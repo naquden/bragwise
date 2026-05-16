@@ -8,6 +8,17 @@ local.properties
 # Log/OS Files
 *.log
 
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Kotlin build cache
+.kotlin/
+
+# Xcode user data
+**/*.xcuserstate
+**/xcuserdata/
+
 # Android Studio generated files and folders
 captures/
 .externalNativeBuild/
