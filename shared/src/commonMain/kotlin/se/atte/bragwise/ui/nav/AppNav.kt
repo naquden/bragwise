@@ -13,11 +13,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Target
@@ -70,17 +72,36 @@ private sealed interface Route {
 fun AppNav(
     deps: AppDeps = remember { AppDeps.stub() },
 ) {
-    var route by remember { mutableStateOf<Route>(Route.Tabs(Tab.Challenges)) }
+    val backStack: SnapshotStateList<Route> = remember { listOf<Route>(Route.Tabs(Tab.Challenges)).toMutableStateList() }
     val platformShare = remember { createPlatformShare() }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val isAtTabs = route is Route.Tabs
-    val currentTab = if (isAtTabs) (route as Route.Tabs).tab else null
+    fun push(next: Route) {
+        if (backStack.last() != next) backStack.add(next)
+    }
+    fun replaceTop(next: Route) {
+        backStack[backStack.lastIndex] = next
+    }
+    fun pop() {
+        if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
+    }
+
+    val current: Route = backStack.last()
+    val isAtTabs = current is Route.Tabs
+    val currentTab = if (current is Route.Tabs) current.tab else null
+
+    val navEventState = rememberNavigationEventState<NavigationEventInfo>(currentInfo = NavigationEventInfo.None)
+    NavigationBackHandler(
+        state = navEventState,
+        isBackEnabled = backStack.size > 1,
+        onBackCancelled = {},
+        onBackCompleted = { pop() },
+    )
 
     Scaffold(
         topBar = {
             if (!isAtTabs) {
-                TextButton(onClick = { route = Route.Tabs(Tab.Challenges) }) {
+                TextButton(onClick = { pop() }) {
                     Text("Back")
                 }
             }
@@ -91,13 +112,13 @@ fun AppNav(
                 NavigationBar {
                     NavigationBarItem(
                         selected = currentTab == Tab.Challenges,
-                        onClick = { route = Route.Tabs(Tab.Challenges) },
+                        onClick = { push(Route.Tabs(Tab.Challenges)) },
                         icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
                         label = { Text("Challenges") },
                     )
                     NavigationBarItem(
                         selected = currentTab == Tab.Me,
-                        onClick = { route = Route.Tabs(Tab.Me) },
+                        onClick = { push(Route.Tabs(Tab.Me)) },
                         icon = { Icon(imageVector = Lucide.User, contentDescription = null) },
                         label = { Text("Me") },
                     )
@@ -107,7 +128,7 @@ fun AppNav(
         floatingActionButton = {
             if (isAtTabs) {
                 FloatingActionButton(
-                    onClick = { route = Route.Create },
+                    onClick = { push(Route.Create) },
                     shape = MaterialTheme.shapes.extraLarge,
                 ) {
                     Icon(imageVector = Lucide.Plus, contentDescription = "Create challenge")
@@ -116,7 +137,7 @@ fun AppNav(
         },
     ) { padding ->
         androidx.compose.animation.Crossfade(
-            targetState = route,
+            targetState = current,
             modifier = Modifier.fillMaxSize().padding(padding),
             animationSpec = androidx.compose.animation.core.tween(durationMillis = 220),
             label = "route",
@@ -125,14 +146,14 @@ fun AppNav(
                 is Route.Tabs -> when (r.tab) {
                     Tab.Challenges -> ChallengesScreen(
                         viewModel = remember { ChallengesViewModel(deps.challenges, deps.social) },
-                        onNavigateToChallenge = { route = Route.ChallengeDetail(it) },
-                        onNavigateToCreate = { route = Route.Create },
+                        onNavigateToChallenge = { push(Route.ChallengeDetail(it)) },
+                        onNavigateToCreate = { push(Route.Create) },
                     )
                     Tab.Me -> MeScreen(
                         viewModel = remember { MeViewModel(deps.profile, deps.auth) },
                         onNavigateToSettings = {},
-                        onNavigateToFriends = { route = Route.Friends },
-                        onNavigateToSignIn = { route = Route.SignIn },
+                        onNavigateToFriends = { push(Route.Friends) },
+                        onNavigateToSignIn = { push(Route.SignIn) },
                     )
                 }
                 is Route.ChallengeDetail -> ChallengeDetailScreen(
@@ -140,15 +161,15 @@ fun AppNav(
                         ChallengeDetailViewModel(r.id, deps.challenges, deps.auth)
                     },
                     platformShare = platformShare,
-                    onNavigateToBet = { route = Route.Predict(r.id) },
-                    onNavigateToLeaderboard = { route = Route.Leaderboard(r.id, isPromoted = false) },
+                    onNavigateToBet = { push(Route.Predict(r.id)) },
+                    onNavigateToLeaderboard = { push(Route.Leaderboard(challengeId = r.id, isPromoted = false)) },
                 )
                 is Route.Predict -> PredictScreen(
                     viewModel = remember(r.challengeId) {
                         PredictViewModel(r.challengeId, deps.challenges)
                     },
                     snackbarHostState = snackbarHostState,
-                    onSubmitted = { route = Route.ChallengeDetail(r.challengeId) },
+                    onSubmitted = { pop() },
                 )
                 is Route.Leaderboard -> LeaderboardScreen(
                     viewModel = remember(r.challengeId, r.isPromoted) {
@@ -158,8 +179,8 @@ fun AppNav(
                 Route.Create -> CreateChallengeScreen(
                     viewModel = remember { CreateChallengeViewModel(deps.challenges) },
                     snackbarHostState = snackbarHostState,
-                    onPublished = { id -> route = Route.ChallengeDetail(id) },
-                    onDraftSaved = { route = Route.Tabs(Tab.Challenges) },
+                    onPublished = { id -> replaceTop(Route.ChallengeDetail(id)) },
+                    onDraftSaved = { pop() },
                 )
                 Route.SignIn -> SignInScreen(
                     viewModel = remember { SignInViewModel(deps.auth) },
@@ -168,29 +189,31 @@ fun AppNav(
                         // route to ReconcileFriends; otherwise straight back to
                         // the Me tab (where the user originated the sign-in
                         // flow). ReconcileFriends.onDone also returns to Me.
-                        route = if (deps.social.localFriendSnapshot().isNotEmpty()) {
-                            Route.ReconcileFriends
-                        } else {
-                            Route.Tabs(Tab.Me)
-                        }
+                        replaceTop(
+                            if (deps.social.localFriendSnapshot().isNotEmpty()) {
+                                Route.ReconcileFriends
+                            } else {
+                                Route.Tabs(Tab.Me)
+                            },
+                        )
                     },
-                    onGuest = { route = Route.Tabs(Tab.Challenges) },
+                    onGuest = { replaceTop(Route.Tabs(Tab.Challenges)) },
                 )
                 Route.Friends -> FriendsScreen(
                     viewModel = remember { FriendsViewModel(deps.social, deps.auth) },
-                    onLocalAddOrEdit = { id -> route = Route.FriendEditor(id) },
+                    onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
                     onOpenCloudProfile = { /* TODO LB-04 */ },
-                    onOpenReconcile = { route = Route.ReconcileFriends },
+                    onOpenReconcile = { push(Route.ReconcileFriends) },
                 )
                 is Route.FriendEditor -> LocalFriendEditorScreen(
                     social = deps.social,
                     localId = r.localId,
-                    onSaved = { route = Route.Friends },
-                    onCancel = { route = Route.Friends },
+                    onSaved = { pop() },
+                    onCancel = { pop() },
                 )
                 Route.ReconcileFriends -> ReconcileFriendsScreen(
                     viewModel = remember { ReconcileFriendsViewModel(deps.social) },
-                    onDone = { route = Route.Tabs(Tab.Me) },
+                    onDone = { replaceTop(Route.Tabs(Tab.Me)) },
                 )
             }
         }

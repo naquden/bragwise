@@ -7,6 +7,7 @@ androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0-beta01"
 composeIcons = "2.2.1"
 composeMultiplatform = "1.11.0"
+navigationEvent = "1.1.1"
 firebaseBom = "34.13.0"
 gitliveFirebase = "2.4.0"
 kotlin = "2.3.21"
@@ -33,6 +34,7 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
+navigationevent-compose = { module = "androidx.navigationevent:navigationevent-compose", version.ref = "navigationEvent" }
 composables-icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "composeIcons" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 
