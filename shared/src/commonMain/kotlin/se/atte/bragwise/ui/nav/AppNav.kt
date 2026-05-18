@@ -13,17 +13,21 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.nav_back
+import bragwise.shared.generated.resources.nav_tab_challenges
+import bragwise.shared.generated.resources.nav_tab_me
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.User
+import org.jetbrains.compose.resources.stringResource
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ProfileRepository
@@ -72,7 +76,7 @@ private sealed interface Route {
 fun AppNav(
     deps: AppDeps = remember { AppDeps.stub() },
 ) {
-    val backStack: SnapshotStateList<Route> = remember { listOf<Route>(Route.Tabs(Tab.Challenges)).toMutableStateList() }
+    val backStack = remember { mutableStateListOf<Route>(Route.Tabs(Tab.Challenges)) }
     val platformShare = remember { createPlatformShare() }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -102,7 +106,7 @@ fun AppNav(
         topBar = {
             if (!isAtTabs) {
                 TextButton(onClick = { pop() }) {
-                    Text("Back")
+                    Text(stringResource(Res.string.nav_back))
                 }
             }
         },
@@ -112,15 +116,15 @@ fun AppNav(
                 NavigationBar {
                     NavigationBarItem(
                         selected = currentTab == Tab.Challenges,
-                        onClick = { push(Route.Tabs(Tab.Challenges)) },
+                        onClick = { replaceTop(Route.Tabs(Tab.Challenges)) },
                         icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
-                        label = { Text("Challenges") },
+                        label = { Text(stringResource(Res.string.nav_tab_challenges)) },
                     )
                     NavigationBarItem(
                         selected = currentTab == Tab.Me,
-                        onClick = { push(Route.Tabs(Tab.Me)) },
+                        onClick = { replaceTop(Route.Tabs(Tab.Me)) },
                         icon = { Icon(imageVector = Lucide.User, contentDescription = null) },
-                        label = { Text("Me") },
+                        label = { Text(stringResource(Res.string.nav_tab_me)) },
                     )
                 }
             }
@@ -157,7 +161,7 @@ fun AppNav(
                     )
                 }
                 is Route.ChallengeDetail -> ChallengeDetailScreen(
-                        viewModel = remember(r.id) {
+                    viewModel = remember(r.id) {
                         ChallengeDetailViewModel(r.id, deps.challenges, deps.auth)
                     },
                     platformShare = platformShare,

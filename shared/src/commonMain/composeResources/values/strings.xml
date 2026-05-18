@@ -34,6 +34,11 @@
     <string name="cta_post_results">POST ALL RESULTS</string>
     <string name="cta_share">Share</string>
 
+    <!-- Navigation. -->
+    <string name="nav_back">Back</string>
+    <string name="nav_tab_challenges">Challenges</string>
+    <string name="nav_tab_me">Me</string>
+
     <!-- Auth. -->
     <string name="auth_sign_in">Sign in</string>
     <string name="auth_continue_guest">Continue as guest</string>
