@@ -79,6 +79,12 @@ service cloud.firestore {
       allow read: if isSelf(uid) || (isSignedIn() && resource.data.invitedUid == request.auth.uid);
     }
 
+    // Collection-group query: "challenges I've joined" across all challenges.
+    // observeJoined queries collectionGroup("players") filtered by uid field.
+    match /{path=**}/players/{uid} {
+      allow read: if isSelf(uid) || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+
     match /deletionRequests/{uid} {
       allow read, write: if false;    // server-only checklist
     }

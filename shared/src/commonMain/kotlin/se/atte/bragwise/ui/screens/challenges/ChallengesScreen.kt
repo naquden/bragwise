@@ -79,7 +79,7 @@ private fun ChallengesContentRoot(
         is UiState.Empty -> EmptyState(onCreate = onCreate)
         is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = ui.cause.toUserMessage(authMessage = "Sign in to see challenges."),
+                text = ui.cause.toUserMessage(),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

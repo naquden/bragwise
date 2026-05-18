@@ -3,6 +3,7 @@ package se.atte.bragwise.ui.nav
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -17,6 +18,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.Target
+import com.composables.icons.lucide.User
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ProfileRepository
@@ -87,13 +92,13 @@ fun AppNav(
                     NavigationBarItem(
                         selected = currentTab == Tab.Challenges,
                         onClick = { route = Route.Tabs(Tab.Challenges) },
-                        icon = { Text("🎯") },
+                        icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
                         label = { Text("Challenges") },
                     )
                     NavigationBarItem(
                         selected = currentTab == Tab.Me,
                         onClick = { route = Route.Tabs(Tab.Me) },
-                        icon = { Text("👤") },
+                        icon = { Icon(imageVector = Lucide.User, contentDescription = null) },
                         label = { Text("Me") },
                     )
                 }
@@ -105,7 +110,7 @@ fun AppNav(
                     onClick = { route = Route.Create },
                     shape = MaterialTheme.shapes.extraLarge,
                 ) {
-                    Text("+")
+                    Icon(imageVector = Lucide.Plus, contentDescription = "Create challenge")
                 }
             }
         },

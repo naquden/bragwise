@@ -1,5 +1,14 @@
 package se.atte.bragwise.mvi
 
+import androidx.compose.runtime.Composable
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.error_auth
+import bragwise.shared.generated.resources.error_email_unverified
+import bragwise.shared.generated.resources.error_network
+import bragwise.shared.generated.resources.error_rate_limited
+import bragwise.shared.generated.resources.error_unknown
+import org.jetbrains.compose.resources.stringResource
+
 /**
  * Sealed envelope for screen-level state. Every screen handles all four.
  * Locked / Scored — the bet-level extra states from plan §4 — live in
@@ -20,12 +29,13 @@ sealed interface Cause {
     data object EmailUnverified : Cause
     data class Unknown(val message: String? = null) : Cause
 
-    fun toUserMessage(authMessage: String = "Sign in to see this."): String = when (this) {
-        Auth -> authMessage
-        Network -> "No connection. Pull to refresh."
-        RateLimited -> "Too many requests. Try again later."
-        EmailUnverified -> "Verify your email to continue."
-        is Unknown -> "Something went wrong. Pull to refresh."
+    @Composable
+    fun toUserMessage(): String = when (this) {
+        Auth -> stringResource(Res.string.error_auth)
+        Network -> stringResource(Res.string.error_network)
+        RateLimited -> stringResource(Res.string.error_rate_limited)
+        EmailUnverified -> stringResource(Res.string.error_email_unverified)
+        is Unknown -> stringResource(Res.string.error_unknown)
     }
 }
 

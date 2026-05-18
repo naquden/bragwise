@@ -26,11 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import bragwise.shared.generated.resources.Res
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.X
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
-import bragwise.shared.generated.resources.ic_close
-import org.jetbrains.compose.resources.painterResource
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Visibility
@@ -231,7 +230,7 @@ private fun BetsStep(
                                     enabled = options.size > 2,
                                 ) {
                                     Icon(
-                                        painter = painterResource(Res.drawable.ic_close),
+                                        imageVector = Lucide.X,
                                         contentDescription = "Remove option",
                                         tint = if (options.size > 2)
                                             MaterialTheme.colorScheme.onSurfaceVariant

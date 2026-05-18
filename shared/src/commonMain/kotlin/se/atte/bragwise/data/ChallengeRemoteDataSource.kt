@@ -9,6 +9,9 @@ import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.functions.FirebaseFunctions
 import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.builtins.serializer
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
@@ -96,17 +99,13 @@ class ChallengeRemoteDataSource(
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     fun observeChallengeDetail(challengeId: String, myUid: String): Flow<ChallengeDetail> = flow {
         val challengeFlow = db.document("challenges/$challengeId").snapshots
             .map { snap -> snap.toChallenge() }
         val playerFlow = db.document("challenges/$challengeId/players/$myUid").snapshots
             .map { snap ->
                 if (!snap.exists) return@map emptyMap<String, se.atte.bragwise.domain.PredictionPayload>()
-                val rawPreds = snap.rawOrNull("predictions") as? Map<String, Any?> ?: return@map emptyMap()
-                rawPreds.entries.mapNotNull { (betId, v) ->
-                    (v as? Map<String, Any?>)?.toPredictionPayload()?.let { betId to it }
-                }.toMap()
+                snap.toPredictionsMap()
             }
 
         emitAll(
@@ -136,17 +135,13 @@ class ChallengeRemoteDataSource(
         emitAll(
             db.document("challenges/$challengeId").snapshots
                 .map { snap ->
-                    val board = snap.rawOrNull("leaderboard") as? Map<String, Any?> ?: return@map emptyList()
+                    val board = snap.toLeaderboardMap() ?: return@map emptyList()
                     board.entries
-                        .mapNotNull { (uid, pts) ->
-                            val p = (pts as? Long)?.toInt() ?: (pts as? Int) ?: return@mapNotNull null
-                            uid to p
-                        }
-                        .sortedByDescending { it.second }
+                        .sortedByDescending { it.value }
                         .mapIndexed { idx, (uid, pts) ->
                             LeaderboardEntry(
                                 uid = uid,
-                                displayName = uid, // resolved by ProfileRepository on demand
+                                displayName = uid,
                                 points = pts,
                                 rank = idx + 1,
                             )
@@ -167,9 +162,8 @@ class ChallengeRemoteDataSource(
             "bets" to challenge.bets.map { it.toMap() },
         )
         val result = functions.httpsCallable("createChallenge")(data)
-        @Suppress("UNCHECKED_CAST")
-        val resultData = result.data<Any?>() as? Map<String, Any?> ?: error("createChallenge returned no data")
-        return resultData["challengeId"] as? String ?: error("createChallenge returned no challengeId")
+        val resultData = result.data(MapSerializer(String.serializer(), String.serializer().nullable))
+        return resultData["challengeId"] ?: error("createChallenge returned no challengeId")
     }
 
     suspend fun updateDraft(challenge: Challenge) {

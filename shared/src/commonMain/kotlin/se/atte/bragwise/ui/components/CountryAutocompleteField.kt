@@ -26,10 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import bragwise.shared.generated.resources.Res
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.X
 import se.atte.bragwise.ui.standardPadding
-import bragwise.shared.generated.resources.ic_close
-import org.jetbrains.compose.resources.painterResource
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.searchCountries
 
@@ -88,7 +87,7 @@ fun CountryAutocompleteField(
                         onChange(value.copy(countryCode = null))
                     }) {
                         Icon(
-                            painter = painterResource(Res.drawable.ic_close),
+                            imageVector = Lucide.X,
                             contentDescription = "Clear country",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

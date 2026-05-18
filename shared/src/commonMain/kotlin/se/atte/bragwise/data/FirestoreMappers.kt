@@ -2,6 +2,7 @@ package se.atte.bragwise.data
 
 import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Timestamp
+import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
@@ -17,10 +18,44 @@ import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.Visibility
 
+// ── Serializable DTOs ────────────────────────────────────────────────────────
+// Used so gitlive's typed decoder can deserialize nested Firestore structures.
+
+@Serializable
+private data class BetOptionDto(
+    val id: String,
+    val label: String = "",
+    val countryCode: String? = null,
+)
+
+@Serializable
+private data class BetDto(
+    val kind: String,
+    val id: String,
+    val title: String = "",
+    val optionType: String = "NONE",
+    val options: List<BetOptionDto> = emptyList(),
+    val topN: Int = 1,
+)
+
+@Serializable
+private data class PredictionPayloadDto(
+    val kind: String,
+    val optionId: String? = null,
+    val orderedOptionIds: List<String> = emptyList(),
+    val value: Boolean? = null,
+)
+
+@Serializable
+private data class LeaderboardDto(
+    val entries: Map<String, Int> = emptyMap(),
+)
+
+// ── Primitive helpers ────────────────────────────────────────────────────────
+
 internal fun Timestamp.toInstant(): Instant =
     Instant.fromEpochSeconds(seconds, nanoseconds.toLong())
 
-/** Safe typed field read — returns null on absent/null/type-mismatch. */
 internal fun DocumentSnapshot.timestampOrNull(field: String): Instant? = runCatching {
     get<Timestamp>(field).toInstant()
 }.getOrNull()
@@ -37,24 +72,22 @@ internal fun DocumentSnapshot.boolOrNull(field: String): Boolean? = runCatching 
     get<Boolean>(field)
 }.getOrNull()
 
-/**
- * Returns the raw platform value for a field, suitable for casting to
- * List<*> or Map<*,*>. Uses Any? to bypass GitLive's typed decoder so
- * complex nested structures (bets, results, leaderboard) pass through as
- * the platform's native Java/ObjC types.
- */
-@Suppress("UNCHECKED_CAST")
-internal fun DocumentSnapshot.rawOrNull(field: String): Any? = runCatching {
-    get<Any?>(field)
-}.getOrNull()
+// ── Challenge ────────────────────────────────────────────────────────────────
 
-@Suppress("UNCHECKED_CAST")
 internal fun DocumentSnapshot.toChallenge(): Challenge {
-    val rawBets = (rawOrNull("bets") as? List<*>)
-        ?.filterIsInstance<Map<String, Any?>>()
-        ?: emptyList()
-    val rawResults = rawOrNull("results") as? Map<String, Any?>
-    val rawLeaderboard = rawOrNull("leaderboard") as? Map<String, Any?>
+    val bets = runCatching {
+        get<List<BetDto>>(field = "bets").map { it.toDomain() }
+    }.onFailure { println("BRAGWISE_BETS_ERR ${it.message}") }.getOrElse { emptyList() }
+
+    val results: Map<String, PredictionPayload>? = runCatching {
+        get<Map<String, PredictionPayloadDto>>(field = "results")
+            .mapNotNull { (betId, dto) -> dto.toDomain()?.let { betId to it } }
+            .toMap()
+    }.getOrNull()
+
+    val leaderboard: Map<String, Int>? = runCatching {
+        get<Map<String, Int>>(field = "leaderboard")
+    }.getOrNull()
 
     return Challenge(
         id = strOrNull("id") ?: id,
@@ -74,75 +107,52 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
         joinedCount = longOrNull("joinedCount")?.toInt() ?: 0,
         promoted = boolOrNull("promoted") ?: false,
         trusted = boolOrNull("trusted") ?: false,
-        bets = rawBets.mapNotNull { it.toBet() },
-        results = rawResults?.entries
-            ?.mapNotNull { (betId, v) ->
-                (v as? Map<String, Any?>)?.toPredictionPayload()?.let { betId to it }
-            }?.toMap(),
-        leaderboard = rawLeaderboard?.entries
-            ?.mapNotNull { (uid, pts) ->
-                val p = (pts as? Long)?.toInt() ?: (pts as? Int) ?: return@mapNotNull null
-                uid to p
-            }?.toMap(),
+        bets = bets,
+        results = results,
+        leaderboard = leaderboard,
     )
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun Map<String, Any?>.toBet(): Bet? {
-    val id = this["id"] as? String ?: return null
-    val title = this["title"] as? String ?: ""
-    val optionType = runCatching {
-        OptionType.valueOf(this["optionType"] as? String ?: "NONE")
-    }.getOrDefault(OptionType.NONE)
-    return when (this["kind"] as? String) {
-        "SINGLE_PICK" -> Bet.SinglePick(
-            id = id, title = title, optionType = optionType,
-            options = decodeOptions(),
-        )
-        "RANKING" -> Bet.Ranking(
-            id = id, title = title, optionType = optionType,
-            topN = (this["topN"] as? Long)?.toInt() ?: (this["topN"] as? Int) ?: 1,
-            options = decodeOptions(),
-        )
-        "BOOLEAN_PROP" -> Bet.BooleanProp(id = id, title = title)
-        else -> null
+private fun BetDto.toDomain(): Bet {
+    val opts = options.map { BetOption(id = it.id, label = it.label, countryCode = it.countryCode) }
+    val ot = runCatching { OptionType.valueOf(optionType) }.getOrDefault(OptionType.NONE)
+    return when (kind) {
+        "SINGLE_PICK" -> Bet.SinglePick(id = id, title = title, optionType = ot, options = opts)
+        "RANKING" -> Bet.Ranking(id = id, title = title, optionType = ot, topN = topN, options = opts)
+        else -> Bet.BooleanProp(id = id, title = title)
     }
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun Map<String, Any?>.decodeOptions(): List<BetOption> =
-    (this["options"] as? List<*>)
-        ?.filterIsInstance<Map<String, Any?>>()
-        ?.mapNotNull { opt ->
-            val optId = opt["id"] as? String ?: return@mapNotNull null
-            BetOption(
-                id = optId,
-                label = opt["label"] as? String ?: "",
-                countryCode = opt["countryCode"] as? String,
-            )
-        } ?: emptyList()
+private fun PredictionPayloadDto.toDomain(): PredictionPayload? = when (kind) {
+    "SINGLE_PICK" -> optionId?.let { PredictionPayload.SinglePick(optionId = it) }
+    "RANKING" -> PredictionPayload.Ranking(orderedOptionIds = orderedOptionIds)
+    "BOOLEAN_PROP" -> value?.let { PredictionPayload.BooleanProp(value = it) }
+    else -> null
+}
 
-@Suppress("UNCHECKED_CAST")
-internal fun Map<String, Any?>.toPredictionPayload(): PredictionPayload? =
-    when (this["kind"] as? String) {
-        "SINGLE_PICK" -> PredictionPayload.SinglePick(
-            optionId = this["optionId"] as? String ?: return null,
-        )
-        "RANKING" -> PredictionPayload.Ranking(
-            orderedOptionIds = (this["orderedOptionIds"] as? List<*>)
-                ?.filterIsInstance<String>() ?: emptyList(),
-        )
-        "BOOLEAN_PROP" -> PredictionPayload.BooleanProp(
-            value = this["value"] as? Boolean ?: return null,
-        )
-        else -> null
-    }
+// ── Predictions (player sub-doc) ─────────────────────────────────────────────
+
+internal fun DocumentSnapshot.toPredictionsMap(): Map<String, PredictionPayload> = runCatching {
+    get<Map<String, PredictionPayloadDto>>(field = "predictions")
+        .mapNotNull { (betId, dto) -> dto.toDomain()?.let { betId to it } }
+        .toMap()
+}.getOrElse { emptyMap() }
+
+// ── Leaderboard ──────────────────────────────────────────────────────────────
+
+internal fun DocumentSnapshot.toLeaderboardMap(): Map<String, Int>? = runCatching {
+    get<Map<String, Int>>(field = "leaderboard")
+}.getOrNull()
+
+// ── PredictionPayload serialization (write path) ─────────────────────────────
 
 internal fun PredictionPayload.toMap(): Map<String, Any?> = when (this) {
     is PredictionPayload.SinglePick -> mapOf("kind" to "SINGLE_PICK", "optionId" to optionId)
     is PredictionPayload.Ranking -> mapOf("kind" to "RANKING", "orderedOptionIds" to orderedOptionIds)
     is PredictionPayload.BooleanProp -> mapOf("kind" to "BOOLEAN_PROP", "value" to value)
 }
+
+// ── Other document types ─────────────────────────────────────────────────────
 
 internal fun DocumentSnapshot.toPublicProfile(): PublicProfile = PublicProfile(
     uid = id,
@@ -159,54 +169,48 @@ internal fun DocumentSnapshot.toPlayer(): Player = Player(
     createdAt = timestampOrNull("createdAt") ?: Instant.DISTANT_PAST,
 )
 
-@Suppress("UNCHECKED_CAST")
-internal fun DocumentSnapshot.toCloudFriends(): List<CloudFriend> {
-    val friendsMap = rawOrNull("friends") as? Map<String, Any?> ?: return emptyList()
-    return friendsMap.mapNotNull { (uid, since) ->
-        // `since` is a platform Timestamp; convert via runCatching
-        val sinceInstant = runCatching { (since as Timestamp).toInstant() }.getOrNull()
-            ?: Instant.DISTANT_PAST
+@Serializable
+private data class SocialDocDto(
+    val friends: Map<String, @Serializable(with = dev.gitlive.firebase.firestore.TimestampSerializer::class) Timestamp> = emptyMap(),
+)
+
+internal fun DocumentSnapshot.toCloudFriends(): List<CloudFriend> = runCatching {
+    data<SocialDocDto>().friends.map { (uid, ts) ->
+        val since = ts.toInstant()
         CloudFriend(
-            player = Player(
-                uid = uid,
-                handle = "",
-                displayName = uid,
-                avatarSeed = uid,
-                createdAt = sinceInstant,
-            ),
-            since = sinceInstant,
+            player = Player(uid = uid, handle = "", displayName = uid, avatarSeed = uid, createdAt = since),
+            since = since,
         )
     }
+}.getOrElse { emptyList() }
+
+@Serializable
+private data class FriendRequestsDto(
+    val requestsIn: Map<String, @Serializable(with = dev.gitlive.firebase.firestore.TimestampSerializer::class) Timestamp> = emptyMap(),
+    val requestsOut: Map<String, @Serializable(with = dev.gitlive.firebase.firestore.TimestampSerializer::class) Timestamp> = emptyMap(),
+)
+
+internal fun DocumentSnapshot.toFriendRequests(): FriendRequests = runCatching {
+    val dto = data<FriendRequestsDto>()
+    FriendRequests(
+        incoming = dto.requestsIn.mapValues { it.value.toInstant() },
+        outgoing = dto.requestsOut.mapValues { it.value.toInstant() },
+    )
+}.getOrElse { FriendRequests(incoming = emptyMap(), outgoing = emptyMap()) }
+
+@Serializable
+private data class HeadToHeadDto(
+    val vs: Map<String, RecordDto> = emptyMap(),
+) {
+    @Serializable
+    data class RecordDto(val wins: Int = 0, val losses: Int = 0, val ties: Int = 0)
 }
 
-@Suppress("UNCHECKED_CAST")
-internal fun DocumentSnapshot.toFriendRequests(): FriendRequests {
-    val incoming = (rawOrNull("requestsIn") as? Map<String, Any?>)
-        ?.mapNotNull { (uid, ts) ->
-            runCatching { (ts as Timestamp).toInstant() }.getOrNull()?.let { uid to it }
-        }?.toMap() ?: emptyMap()
-    val outgoing = (rawOrNull("requestsOut") as? Map<String, Any?>)
-        ?.mapNotNull { (uid, ts) ->
-            runCatching { (ts as Timestamp).toInstant() }.getOrNull()?.let { uid to it }
-        }?.toMap() ?: emptyMap()
-    return FriendRequests(incoming = incoming, outgoing = outgoing)
-}
+internal fun DocumentSnapshot.toHeadToHead(): HeadToHead = runCatching {
+    val dto = data<HeadToHeadDto>()
+    HeadToHead(vs = dto.vs.mapValues { (_, r) -> HeadToHead.Record(wins = r.wins, losses = r.losses, ties = r.ties) })
+}.getOrElse { HeadToHead(emptyMap()) }
 
-@Suppress("UNCHECKED_CAST")
-internal fun DocumentSnapshot.toHeadToHead(): HeadToHead {
-    val vsMap = rawOrNull("vs") as? Map<String, Any?> ?: return HeadToHead(emptyMap())
-    val records = vsMap.mapNotNull { (uid, raw) ->
-        val m = raw as? Map<String, Any?> ?: return@mapNotNull null
-        uid to HeadToHead.Record(
-            wins = (m["wins"] as? Long)?.toInt() ?: 0,
-            losses = (m["losses"] as? Long)?.toInt() ?: 0,
-            ties = (m["ties"] as? Long)?.toInt() ?: 0,
-        )
-    }.toMap()
-    return HeadToHead(vs = records)
-}
-
-@Suppress("UNCHECKED_CAST")
 internal fun DocumentSnapshot.toInvitation(challengeId: String): Invitation = Invitation(
     challengeId = challengeId,
     invitedUid = strOrNull("invitedUid") ?: id,
