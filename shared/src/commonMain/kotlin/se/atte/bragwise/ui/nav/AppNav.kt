@@ -160,11 +160,13 @@ fun AppNav(
                     viewModel = remember { SignInViewModel(deps.auth) },
                     onSignedIn = {
                         // OB-06 follow-on: if any local-friend rows survive,
-                        // route to ReconcileFriends; otherwise straight back to tabs.
+                        // route to ReconcileFriends; otherwise straight back to
+                        // the Me tab (where the user originated the sign-in
+                        // flow). ReconcileFriends.onDone also returns to Me.
                         route = if (deps.social.localFriendSnapshot().isNotEmpty()) {
                             Route.ReconcileFriends
                         } else {
-                            Route.Tabs(Tab.Challenges)
+                            Route.Tabs(Tab.Me)
                         }
                     },
                     onGuest = { route = Route.Tabs(Tab.Challenges) },
@@ -183,7 +185,7 @@ fun AppNav(
                 )
                 Route.ReconcileFriends -> ReconcileFriendsScreen(
                     viewModel = remember { ReconcileFriendsViewModel(deps.social) },
-                    onDone = { route = Route.Tabs(Tab.Challenges) },
+                    onDone = { route = Route.Tabs(Tab.Me) },
                 )
             }
         }
@@ -224,10 +226,12 @@ class AppDeps(
                 social = SocialRepository(
                     remote = se.atte.bragwise.data.SocialRemoteDataSource(),
                     local = se.atte.bragwise.data.SocialLocalDataSource(),
+                    auth = authRepo,
                 ),
                 profile = ProfileRepository(
                     remote = se.atte.bragwise.data.ProfileRemoteDataSource(),
                     local = se.atte.bragwise.data.ProfileLocalDataSource(),
+                    auth = authRepo,
                 ),
             )
         }

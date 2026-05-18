@@ -1,8 +1,10 @@
 package se.atte.bragwise.ui.screens.challenges
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.launchIn
 import androidx.lifecycle.viewModelScope
 import se.atte.bragwise.data.ChallengeRepository
@@ -13,6 +15,21 @@ import se.atte.bragwise.mvi.Cause
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
+
+// #region agent log
+private const val DBG = "BRAGWISE_DBG_9c95cf"
+private fun dbg(msg: String) { println("$DBG $msg") }
+private fun <T> Flow<T>.tag(name: String): Flow<T> = this
+    .onStart { dbg("$name.start") }
+    .onEach { v ->
+        val size = (v as? Collection<*>)?.size
+        dbg("$name.value size=$size")
+    }
+    .catch { e ->
+        dbg("$name.error type=${e::class.simpleName} msg=${e.message}")
+        throw e
+    }
+// #endregion
 
 /**
  * CL-01 Challenges screen. Single-scroll, four optional sections:
@@ -46,11 +63,14 @@ class ChallengesViewModel(
     }
 
     init {
+        // #region agent log
+        dbg("init.start")
+        // #endregion
         combine(
-            challenges.observeMine(),
-            challenges.observePromoted(),
-            challenges.observeFromFriends(),
-            challenges.observePendingInvites(),
+            challenges.observeMine().tag("mine"),
+            challenges.observePromoted().tag("promoted"),
+            challenges.observeFromFriends().tag("fromFriends"),
+            challenges.observePendingInvites().tag("invites"),
         ) { mine, promoted, fromFriends, invites ->
             Sections(mine, promoted, fromFriends, invites)
         }
@@ -63,7 +83,12 @@ class ChallengesViewModel(
                     it.copy(ui = if (isEmpty) UiState.Empty() else UiState.Ready(sections))
                 }
             }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                // #region agent log
+                dbg("combine.error type=${e::class.simpleName} msg=${e.message}")
+                // #endregion
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+            }
             .launchIn(viewModelScope)
     }
 

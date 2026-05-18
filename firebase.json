@@ -20,8 +20,14 @@
     "public": "firebase/public",
     "ignore": [
       "firebase.json",
-      "**/.*",
+      "**/.git/**",
+      "**/.DS_Store",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      { "source": "/auth/finish", "function": "landing", "region": "europe-west1" },
+      { "source": "/c/**",        "function": "landing", "region": "europe-west1" },
+      { "source": "/u/**",        "function": "landing", "region": "europe-west1" }
     ],
     "headers": [
       {

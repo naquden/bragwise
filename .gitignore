@@ -48,3 +48,31 @@ google-services.json
 temp
 temp/
 
+# Firebase CLI artifacts
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firepit-log.txt
+
+# Firebase Functions secrets
+functions/.runtimeconfig.json
+.runtimeconfig.json
+
+# Environment files
+.env
+.env.*
+
+# Certificates / keys (in addition to *.jks, *.keystore)
+*.p12
+*.pem
+*.key
+
+# iOS Firebase config (parallel to google-services.json)
+GoogleService-Info.plist
+
+# iOS CocoaPods
+Pods/
+Podfile.lock
+
+# Personal work-in-progress notes
+plan.md

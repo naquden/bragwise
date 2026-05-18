@@ -1,19 +1,17 @@
 package se.atte.bragwise.data
 
 /**
- * Stub data sources for the not-yet-wired repositories. Each is a placeholder
- * that the matching `*Repository` constructs but never delegates to — every
- * cloud-touching method on those repositories still returns
- * `NotImplementedError` until the corresponding callable lands in Phase D
- * (plan §5).
+ * Placeholder local data sources — SQLDelight persistence deferred to Phase 2.
+ * All read flows go directly to Firestore in Phase 1; the local cache layer
+ * will sit between remote and UI in Phase 2 for offline-first support.
  *
- * Auth's data sources are real and live in their own files:
- * [AuthRemoteDataSource] (GitLive-backed) and [AuthLocalDataSource]
- * (expect/actual, SharedPreferences / NSUserDefaults).
+ * Auth's data sources live in their own files:
+ * [AuthRemoteDataSource] and [AuthLocalDataSource] (expect/actual).
+ *
+ * Challenge / Social / Profile remote data sources also live in their own
+ * files: [ChallengeRemoteDataSource], [SocialRemoteDataSource],
+ * [ProfileRemoteDataSource].
  */
-class ChallengeRemoteDataSource
 class ChallengeLocalDataSource
-class SocialRemoteDataSource
 class SocialLocalDataSource
-class ProfileRemoteDataSource
 class ProfileLocalDataSource

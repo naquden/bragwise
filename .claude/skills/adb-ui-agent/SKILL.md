@@ -120,17 +120,14 @@ adb shell input keyevent 111                   # Escape (numeric)
 # Build and install debug APK to connected device/emulator
 ./gradlew :androidApp:installDebug
 
-# Launch app (debug)
-adb shell am start -n se.atte.bragwise.debug/se.atte.bragwise.MainActivity
-
-# Launch app (release)
+# Launch app (debug and release share applicationId — no .debug suffix)
 adb shell am start -n se.atte.bragwise/se.atte.bragwise.MainActivity
 
 # Force stop
-adb shell am force-stop se.atte.bragwise.debug
+adb shell am force-stop se.atte.bragwise
 
 # Clear app data
-adb shell pm clear se.atte.bragwise.debug
+adb shell pm clear se.atte.bragwise
 
 # Check if app is installed
 adb shell pm list packages | grep bragwise
@@ -206,7 +203,7 @@ When reporting results, describe what you see concretely: "The screen shows a li
 Run this with `block_until_ms: 0` so it backgrounds immediately:
 
 ```bash
-adb logcat -c && adb logcat --pid=$(adb shell pidof se.atte.bragwise.debug) -v time > /tmp/ast-logcat.txt
+adb logcat -c && adb logcat --pid=$(adb shell pidof se.atte.bragwise) -v time > /tmp/ast-logcat.txt
 ```
 
 If the app isn't running yet (pidof returns empty), start the watcher after launching the app.
@@ -257,7 +254,7 @@ Read /tmp/ast-logcat.txt (with offset from the previous line count)
 
 ```bash
 # Get PID of the running app
-adb shell pidof se.atte.bragwise.debug
+adb shell pidof se.atte.bragwise
 
 # Dump recent logs for that PID
 adb logcat -d --pid=<pid> -t 200
@@ -282,7 +279,7 @@ If something goes wrong:
 | App crashed | Check `adb logcat -d -t 100 -s AndroidRuntime:E`, restart with `am start` |
 | Wrong screen | Press back: `adb shell input keyevent KEYCODE_BACK` |
 | Dialog blocking | Try BACK key or tap outside dialog area |
-| App not responding | `adb shell am force-stop se.atte.bragwise.debug`, then relaunch |
+| App not responding | `adb shell am force-stop se.atte.bragwise`, then relaunch |
 | Keyboard covering UI | `adb shell input keyevent KEYCODE_BACK` to dismiss |
 | Screen is off | `adb shell input keyevent KEYCODE_WAKEUP` |
 | Device locked | `adb shell input keyevent KEYCODE_MENU` then swipe up |
@@ -309,7 +306,7 @@ The app uses passwordless email-link sign-in. The sign-in screen shows "Bragwise
 
 ```
 1. Launch the app
-   → adb shell am start -n se.atte.bragwise.debug/se.atte.bragwise.MainActivity
+   → adb shell am start -n se.atte.bragwise/se.atte.bragwise.MainActivity
 
 2. Wait for screen, take screenshot to confirm state
    → sleep 2 && adb exec-out screencap -p > /tmp/ast-screenshot.png
@@ -345,7 +342,7 @@ Agent execution:
    → adb logcat -c
 
 2. Launch app
-   → adb shell am start -n se.atte.bragwise.debug/se.atte.bragwise.MainActivity
+   → adb shell am start -n se.atte.bragwise/se.atte.bragwise.MainActivity
 
 3. Wait 2 seconds, take screenshot
    → sleep 2

@@ -1,5 +1,34 @@
 # Firebase Operator Runbook
 
+Project: `bragwise` (single Firebase project — no separate staging/prod split in Phase 1).
+
+## Console links
+
+| Resource | URL |
+|---|---|
+| Overview | https://console.firebase.google.com/project/bragwise/overview |
+| Firestore | https://console.firebase.google.com/project/bragwise/firestore |
+| Authentication | https://console.firebase.google.com/project/bragwise/authentication/users |
+| Cloud Functions | https://console.firebase.google.com/project/bragwise/functions |
+| App Check | https://console.firebase.google.com/project/bragwise/appcheck |
+| Hosting | https://console.firebase.google.com/project/bragwise/hosting |
+
+## Deploy commands
+
+```sh
+# Firestore rules + indexes
+firebase deploy --only firestore:rules,firestore:indexes
+
+# Cloud Functions only
+firebase deploy --only functions
+
+# Firebase Hosting only (assetlinks.json + AASA + landing stub)
+firebase deploy --only hosting
+
+# Everything
+firebase deploy
+```
+
 ## Promote a challenge
 
 Promotion is **operator-only** (the developer). Clients can never write
@@ -31,12 +60,40 @@ fires the leaderboard build asynchronously.
 ## Deploy rules and indexes
 
 ```sh
-firebase deploy --only firestore:rules,firestore:indexes \
-  --project bragwise-prod
+firebase deploy --only firestore:rules,firestore:indexes
 ```
 
-Always deploy to `bragwise-staging` first; smoke-test the read-ACL with the
-emulator suite before promoting to prod.
+Always smoke-test the read-ACL in the Rules Playground before deploying:
+- `get /challenges/{any}` as unauthenticated → ALLOW (bearer-capability model)
+- `set /players/{any}` as anyone → DENY
+
+## App Check debug tokens
+
+The first debug launch prints a UUID to Logcat:
+```
+D DebugAppCheckProvider: Enter this debug secret into the allowlist: <UUID>
+```
+
+Paste that UUID into:
+**Console → App Check → `se.atte.bragwise` → ⋮ → Manage debug tokens → Add**
+
+One token per development device/emulator. Tokens are NOT committed to the
+repo and must be re-registered if the app is reinstalled.
+
+## Add a release signing fingerprint
+
+When a real release signing config is added to `androidApp/build.gradle.kts`:
+
+```sh
+./gradlew :androidApp:signingReport
+# copy SHA-256 from "Variant: release"
+```
+
+Then:
+1. Console → Project Settings → Your apps → Android → Add fingerprint (SHA-256).
+2. Re-download `google-services.json` → replace `androidApp/google-services.json`.
+3. Add the new SHA-256 to `firebase/public/.well-known/assetlinks.json`.
+4. `firebase deploy --only hosting`.
 
 ## Account deletion checklist
 
@@ -45,4 +102,12 @@ emulator suite before promoting to prod.
 `reconcileDeletions` (hourly) resumes any request with pending steps older
 than 24 h. Operator action is only required if a `deletionRequests/{uid}`
 doc has been pending for more than ~26 h — at that point inspect the
-checklist field, find the failing step, and re-trigger or hand-fix.
+`steps` map, find the failing step, and re-trigger or hand-fix.
+
+## Staging / production split
+
+Phase 1 uses a single `bragwise` project. Before public launch:
+1. Create a second Firebase project `bragwise-prod`.
+2. Update `.firebaserc` with `"prod": "bragwise-prod"`.
+3. Add a second `google-services.json` for the prod app registration.
+4. Deploy to staging first (`firebase use bragwise`) then prod (`firebase use bragwise-prod`).

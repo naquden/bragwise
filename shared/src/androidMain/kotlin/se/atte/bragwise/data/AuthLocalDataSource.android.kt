@@ -1,0 +1,24 @@
+package se.atte.bragwise.data
+
+import android.content.Context
+import android.content.SharedPreferences
+import se.atte.bragwise.platform.AndroidPlatformShareHolder
+
+private const val PREFS = "bragwise_auth"
+private const val KEY_PENDING_EMAIL = "pending_sign_in_email"
+
+actual class AuthLocalDataSource actual constructor() {
+    private val prefs: SharedPreferences by lazy {
+        val ctx = AndroidPlatformShareHolder.appContext
+            ?: error("AndroidPlatformShareHolder.appContext not initialised before AuthLocalDataSource use")
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    }
+
+    actual var pendingSignInEmail: String?
+        get() = prefs.getString(KEY_PENDING_EMAIL, null)
+        set(value) {
+            prefs.edit().apply {
+                if (value == null) remove(KEY_PENDING_EMAIL) else putString(KEY_PENDING_EMAIL, value)
+            }.apply()
+        }
+}

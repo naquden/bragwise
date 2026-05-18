@@ -21,7 +21,10 @@ sealed interface Cause {
     data class Unknown(val message: String? = null) : Cause
 }
 
-fun Throwable.toCause(): Cause = when (this) {
-    is kotlin.coroutines.cancellation.CancellationException -> throw this
+fun Throwable.toCause(): Cause = when {
+    this is kotlin.coroutines.cancellation.CancellationException -> throw this
+    message?.contains("PERMISSION_DENIED", ignoreCase = true) == true -> Cause.Auth
+    message?.contains("UNAVAILABLE", ignoreCase = true) == true ||
+        message?.contains("network", ignoreCase = true) == true -> Cause.Network
     else -> Cause.Unknown(message)
 }

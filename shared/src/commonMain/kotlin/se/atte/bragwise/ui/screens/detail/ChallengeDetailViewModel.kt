@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeRepository
+import se.atte.bragwise.data.shareUrlForChallenge
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
@@ -70,7 +71,7 @@ class ChallengeDetailViewModel(
                 if (title != null) {
                     emitEffect(
                         Effect.ShareLink(
-                            url = "https://bragwise.app/c/$challengeId",
+                            url = shareUrlForChallenge(challengeId),
                             message = ShareMessage.ChallengeShare(challengeTitle = title),
                         ),
                     )

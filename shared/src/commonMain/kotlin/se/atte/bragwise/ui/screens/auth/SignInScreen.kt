@@ -39,10 +39,15 @@ fun SignInScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    // State-driven sign-in navigation: works even when the user lands on this
+    // screen while already authed (state replays).
+    LaunchedEffect(state.signedIn) {
+        if (state.signedIn) onSignedIn()
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                SignInViewModel.Effect.SignedIn -> onSignedIn()
                 SignInViewModel.Effect.ContinuedAsGuest -> onGuest()
                 is SignInViewModel.Effect.Snackbar -> { /* TODO host snackbar */ }
             }

@@ -28,6 +28,14 @@ class SignInViewModel(
         /** Non-null after a successful `sendSignInLink` — UI flips to "Check your inbox". */
         val sentTo: String? = null,
         val submitting: Boolean = false,
+        /**
+         * Mirrors `AuthRepository.authState` becoming `SignedIn`. State-driven
+         * (not effect-driven) so the navigation signal survives the race where
+         * the user lands on this screen while already authed — the StateFlow
+         * replays the current value to the screen's late-attaching collector,
+         * whereas `Effect.SignedIn` on a replay-0 SharedFlow would be lost.
+         */
+        val signedIn: Boolean = false,
     )
 
     sealed interface Intent {
@@ -39,20 +47,20 @@ class SignInViewModel(
     }
 
     sealed interface Effect {
-        data object SignedIn : Effect
         data object ContinuedAsGuest : Effect
         data class Snackbar(val text: String) : Effect
     }
 
     init {
         // MainActivity routes the inbound App Link directly into AuthRepository,
-        // which flips authState to SignedIn. This collector is the single point
-        // of "we're signed in, leave OB-02" — works whether sign-in completed
-        // from a fresh launch, a same-session deep-link return, or because the
-        // user was already signed in when we opened the screen.
+        // which flips authState to SignedIn. We mirror that into our State so
+        // SignInScreen reacts via LaunchedEffect on state.signedIn — works
+        // whether sign-in completed from a fresh launch, a same-session
+        // deep-link return, or because the user was already signed in when we
+        // opened the screen (StateFlow replays the current value).
         auth.authState
             .filterIsInstance<AuthState.SignedIn>()
-            .onEach { emitEffect(Effect.SignedIn) }
+            .onEach { update { it.copy(signedIn = true) } }
             .launchIn(viewModelScope)
     }
 

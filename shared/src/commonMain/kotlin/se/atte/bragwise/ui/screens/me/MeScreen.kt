@@ -21,7 +21,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingLarge
-import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppTextButton
@@ -50,35 +49,44 @@ fun MeScreen(
         }
     }
 
-    when (val ui = state.ui) {
-        UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    when {
+        // Initial auth resolution or signed-in but profile still loading
+        state.isLoading -> Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
             CircularProgressIndicator()
         }
-        is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Failed: ${ui.cause}")
-        }
-        is UiState.Empty,
-        is UiState.Ready<*> -> {
-            val player = (ui as? UiState.Ready)?.data
-            MeContent(
-                player = player,
-                onFriends = { viewModel.onIntent(MeViewModel.Intent.OpenFriends) },
-                onSettings = { viewModel.onIntent(MeViewModel.Intent.OpenSettings) },
-                onSignOut = { viewModel.onIntent(MeViewModel.Intent.SignOut) },
-                onSignIn = onNavigateToSignIn,
-            )
-        }
+        // Authoritative session = AuthState. Guest UI only when truly signed out.
+        !state.isSignedIn -> MeContent(
+            player = null,
+            email = null,
+            onFriends = { viewModel.onIntent(MeViewModel.Intent.OpenFriends) },
+            onSettings = { viewModel.onIntent(MeViewModel.Intent.OpenSettings) },
+            onSignOut = { viewModel.onIntent(MeViewModel.Intent.SignOut) },
+            onSignIn = onNavigateToSignIn,
+        )
+        else -> MeContent(
+            player = state.player,
+            email = state.email,
+            onFriends = { viewModel.onIntent(MeViewModel.Intent.OpenFriends) },
+            onSettings = { viewModel.onIntent(MeViewModel.Intent.OpenSettings) },
+            onSignOut = { viewModel.onIntent(MeViewModel.Intent.SignOut) },
+            onSignIn = onNavigateToSignIn,
+        )
     }
 }
 
 @Composable
 private fun MeContent(
     player: Player?,
+    email: String?,
     onFriends: () -> Unit,
     onSettings: () -> Unit,
     onSignOut: () -> Unit,
     onSignIn: () -> Unit,
 ) {
+    val isSignedIn = player != null || email != null
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -86,7 +94,7 @@ private fun MeContent(
             .padding(standardPadding),
     ) {
         SectionCard {
-            if (player == null) {
+            if (!isSignedIn) {
                 Text(text = "Guest", style = MaterialTheme.typography.headlineLarge)
                 Text(
                     text = "Sign up to save your run, join friends, and appear on leaderboards.",
@@ -100,7 +108,7 @@ private fun MeContent(
                         .padding(top = standardPadding),
                     onClick = onSignIn,
                 ) { Text("Sign in or sign up") }
-            } else {
+            } else if (player != null) {
                 Text(text = player.displayName, style = MaterialTheme.typography.headlineLarge)
                 Text(
                     text = "@${player.handle}",
@@ -108,6 +116,8 @@ private fun MeContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
+            } else {
+                Text(text = email ?: "", style = MaterialTheme.typography.headlineLarge)
             }
         }
 
@@ -127,7 +137,7 @@ private fun MeContent(
             )
         }
 
-        if (player != null) {
+        if (isSignedIn) {
             SectionGap(standardPaddingLarge)
             AppTextButton(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -144,7 +154,7 @@ private fun MeContent(
 @Composable
 private fun MeContent_Guest_Preview() {
     ThemePreview {
-        MeContent(player = null, onFriends = {}, onSettings = {}, onSignOut = {}, onSignIn = {})
+        MeContent(player = null, email = null, onFriends = {}, onSettings = {}, onSignOut = {}, onSignIn = {})
     }
 }
 
@@ -160,6 +170,7 @@ private fun MeContent_SignedIn_Preview() {
                 avatarSeed = "atte",
                 createdAt = Instant.fromEpochSeconds(0),
             ),
+            email = "atte@example.com",
             onFriends = {},
             onSettings = {},
             onSignOut = {},

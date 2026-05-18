@@ -44,8 +44,10 @@ class AuthRemoteDataSource(
     }
 
     companion object {
-        private const val EMAIL_LINK_RETURN_URL =
-            "https://bragwise.firebaseapp.com/auth/finish"
+        // See FirebaseConfig.APP_LINK_HOST — must stay in sync with the
+        // hosted assetlinks.json / apple-app-site-association files and the
+        // App Links intent-filter / Associated Domains entitlement.
+        private const val EMAIL_LINK_RETURN_URL = "$APP_LINK_BASE_URL/auth/finish"
 
         fun defaultActionCodeSettings(): ActionCodeSettings = ActionCodeSettings(
             url = EMAIL_LINK_RETURN_URL,

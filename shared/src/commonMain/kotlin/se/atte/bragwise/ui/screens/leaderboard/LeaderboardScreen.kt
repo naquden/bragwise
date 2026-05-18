@@ -66,7 +66,17 @@ private fun LeaderboardBody(
                 Text("No leaderboard yet")
             }
             is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Failed: ${ui.cause}")
+                Text(
+                    text = when (ui.cause) {
+                        se.atte.bragwise.mvi.Cause.Auth -> "Sign in to see this."
+                        se.atte.bragwise.mvi.Cause.Network -> "No connection. Pull to refresh."
+                        se.atte.bragwise.mvi.Cause.RateLimited -> "Too many requests. Try again later."
+                        se.atte.bragwise.mvi.Cause.EmailUnverified -> "Verify your email to continue."
+                        is se.atte.bragwise.mvi.Cause.Unknown -> "Something went wrong. Pull to refresh."
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             is UiState.Ready -> LazyColumn(Modifier.fillMaxSize()) {
                 items(items = ui.data, key = { it.uid }) { entry -> EntryRow(entry) }

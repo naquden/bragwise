@@ -1,71 +1,286 @@
-/**
- * Server-driven reactions to already-validated state. Triggers never
- * validate user input — that's the callable layer's job. See plan §5
- * "Triggers" table.
- */
 import { onDocumentUpdated, onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { auth } from 'firebase-functions/v1';
+import { db, FieldValue } from './lib/admin';
+import { score, Bet, PredictionPayload } from './scoring';
 
-const NOT_IMPL = 'trigger not yet implemented — see decision.md';
+// ─── onResultsPosted ──────────────────────────────────────────────────────────
 
 /**
- * Fires when `challenges/{c}.resultsPostedAt` is written. Two-phase:
- *   1. Scan composite player docs, run TS scoring engine, write
- *      `challenges/{c}.leaderboard` map ({ uid → points }).
- *   2. Per-participant: read `private/social`, intersect with leaderboard
- *      keys, accumulate friend-pair deltas in memory, issue ONE
- *      `update()` per side covering all friend deltas.
+ * Fires on any write to a challenge doc. Only acts when `resultsPostedAt`
+ * transitions null → non-null (the sentinel set by `postResults`).
  *
- * Head-to-head writes are NOT retried on transient failure — `FieldValue.increment`
- * is not idempotent under retry, and head-to-head is a rivalry signal,
- * not load-bearing data. See plan §5 "Head-to-head failure policy".
+ * Phase 1:
+ *   1. Scan composite player docs, score each against results, write
+ *      `challenges/{c}.leaderboard` map { uid → points }.
+ *   2. Per-participant: read private/social, accumulate friend-pair h2h
+ *      deltas in memory, issue ONE update per side.
+ *
+ * Head-to-head writes are NOT retried on transient failure — FieldValue.increment
+ * is not idempotent and h2h is a rivalry signal, not load-bearing data.
  */
 export const onResultsPosted = onDocumentUpdated(
   'challenges/{challengeId}',
-  async (_event) => {
-    // TODO: detect resultsPostedAt sentinel transition null → non-null
-    throw new Error(NOT_IMPL);
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!after) return;
+
+    // Only act on the null → non-null transition.
+    if (before?.resultsPostedAt !== null && before?.resultsPostedAt !== undefined) return;
+    if (after.resultsPostedAt === null || after.resultsPostedAt === undefined) return;
+
+    const challengeId = event.params.challengeId;
+    const results: Record<string, PredictionPayload> = after.results ?? {};
+    const bets: Bet[] = after.bets ?? [];
+
+    // 1. Scan player docs and compute scores.
+    const playersSnap = await db.collection(`challenges/${challengeId}/players`).get();
+    const leaderboard: Record<string, number> = {};
+    for (const playerDoc of playersSnap.docs) {
+      const data = playerDoc.data();
+      const playerUid: string = data.uid ?? playerDoc.id;
+      const predictions: Record<string, PredictionPayload> = data.predictions ?? {};
+      let total = 0;
+      for (const bet of bets) {
+        const pred = predictions[bet.id];
+        const result = results[bet.id];
+        if (pred && result) {
+          try { total += score(bet, pred, result); } catch (_) { /* mismatch — skip */ }
+        }
+      }
+      leaderboard[playerUid] = total;
+    }
+
+    await db.doc(`challenges/${challengeId}`).update({ leaderboard });
+
+    // 2. Head-to-head deltas — best-effort, NOT retried.
+    const participants = Object.keys(leaderboard);
+    await Promise.allSettled(
+      participants.map(async (pid) => {
+        const socialSnap = await db.doc(`players/${pid}/private/social`).get();
+        if (!socialSnap.exists) return;
+        const friends: Record<string, unknown> = socialSnap.data()!.friends ?? {};
+        const myPoints = leaderboard[pid];
+        const updates: Record<string, unknown> = {};
+        for (const fid of Object.keys(friends)) {
+          if (!(fid in leaderboard)) continue;
+          const theirPoints = leaderboard[fid];
+          let outcome: 'wins' | 'losses' | 'ties';
+          if (myPoints > theirPoints) outcome = 'wins';
+          else if (myPoints < theirPoints) outcome = 'losses';
+          else outcome = 'ties';
+          updates[`vs.${fid}.${outcome}`] = FieldValue.increment(1);
+        }
+        if (Object.keys(updates).length > 0) {
+          await db.doc(`players/${pid}/private/headToHead`).set(updates, { merge: true });
+        }
+      }),
+    );
   },
 );
 
+// ─── onMemberJoin ─────────────────────────────────────────────────────────────
+
 /**
- * Best-effort joinedCount maintenance. Idempotent via Firestore event ID
- * dedup. Fires on first complete `submitPredictions` (creates the player
- * doc) and on creator auto-join during `publishChallenge`. Subsequent
- * prediction edits are `update()`s — they don't re-fire.
+ * Increments `joinedCount` on first player doc creation. Idempotent: a
+ * re-delivered event for the same doc path would re-increment, but Firestore
+ * v2 triggers guarantee at-least-once delivery and there is no built-in
+ * dedup — acceptable since joinedCount is best-effort UI noise, not
+ * load-bearing (ground truth is the players subcollection).
  */
 export const onMemberJoin = onDocumentCreated(
   'challenges/{challengeId}/players/{uid}',
-  async (_event) => {
-    throw new Error(NOT_IMPL);
+  async (event) => {
+    const data = event.data?.data();
+    // Creator auto-join is excluded from the count — they set isCreator=true.
+    if (!data || data.isCreator === true) return;
+    await db.doc(`challenges/${event.params.challengeId}`).update({
+      joinedCount: FieldValue.increment(1),
+    });
   },
 );
 
+// ─── onFriendAccepted ─────────────────────────────────────────────────────────
+
 /**
- * Diff `change.before.data().friends` vs `change.after.data().friends` to
- * find newly-added uids. For each new pair, scan both users' open
- * FRIENDS-visibility challenges and create reciprocal invitations. Safe
- * because friend entries can only be added by `acceptFriendRequest`,
- * which verifies the inbound request first.
+ * Fires on every write to `players/{uid}/private/social`. Only acts when
+ * the `friends` map has grown (new entries added). For each new friend pair,
+ * scans both users' open FRIENDS-visibility challenges and creates reciprocal
+ * invitations for the other party.
  */
 export const onFriendAccepted = onDocumentWritten(
   'players/{uid}/private/social',
-  async (_event) => {
-    throw new Error(NOT_IMPL);
+  async (event) => {
+    const uid = event.params.uid;
+    const before: Record<string, unknown> = event.data?.before.data()?.friends ?? {};
+    const after: Record<string, unknown> = event.data?.after.data()?.friends ?? {};
+
+    const newFriendUids = Object.keys(after).filter((fid) => !(fid in before));
+    if (newFriendUids.length === 0) return;
+
+    // For each new friend pair, find open FRIENDS challenges created by
+    // either side and create invitations for the other.
+    for (const friendUid of newFriendUids) {
+      await Promise.allSettled([
+        createInvitationsForNewFriend(uid, friendUid),
+        createInvitationsForNewFriend(friendUid, uid),
+      ]);
+    }
   },
 );
 
+async function createInvitationsForNewFriend(creatorUid: string, inviteeUid: string): Promise<void> {
+  const challengesSnap = await db
+    .collection('challenges')
+    .where('createdBy', '==', creatorUid)
+    .where('status', '==', 'OPEN')
+    .where('visibility', '==', 'FRIENDS')
+    .get();
+
+  if (challengesSnap.empty) return;
+
+  const batch = db.batch();
+  for (const doc of challengesSnap.docs) {
+    const inviteRef = db.doc(`challenges/${doc.id}/invitations/${inviteeUid}`);
+    batch.set(inviteRef, {
+      invitedUid: inviteeUid,
+      invitedBy: creatorUid,
+      invitedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+  await batch.commit();
+}
+
+// ─── onUserDeleted ────────────────────────────────────────────────────────────
+
 /**
- * Step through the deletion checklist. Idempotent and resumable — each step
- * queries-then-deletes, so re-runs are no-ops once a step has succeeded.
- * See plan §5 "Account deletion".
+ * Processes the deletion checklist written by the `deleteAccount` callable.
+ * Idempotent and resumable: each step queries-then-deletes so re-runs after
+ * partial failure are no-ops for already-completed steps.
  */
-export const onUserDeleted = auth.user().onDelete(async (_user) => {
-  throw new Error(NOT_IMPL);
+export const onUserDeleted = auth.user().onDelete(async (user) => {
+  const uid = user.uid;
+  await processDeleteChecklist(uid);
 });
 
-/** Hourly resume of any deletionRequest with pending steps older than 24h. */
+async function processDeleteChecklist(uid: string): Promise<void> {
+  const checklistRef = db.doc(`deletionRequests/${uid}`);
+  const snap = await checklistRef.get();
+  // If the callable didn't create the checklist yet (edge case: manual
+  // Admin Console deletion), create it now.
+  if (!snap.exists) {
+    await checklistRef.set({
+      uid,
+      requestedAt: FieldValue.serverTimestamp(),
+      steps: {
+        handles: 'pending',
+        players_subs: 'pending',
+        players_subcoll: 'pending',
+        invitations: 'pending',
+        public_profile: 'pending',
+        player_doc: 'pending',
+        auth_user: 'done', // already deleted since we're in the trigger
+      },
+    });
+  }
+
+  const tick = (step: string) =>
+    checklistRef.update({ [`steps.${step}`]: 'done' });
+
+  // Step 1: remove handle reservation
+  const playerSnap = await db.doc(`players/${uid}`).get();
+  if (playerSnap.exists) {
+    const handle = playerSnap.data()!.handle as string | undefined;
+    if (handle) await db.doc(`handles/${handle}`).delete();
+  }
+  await tick('handles');
+
+  // Step 2: private subcollections
+  const privateDocs = await db.collection(`players/${uid}/private`).listDocuments();
+  if (privateDocs.length > 0) {
+    const batch = db.batch();
+    for (const ref of privateDocs) batch.delete(ref);
+    await batch.commit();
+  }
+  await tick('players_subs');
+
+  // Step 3: membership + prediction docs (collection-group)
+  const memberDocs = await db
+    .collectionGroup('players')
+    .where('uid', '==', uid)
+    .get();
+  if (!memberDocs.empty) {
+    const chunks = chunk(memberDocs.docs, 500);
+    for (const c of chunks) {
+      const batch = db.batch();
+      for (const d of c) {
+        batch.delete(d.ref);
+        batch.update(d.ref.parent.parent!, {
+          joinedCount: FieldValue.increment(-1),
+          [`leaderboard.${uid}`]: FieldValue.delete(),
+        });
+      }
+      await batch.commit();
+    }
+  }
+  await tick('players_subcoll');
+
+  // Step 4: invitations
+  const inviteDocs = await db
+    .collectionGroup('invitations')
+    .where('invitedUid', '==', uid)
+    .get();
+  if (!inviteDocs.empty) {
+    const chunks = chunk(inviteDocs.docs, 500);
+    for (const c of chunks) {
+      const batch = db.batch();
+      for (const d of c) batch.delete(d.ref);
+      await batch.commit();
+    }
+  }
+  await tick('invitations');
+
+  // Step 5: public profile
+  await db.doc(`publicProfiles/${uid}`).delete();
+  await tick('public_profile');
+
+  // Step 6: root player doc
+  await db.doc(`players/${uid}`).delete();
+  await tick('player_doc');
+
+  // Auth user already gone (we're in the trigger) — mark done
+  await tick('auth_user');
+  await checklistRef.update({ completedAt: FieldValue.serverTimestamp() });
+}
+
+// ─── reconcileDeletions ───────────────────────────────────────────────────────
+
+/**
+ * Hourly. Resumes any deletionRequest with steps still `pending` older
+ * than 24 h (catches failures from the `onUserDeleted` trigger).
+ */
 export const reconcileDeletions = onSchedule('every 60 minutes', async (_event) => {
-  throw new Error(NOT_IMPL);
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const staleSnap = await db
+    .collection('deletionRequests')
+    .where('requestedAt', '<', cutoff)
+    .get();
+
+  await Promise.allSettled(
+    staleSnap.docs
+      .filter((doc) => {
+        const steps: Record<string, string> = doc.data().steps ?? {};
+        return Object.values(steps).some((v) => v === 'pending');
+      })
+      .map((doc) => processDeleteChecklist(doc.id)),
+  );
 });
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
