@@ -1,0 +1,60 @@
+---
+description: Compose UI - always use Common.kt composables before creating new ones
+alwaysApply: true
+---
+
+# Compose UI Components
+
+## Using Common.kt Composables
+
+- **REQUIRED**: When creating composables, ALWAYS prioritize using a defined composable from `Common.kt` (`Common.kt`).
+- **REQUIRED**: Before creating a new composable, check if a suitable composable already exists in `Common.kt`.
+- **REQUIRED**: Only create new composables if no existing composable in `Common.kt` meets the requirements.
+
+## Common.kt Composable Reference Guide
+
+**Image:** `VectorImage`, `DrawableImage`, `DrawableVectorImage`
+
+**Text:** `TextHeader` — section headers
+
+**Buttons:** `ButtonPositive` (primary/filled), `ButtonNeutral` (outlined), `FlatButton` (text-only uppercase), `FlatButtonNeutral` (transparent)
+
+**Navigation/App Bar:** `Toolbar`, `ToolbarActionQuickView`
+
+**Cards:** `CommonCard`, `CommonCardButton`, `CommonOutlinedCardButton`
+
+**Input:** `InputField`, `PasswordInputField`, `FilterBar`, `CommonSearchBar`
+
+**Lists:** `FilteredList` — searchable list with filter bar and lazy list
+
+**Items/Rows:** `CommonItem`, `CommonItemWithoutPadding`, `CommonSwitch`
+
+**Feedback:** `SnackbarPresenter`, `ErrorBubble`, `WarningBanner`, `CriticalBanner`
+
+**Loading:** `InfiniteLoadingImage`
+
+**Actions:** `ActionFAB` (extended FAB), `ActionButton`
+
+**Other:** `LabelChip`, `DefaultArrowIcon`, `RightModalDrawer`, `UnsupportedDeviceInformation`
+
+```kotlin
+// ✅ CORRECT - Using Common.kt composables
+@Composable
+fun MyScreen() {
+    Column {
+        TextHeader(text = "Settings")
+        ButtonPositive(text = "Save", onClick = { /* ... */ })
+        InputField(inputValue = state, label = "Name")
+    }
+}
+
+// ❌ INCORRECT - Reinventing what Common.kt already provides
+@Composable
+fun MyScreen() {
+    Column {
+        Text(text = "Settings", style = MaterialTheme.typography.headlineSmall) // Use TextHeader
+        Button(onClick = { /* ... */ }) { Text("Save") } // Use ButtonPositive
+        TextField(value = state.value, onValueChange = { /* ... */ }) // Use InputField
+    }
+}
+```

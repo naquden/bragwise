@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Plan §5 cross-cutting: ViewModels emit typed values; the screen layer
+         resolves them through stringResource(...). Keep this file the single
+         source of truth for user-facing copy. Localisation lands when values-fi/
+         etc. directories appear (Phase 5). -->
+
+    <string name="app_name">Bragwise</string>
+
+    <!-- Share affordance. `%1$s` is the challenge title. -->
+    <string name="share_challenge_title">%1$s</string>
+    <string name="share_challenge_subject">%1$s on Bragwise</string>
+
+    <!-- Errors (Cause → string mapping). -->
+    <string name="error_network">Network unavailable. Try again.</string>
+    <string name="error_rate_limited">Slow down — try again in a minute.</string>
+    <string name="error_auth">Sign-in expired. Please sign in again.</string>
+    <string name="error_email_unverified">Verify your email to keep playing.</string>
+    <string name="error_unknown">Something went wrong.</string>
+
+    <!-- Discovery / Challenges screen. -->
+    <string name="cl_section_mine">My Challenges</string>
+    <string name="cl_section_promoted">Promoted</string>
+    <string name="cl_section_from_friends">From friends</string>
+    <string name="cl_section_invites">Invites</string>
+    <string name="cl_empty">No challenges yet</string>
+
+    <!-- Detail / predict CTAs. -->
+    <string name="cta_make_predictions">MAKE PREDICTIONS</string>
+    <string name="cta_edit_predictions">EDIT PREDICTIONS</string>
+    <string name="cta_save_predictions">SAVE PREDICTIONS</string>
+    <string name="cta_publish">PUBLISH</string>
+    <string name="cta_save_draft">Save as draft</string>
+    <string name="cta_post_results">POST ALL RESULTS</string>
+    <string name="cta_share">Share</string>
+
+    <!-- Auth. -->
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_continue_guest">Continue as guest</string>
+    <string name="auth_email_label">Email</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_google">Sign in with Google</string>
+    <string name="auth_apple">Sign in with Apple</string>
+</resources>

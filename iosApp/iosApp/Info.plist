@@ -4,5 +4,14 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!--
+	  Disable Firebase's swizzling of UIApplicationDelegate. We're on the
+	  SwiftUI app lifecycle (no AppDelegate), and the proxy only added value
+	  when Dynamic Links handled the URL automatically. Dynamic Links is
+	  sunset (2025-08-25); we receive the email-link URL ourselves via
+	  `.onContinueUserActivity(NSUserActivityTypeBrowsingWeb)` in iOSApp.swift.
+	-->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>

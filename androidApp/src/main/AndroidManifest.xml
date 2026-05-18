@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -10,11 +12,29 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:exported="true"
+            android:launchMode="singleTask"
             android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              App Links for inbound Firebase email sign-in links and (later)
+              shareable challenge / handle URLs. autoVerify=true makes the
+              OS check assetlinks.json on bragwise.firebaseapp.com and open
+              matching URLs directly in the app instead of a browser chooser.
+
+              Phase G migration: when we move to the custom bragwise.app
+              domain we add a second <intent-filter> for that host and ship
+              a parallel assetlinks.json.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="bragwise.firebaseapp.com" />
             </intent-filter>
         </activity>
     </application>

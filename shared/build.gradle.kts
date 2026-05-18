@@ -37,6 +37,9 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
+            // GitLive's firebase-auth-android depends on com.google.firebase:firebase-auth
+            // and firebase-common with NO version, expecting the Firebase BoM to provide them.
+            implementation(project.dependencies.platform(libs.firebase.bom))
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -47,6 +50,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.gitlive.firebase.auth)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

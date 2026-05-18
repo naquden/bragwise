@@ -1,0 +1,24 @@
+---
+description: CRITICAL - Never modify code when user asks a question
+alwaysApply: true
+---
+
+# No Code Changes on Questions
+
+**CRITICAL RULE — highest priority.**
+
+- If the user's message ends with a question mark (`?`), it is a **question**. Do NOT modify any code or files.
+- If the user is asking for clarification, inquiry, or information — do NOT modify any code or files.
+- When asked a question, only:
+  - Provide suggestions or recommendations in the response text
+  - Ask for explicit permission before making any code changes
+  - Wait for user confirmation before proceeding with modifications
+- Code modifications are ONLY allowed when the user **explicitly requests a change** (imperative statement, not a question).
+
+```
+User: "Can you add error handling?"  → QUESTION (ends with ?) → NO code changes
+User: "Should we refactor this?"     → QUESTION (ends with ?) → NO code changes
+User: "How does this function work?" → QUESTION (ends with ?) → NO code changes
+User: "Add error handling"           → REQUEST (imperative)   → Code changes allowed
+User: "Fix the bug in this code"     → REQUEST (imperative)   → Code changes allowed
+```

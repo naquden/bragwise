@@ -1,0 +1,14 @@
+---
+description: Agent behavior rules - minimize markdown file creation, prefer inline answers
+alwaysApply: true
+---
+
+# Agent Behavior — Documentation and Markdown Files
+
+- **REQUIRED**: Minimize creation of markdown (`.md`) files. Prefer providing answers, explanations, and documentation directly in the conversation response.
+- **REQUIRED**: Only create markdown files when:
+  - The user explicitly requests a documentation file to be created
+  - The content is extensive (e.g., comprehensive API specifications, detailed architecture documents) that would be unwieldy in a conversation response
+  - The content needs to be referenced later as a persistent artifact
+- **REQUIRED**: For most answers, explanations, code examples, and analysis, provide the content inline in the conversation response using markdown formatting.
+- **REQUIRED**: When in doubt, prefer inline answers over creating files.

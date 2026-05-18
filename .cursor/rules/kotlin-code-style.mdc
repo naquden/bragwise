@@ -1,0 +1,100 @@
+---
+description: Kotlin code style - named arguments, formatting, variable naming, serialization
+alwaysApply: true
+---
+
+# Kotlin Code Style
+
+## Function and Method Calls
+
+### Named Arguments
+- **REQUIRED**: When calling functions or methods with more than one parameter, ALWAYS use named arguments.
+- **REQUIRED**: When passing a session parameter, ALWAYS use named arguments (e.g., `session = lockSession`).
+
+### Line Length and Formatting
+- **REQUIRED**: Only break into a new line if the line exceeds 150 characters.
+- **REQUIRED**: When splitting parameters across multiple rows, the last parameter must end with a comma (`,`) to ensure formatting rules are maintained.
+
+### When Expression Formatting
+- **REQUIRED**: In `when` expressions, when multiple conditions share the same branch, each condition MUST be on its own line (comma at end of each line except the last which has the arrow `->`).
+
+```kotlin
+// ✅ CORRECT - Multiple parameters with named arguments (single line if < 150 chars)
+someFunction(param1 = value1, param2 = value2, param3 = value3)
+
+// ✅ CORRECT - Multi-line with trailing comma on last parameter
+someFunction(
+    param1 = value1,
+    param2 = value2,
+    param3 = value3,
+)
+
+// ❌ INCORRECT - Multiple parameters without named arguments
+someFunction(value1, value2, value3)
+
+// ✅ CORRECT - When expression with multiple conditions on separate lines
+when (keyStatus) {
+    SystemKeyStatus.MATCH,
+    SystemKeyStatus.SUPERSEDED -> block()
+    SystemKeyStatus.FACTORY_KEY -> handleFactoryKey()
+}
+
+// ❌ INCORRECT - Multiple conditions on the same line
+when (keyStatus) {
+    SystemKeyStatus.MATCH, SystemKeyStatus.SUPERSEDED -> block()
+    SystemKeyStatus.FACTORY_KEY -> handleFactoryKey()
+}
+```
+
+## Variable Naming
+
+### Full Names and Abbreviations
+- **REQUIRED**: Always use full names with lower camel case for variables (e.g., `usbDevice`, `connectionManager`, `deviceHandler`).
+- **REQUIRED**: Never abbreviate variable names (e.g., do NOT use `dev` for `device`, `conn` for `connection`, `mgr` for `manager`).
+
+### Safe Let Variables
+- **REQUIRED**: When using `?.let`, prefix the variable name with "safe" (e.g., `device?.let { safeDevice -> }`, `connection?.let { safeConnection -> }`).
+
+### Session Variables
+- **REQUIRED**: Never name a lock session variable as "session" - this conflicts with `sessionHandler.session`.
+- **REQUIRED**: Always name lock session variables as "lockSession".
+
+```kotlin
+// ✅ CORRECT
+val usbDevice = getUsbDevice()
+device?.let { safeDevice -> safeDevice.connect() }
+val lockSession = getLockSession()
+someFunction(session = lockSession)
+
+// ❌ INCORRECT
+val dev = getUsbDevice()
+device?.let { device -> device.connect() }
+val session = getLockSession()
+someFunction(session = session)
+```
+
+## Serialization
+
+### Serializer Functions
+- **REQUIRED**: Serializer functions should be one-liners when possible.
+
+### Serializer Usage
+- **REQUIRED**: Use `@Serializable(with = Serializer::class)` on the class/type definition itself, not on individual properties or variables.
+
+```kotlin
+// ✅ CORRECT - One-liner serializer, annotation on class definition
+object ConnectionTypeSerializer : KSerializer<USBConnection.ConnectionType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ConnectionType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: USBConnection.ConnectionType) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): USBConnection.ConnectionType = USBConnection.ConnectionType.fromString(decoder.decodeString())
+}
+
+@Serializable(with = ConnectionTypeSerializer::class)
+sealed class ConnectionType(val displayTypeResId: Int)
+
+// ❌ INCORRECT - Multi-line serializer, annotation on property
+data class MyData(
+    @Serializable(with = ConnectionTypeSerializer::class)
+    val connectionType: ConnectionType? = null
+)
+```

@@ -1,0 +1,27 @@
+{
+  "name": "bragwise-functions",
+  "private": true,
+  "version": "0.0.1",
+  "engines": {
+    "node": "22"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "echo \"linting deferred\" && exit 0",
+    "test": "echo \"tests deferred — see decision.md\" && exit 0",
+    "test:integration": "echo \"emulator tests deferred — see decision.md\" && exit 0",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

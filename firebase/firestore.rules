@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// Pure read-ACL per plan §5. Every write is uniformly `false`; the callable
+// layer (admin SDK) is the sole mutation path. App Check is enforced on
+// both surfaces.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn()  { return request.auth != null; }
+    function isSelf(uid)   { return isSignedIn() && request.auth.uid == uid; }
+    function isFriend(uid) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/players/$(request.auth.uid)/private/social).data.friends[uid] != null;
+    }
+    function isCreator(challengeId) {
+      return isSignedIn() &&
+        request.auth.uid == get(/databases/$(database)/documents/challenges/$(challengeId)).data.createdBy;
+    }
+
+    match /players/{uid} {
+      // Friend-private: self + accepted friends only.
+      allow read: if isSelf(uid) || isFriend(uid);
+      allow write: if false;          // updateProfile / deleteAccount callables
+
+      match /private/{doc=**} {
+        allow read, write: if false;  // self-only via callable; FCM/email never client-writable
+      }
+      match /private/headToHead {
+        allow read: if isSelf(uid);
+        allow write: if false;        // onResultsPosted trigger only
+      }
+      match /private/social {
+        // Friends list + pending requests, in one self-only doc.
+        allow read: if isSelf(uid);
+        allow write: if false;        // sendFriendRequest / acceptFriendRequest / declineFriendRequest / unfriend callables
+      }
+    }
+
+    match /publicProfiles/{uid} {
+      // Signed-in readable; identity only (handle/displayName/avatarSeed).
+      allow read: if isSignedIn();
+      allow write: if false;          // updateProfile callable only
+    }
+
+    match /handles/{handle} {
+      // Availability checked via `claimHandle` callable, not by probing.
+      allow read: if false;
+      allow write: if false;          // claimHandle / updateProfile callable
+    }
+
+    match /challenges/{challengeId} {
+      // Anyone (guest or signed-in) with the challengeId may read it.
+      // The 20-char Firestore-generated ID is an unguessable bearer
+      // capability — same model as a Google Doc share link. App Check is
+      // still enforced on the SDK side so this is not an open quota drain.
+      allow read: if true;
+      allow write: if false;          // createChallenge / publishChallenge / postResults / triggers
+
+      match /players/{uid} {
+        // Composite per-user doc: membership + this user's predictions.
+        // Owner-only — predictions are private to their owner.
+        allow read: if isSelf(uid);
+        allow write: if false;        // submitPredictions / publishChallenge / onUserDeleted
+      }
+
+      match /invitations/{uid} {
+        allow read: if isSelf(uid) || isCreator(challengeId);
+        allow write: if false;        // inviteFriends callable / onFriendAccepted trigger
+      }
+    }
+
+    match /deletionRequests/{uid} {
+      allow read, write: if false;    // server-only checklist
+    }
+
+    match /rateLimits/{counterId} {
+      allow read, write: if false;    // server-only counters
+    }
+
+    match /auditLog/{id} {
+      allow read, write: if false;    // server-only
+    }
+  }
+}

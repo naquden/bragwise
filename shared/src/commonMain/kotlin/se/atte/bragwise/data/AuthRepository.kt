@@ -1,0 +1,119 @@
+package se.atte.bragwise.data
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
+
+sealed interface AuthState {
+    data object Loading : AuthState
+    data object SignedOut : AuthState
+
+    /**
+     * Carries identity only (uid + email). Full `Player` profile data
+     * is owned by `ProfileRepository.observeMe()`, which reads
+     * `/publicProfiles/{uid}` + `/players/{uid}` separately.
+     */
+    data class SignedIn(val uid: String, val email: String?) : AuthState
+}
+
+/**
+ * Phase 1 ships email-link passwordless only. Google + Apple are Phase 2
+ * (must ship together on iOS due to App Store guideline 4.8). See
+ * `temp/plan.md` § "Auth providers".
+ */
+enum class AuthProvider { EMAIL_LINK }
+
+sealed interface AuthPayload {
+    /** First leg: user types email, we send them a link. */
+    data class EmailLinkRequest(val email: String) : AuthPayload
+
+    /** Second leg: user clicks the link, the app receives it via App Links. */
+    data class EmailLinkComplete(val email: String, val link: String) : AuthPayload
+}
+
+enum class MigrationMode { RESTORE, SYNC, SKIP }
+
+data class MigrationSummary(
+    val migrated: Int,
+    val deferredKeptLocal: Int,
+    val droppedLocked: Int,
+)
+
+/**
+ * Wraps the Firebase Auth lifecycle for the rest of the app. Auth-state is
+ * observed off `FirebaseAuth.authStateChanged`; the pending email (typed at
+ * OB-02 before the link request) survives process death via
+ * [AuthLocalDataSource].
+ *
+ * `signUp` does not exist — `signInWithEmailLink` auto-creates accounts on
+ * first link click. Profile bootstrap (handle, displayName) happens via the
+ * `updateProfile` callable after the first sign-in, not here.
+ */
+open class AuthRepository(
+    val remote: AuthRemoteDataSource,
+    private val local: AuthLocalDataSource,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
+) {
+    private val _pendingSignInEmail = MutableStateFlow(local.pendingSignInEmail)
+    val pendingSignInEmail: StateFlow<String?> = _pendingSignInEmail
+
+    /**
+     * Emits `Loading` once then switches to `SignedOut` / `SignedIn` based
+     * on Firebase auth state.
+     */
+    val authState: StateFlow<AuthState> = remote.authStateChanged
+        .map<_, AuthState> { user ->
+            if (user == null) AuthState.SignedOut
+            else AuthState.SignedIn(uid = user.uid, email = user.email)
+        }
+        .onStart { emit(AuthState.Loading) }
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = AuthState.Loading,
+        )
+
+    /**
+     * Send the sign-in link. Persists the email locally so the deep-link
+     * leg (which may come back after process death) can replay it into
+     * `signInWithEmailLink`.
+     */
+    suspend fun sendSignInLink(email: String): Result<Unit> = runCatching {
+        local.pendingSignInEmail = email
+        _pendingSignInEmail.value = email
+        remote.sendSignInLink(email)
+    }
+
+    /** True iff this link looks like a Firebase email sign-in link. */
+    fun isSignInLink(link: String): Boolean = remote.isSignInWithEmailLink(link)
+
+    /**
+     * Complete sign-in from the deep-link return. Pulls the email from
+     * local storage; fails fast if the user opened the link on a different
+     * device (no pending email locally).
+     */
+    suspend fun completeSignInWithLink(link: String): Result<Unit> = runCatching {
+        val email = local.pendingSignInEmail
+            ?: error("no pending email — link may have been opened on a different device")
+        remote.signInWithEmailLink(email = email, link = link)
+        local.pendingSignInEmail = null
+        _pendingSignInEmail.value = null
+    }
+
+    suspend fun signOut() {
+        remote.signOut()
+        local.pendingSignInEmail = null
+        _pendingSignInEmail.value = null
+    }
+
+    suspend fun deleteAccount(): Result<Unit> =
+        Result.failure(NotImplementedError("deleteAccount callable not wired"))
+
+    suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary> =
+        Result.failure(NotImplementedError("migrateGuestData callable not wired"))
+}
