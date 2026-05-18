@@ -69,6 +69,16 @@ service cloud.firestore {
       }
     }
 
+    // Collection-group query: "my pending invitations" across all challenges.
+    // The path-scoped rule above only covers direct-path reads; collection-group
+    // queries need this separate wildcard match.
+    // isSelf(uid) alone is insufficient for collection-group queries because
+    // Firestore can't statically prove doc ID == invitedUid field for all results.
+    // The field check lets the query engine authorize the filtered set.
+    match /{path=**}/invitations/{uid} {
+      allow read: if isSelf(uid) || (isSignedIn() && resource.data.invitedUid == request.auth.uid);
+    }
+
     match /deletionRequests/{uid} {
       allow read, write: if false;    // server-only checklist
     }

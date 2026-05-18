@@ -79,13 +79,7 @@ private fun ChallengesContentRoot(
         is UiState.Empty -> EmptyState(onCreate = onCreate)
         is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = when (ui.cause) {
-                    se.atte.bragwise.mvi.Cause.Auth -> "Sign in to see challenges."
-                    se.atte.bragwise.mvi.Cause.Network -> "No connection. Pull to refresh."
-                    se.atte.bragwise.mvi.Cause.RateLimited -> "Too many requests. Try again later."
-                    se.atte.bragwise.mvi.Cause.EmailUnverified -> "Verify your email to continue."
-                    is se.atte.bragwise.mvi.Cause.Unknown -> "Something went wrong. Pull to refresh."
-                },
+                text = ui.cause.toUserMessage(authMessage = "Sign in to see challenges."),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

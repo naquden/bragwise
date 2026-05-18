@@ -19,6 +19,14 @@ sealed interface Cause {
     data object Auth : Cause
     data object EmailUnverified : Cause
     data class Unknown(val message: String? = null) : Cause
+
+    fun toUserMessage(authMessage: String = "Sign in to see this."): String = when (this) {
+        Auth -> authMessage
+        Network -> "No connection. Pull to refresh."
+        RateLimited -> "Too many requests. Try again later."
+        EmailUnverified -> "Verify your email to continue."
+        is Unknown -> "Something went wrong. Pull to refresh."
+    }
 }
 
 fun Throwable.toCause(): Cause = when {

@@ -61,6 +61,7 @@ open class ChallengeRepository(
         }
 
     fun observePromoted(): Flow<List<Challenge>> = remote.observePromoted()
+        .catch { emit(emptyList()) }
 
     /**
      * Challenges from friends — Phase 1 deferred: requires reading the friend
@@ -74,6 +75,7 @@ open class ChallengeRepository(
         auth.authState.flatMapLatest { state ->
             when (state) {
                 is AuthState.SignedIn -> remote.observePendingInvites(state.uid)
+                    .catch { emit(emptyList()) }
                 else -> flowOf(emptyList())
             }
         }
