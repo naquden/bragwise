@@ -6,10 +6,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronUp
+import com.composables.icons.lucide.Lucide
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
@@ -103,18 +111,33 @@ private fun PredictContent(
     onSubmit: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
-            verticalArrangement = Arrangement.spacedBy(standardPadding),
-        ) {
-            items(items = bets, key = { it.id }) { bet ->
-                BetCard(
-                    bet = bet,
-                    draft = drafts[bet.id],
-                    onSinglePick = onSinglePick,
-                    onBoolean = onBoolean,
-                    onRanking = onRanking,
+        val hasRanking = bets.any { it is Bet.Ranking }
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = standardPadding,
+                    top = standardPadding,
+                    end = if (hasRanking) 40.dp else standardPadding,
+                    bottom = standardPadding,
+                ),
+                verticalArrangement = Arrangement.spacedBy(standardPadding),
+            ) {
+                items(items = bets, key = { it.id }) { bet ->
+                    BetCard(
+                        bet = bet,
+                        draft = drafts[bet.id],
+                        onSinglePick = onSinglePick,
+                        onBoolean = onBoolean,
+                        onRanking = onRanking,
+                    )
+                }
+            }
+            if (hasRanking) {
+                ScrollHintIcon(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = standardPaddingSmall),
                 )
             }
         }
@@ -197,6 +220,36 @@ private fun BetCard(
                 onReorder = { ids -> onRanking(bet.id, ids) },
             )
         }
+    }
+}
+
+@Composable
+private fun ScrollHintIcon(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .height(160.dp)
+            .width(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Lucide.ChevronUp,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .weight(1f)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant),
+        )
+        Icon(
+            imageVector = Lucide.ChevronDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 

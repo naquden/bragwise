@@ -85,7 +85,7 @@ private object RankingDragDefaults {
     const val PagerStackTopN = 6
     val PagerEdgeZone = 24.dp
     val PagerAutoFlipDelayMs = 400L
-    val SlotHeight = 56.dp
+    val SlotHeight = 72.dp
 }
 
 // endregion
@@ -749,14 +749,26 @@ private fun SlotRow(
         contentAlignment = Alignment.CenterStart,
     ) {
         if (occupant != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SlotNumber(number = index + 1)
-                OptionRowContent(option = occupant, showFlag = showFlag, modifier = Modifier.weight(1f))
-                Text(text = "≡", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    SlotNumber(number = index + 1)
+                    if (showFlag && occupant.countryCode != null) {
+                        Text(text = flagEmoji(occupant.countryCode), style = MaterialTheme.typography.titleMedium)
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(text = "≡", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text(
+                    text = occupant.label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
         } else {
             Row(
