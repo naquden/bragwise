@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,9 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -87,8 +83,6 @@ import kotlin.math.roundToInt
 private object RankingDragDefaults {
     /** Plan §4: stack into a pager only when topN exceeds this many slots on compact widths. */
     const val PagerStackTopN = 6
-    val AutoScrollEdgeZone = 64.dp
-    val AutoScrollSpeed = 8f
     val PagerEdgeZone = 24.dp
     val PagerAutoFlipDelayMs = 400L
     val SlotHeight = 56.dp
@@ -143,7 +137,6 @@ internal class RankingDragStateHolder(
     val slotBounds = mutableMapOf<Int, Rect>()
     val poolItemBounds = mutableMapOf<String, Rect>()
     var poolColumnBounds: Rect = Rect.Zero
-    val poolListState: LazyListState = LazyListState()
 
     init {
         repeat(topN) { _slots.add(null) }
@@ -355,27 +348,9 @@ fun RankingDragList(
     val ghostY = remember { Animatable(0f) }
 
     val density = LocalDensity.current
-    val edgeZonePx = with(density) { RankingDragDefaults.AutoScrollEdgeZone.toPx() }
 
-    val isDragging = holder.drag !is DragState.Idle
     // Absolute finger position in root coords, kept in sync with the ongoing drag
     val fingerPos = remember { mutableStateOf(Offset.Zero) }
-
-    LaunchedEffect(isDragging) {
-        if (!isDragging) return@LaunchedEffect
-        while (isActive) {
-            val poolBounds = holder.poolColumnBounds
-            if (poolBounds != Rect.Zero) {
-                when {
-                    fingerPos.value.y < poolBounds.top + edgeZonePx ->
-                        holder.poolListState.scrollBy(-RankingDragDefaults.AutoScrollSpeed)
-                    fingerPos.value.y > poolBounds.bottom - edgeZonePx ->
-                        holder.poolListState.scrollBy(RankingDragDefaults.AutoScrollSpeed)
-                }
-            }
-            delay(16)
-        }
-    }
 
     fun handleDragStart(item: BetOption, sourceBounds: Rect, startPosInRow: Offset) {
         ghostItem = item
@@ -427,7 +402,16 @@ fun RankingDragList(
         ghostItem = null
     }
 
-    BoxWithConstraints(modifier = modifier) {
+    // Root-space origin of this composable, used to convert ghost root coords → local offset.
+    // ghostX/ghostY are stored in root coordinates (boundsInRoot of the dragged row).
+    // Modifier.offset is relative to the local container, so we subtract the container origin.
+    var containerOrigin by remember { mutableStateOf(Offset.Zero) }
+
+    BoxWithConstraints(
+        modifier = modifier.onGloballyPositioned { coords ->
+            containerOrigin = coords.boundsInRoot().topLeft
+        },
+    ) {
         // Plan §4: side-by-side by default; stack into a swipe-pager only when topN > 6.
         val isCompact = topN > RankingDragDefaults.PagerStackTopN
 
@@ -470,12 +454,18 @@ fun RankingDragList(
                 )
             }
 
-            // Ghost overlay — floats above both panes during a drag
+            // Ghost overlay — floats above both panes during a drag.
+            // ghostX/ghostY are in root coords; subtract containerOrigin to get local offset.
             val safeGhostItem = ghostItem
             if (safeGhostItem != null) {
                 Box(
                     modifier = Modifier
-                        .offset { IntOffset(ghostX.value.roundToInt(), ghostY.value.roundToInt()) }
+                        .offset {
+                            IntOffset(
+                                x = (ghostX.value - containerOrigin.x).roundToInt(),
+                                y = (ghostY.value - containerOrigin.y).roundToInt(),
+                            )
+                        }
                         .zIndex(10f)
                         .background(
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
@@ -632,7 +622,11 @@ private fun SlotsColumn(
 ) {
     val returnToPoolLabel = stringResource(Res.string.ranking_a11y_return_to_pool)
 
-    Column(modifier = modifier.padding(standardPaddingSmall)) {
+    Column(
+        modifier = modifier
+            .background(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small)
+            .padding(standardPaddingSmall),
+    ) {
         for (i in 0 until topN) {
             val occupant = holder.slots.getOrNull(i)
             val dragItemId = when (drag) {
@@ -745,7 +739,7 @@ private fun SlotRow(
                 },
             )
             .background(
-                color = if (occupant != null) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
+                color = if (occupant != null) MaterialTheme.colorScheme.surface else androidx.compose.ui.graphics.Color.Transparent,
                 shape = MaterialTheme.shapes.small,
             )
             .alpha(if (isBeingDragged) 0.3f else 1f)
@@ -821,34 +815,38 @@ private fun PoolList(
 ) {
     val isDragActive = drag !is DragState.Idle
 
-    LazyColumn(
-        state = holder.poolListState,
+    // Pool is a regular Column rather than LazyColumn so RankingDragList can be hosted
+    // inside another scroller (PredictScreen's LazyColumn) without nested-scroll errors.
+    // Option counts are small (a few dozen at most), so non-lazy rendering is cheap.
+    Column(
         modifier = modifier
             .onGloballyPositioned { coords -> holder.poolColumnBounds = coords.boundsInRoot() }
-            .padding(horizontal = standardPaddingSmall),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = standardPaddingSmall),
+            .background(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small)
+            .padding(horizontal = standardPaddingSmall, vertical = standardPaddingSmall),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        itemsIndexed(items = holder.pool, key = { _, item -> item.id }) { _, item ->
-            val dragItemId = when (drag) {
-                is DragState.Picking -> drag.itemId
-                is DragState.Hovering -> drag.itemId
-                DragState.Idle -> null
+        val dragItemId = when (drag) {
+            is DragState.Picking -> drag.itemId
+            is DragState.Hovering -> drag.itemId
+            DragState.Idle -> null
+        }
+        holder.pool.forEach { item ->
+            androidx.compose.runtime.key(item.id) {
+                val isBeingDragged = item.id == dragItemId
+                PoolRow(
+                    item = item,
+                    showFlag = showFlag,
+                    topN = topN,
+                    isBeingDragged = isBeingDragged,
+                    dimForDrag = isDragActive && !isBeingDragged,
+                    onBoundsChanged = { bounds -> holder.poolItemBounds[item.id] = bounds },
+                    onDragStart = { bounds, startPos -> onDragStart(item, bounds, startPos) },
+                    onDrag = onDrag,
+                    onDragEnd = onDragEnd,
+                    onDragCancel = onDragCancel,
+                    onDropToSlot = { slotIndex -> onDropToSlot(item.id, slotIndex) },
+                )
             }
-            val isBeingDragged = item.id == dragItemId
-            PoolRow(
-                item = item,
-                showFlag = showFlag,
-                topN = topN,
-                isBeingDragged = isBeingDragged,
-                dimForDrag = isDragActive && !isBeingDragged,
-                onBoundsChanged = { bounds -> holder.poolItemBounds[item.id] = bounds },
-                onDragStart = { bounds, startPos -> onDragStart(item, bounds, startPos) },
-                onDrag = onDrag,
-                onDragEnd = onDragEnd,
-                onDragCancel = onDragCancel,
-                onDropToSlot = { slotIndex -> onDropToSlot(item.id, slotIndex) },
-            )
         }
     }
 }
@@ -884,7 +882,7 @@ private fun PoolRow(
                     else -> 1f
                 },
             )
-            .background(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small)
+            .background(color = MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.small)
             .pointerInput(item.id) {
                 detectDragGestures(
                     onDragStart = { startPos -> onDragStart(rowBoundsInRoot, startPos) },

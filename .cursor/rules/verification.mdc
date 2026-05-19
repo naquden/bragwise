@@ -1,0 +1,10 @@
+---
+description: Verification approach — skip tests, use emulator instead
+alwaysApply: true
+---
+
+# Verification
+
+- **NEVER** run automated tests to verify changes (no `./gradlew test`, `allTests`, etc.).
+- Verification is always done by building and running the app on a real device or emulator.
+- After changes, compile with `./gradlew :androidApp:compileDebugKotlin` to confirm it builds, then let the user verify behaviour in the app.

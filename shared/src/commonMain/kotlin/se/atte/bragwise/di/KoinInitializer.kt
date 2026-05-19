@@ -4,10 +4,11 @@ import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 
-fun initKoin(appDeclaration: KoinAppDeclaration = {}) {
+fun initKoin(useMock: Boolean = false, appDeclaration: KoinAppDeclaration = {}) {
     startKoin {
         appDeclaration()
-        modules(platformModule, dataModule, viewModelModule)
+        val repoModule = if (useMock) mockDataModule else dataModule
+        modules(platformModule, repoModule, viewModelModule)
     }
 }
 

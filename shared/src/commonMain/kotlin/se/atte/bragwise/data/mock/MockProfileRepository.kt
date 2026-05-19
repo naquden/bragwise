@@ -1,0 +1,43 @@
+package se.atte.bragwise.data.mock
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import se.atte.bragwise.data.ProfileRepository
+import se.atte.bragwise.domain.Player
+import se.atte.bragwise.domain.PublicProfile
+
+class MockProfileRepository : ProfileRepository {
+    private val _player = MutableStateFlow(mockPlayer)
+
+    override fun observeMe(): Flow<Player?> = _player.asStateFlow()
+
+    override fun observePublicProfile(uid: String): Flow<PublicProfile?> = flowOf(
+        when (uid) {
+            MOCK_UID -> mockPublicProfile
+            "uid-alice" -> mockCloudFriends[0].player.let { PublicProfile(uid = it.uid, handle = it.handle, displayName = it.displayName, avatarSeed = it.avatarSeed) }
+            "uid-bob" -> mockCloudFriends[1].player.let { PublicProfile(uid = it.uid, handle = it.handle, displayName = it.displayName, avatarSeed = it.avatarSeed) }
+            else -> null
+        },
+    )
+
+    override suspend fun claimHandle(handle: String): Result<Unit> {
+        _player.value = _player.value.copy(handle = handle)
+        return Result.success(Unit)
+    }
+
+    override suspend fun updateProfile(
+        displayName: String?,
+        handle: String?,
+        avatarSeed: String?,
+    ): Result<Unit> {
+        _player.value = _player.value.copy(
+            displayName = displayName ?: _player.value.displayName,
+            handle = handle ?: _player.value.handle,
+            avatarSeed = avatarSeed ?: _player.value.avatarSeed,
+        )
+        return Result.success(Unit)
+    }
+}

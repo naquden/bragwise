@@ -10,16 +10,27 @@ import kotlinx.coroutines.flow.map
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 
-open class ProfileRepository(
-    val remote: ProfileRemoteDataSource,
-    private val local: ProfileLocalDataSource,
-    private val auth: AuthRepository,
-) {
+interface ProfileRepository {
     /**
      * Real-time stream of the signed-in user's full player doc. Emits null
      * when signed out or the doc doesn't exist yet (new account).
      */
-    fun observeMe(): Flow<Player?> =
+    fun observeMe(): Flow<Player?>
+    fun observePublicProfile(uid: String): Flow<PublicProfile?>
+    suspend fun claimHandle(handle: String): Result<Unit>
+    suspend fun updateProfile(
+        displayName: String? = null,
+        handle: String? = null,
+        avatarSeed: String? = null,
+    ): Result<Unit>
+}
+
+class FirebaseProfileRepository(
+    val remote: ProfileRemoteDataSource,
+    private val local: ProfileLocalDataSource,
+    private val auth: AuthRepository,
+) : ProfileRepository {
+    override fun observeMe(): Flow<Player?> =
         auth.authState.flatMapLatest { state ->
             when (state) {
                 is AuthState.SignedIn -> remote.observePlayer(state.uid).catch { emit(null) }
@@ -27,20 +38,17 @@ open class ProfileRepository(
             }
         }
 
-    fun observePublicProfile(uid: String): Flow<PublicProfile?> =
+    override fun observePublicProfile(uid: String): Flow<PublicProfile?> =
         remote.observePublicProfile(uid)
 
-    /** @deprecated signature kept for compatibility; prefer observePublicProfile(uid). */
-    fun observePlayer(handle: String): Flow<PublicProfile?> = flowOf(null)
-
-    suspend fun claimHandle(handle: String): Result<Unit> = runCatching {
+    override suspend fun claimHandle(handle: String): Result<Unit> = runCatching {
         remote.claimHandle(handle)
     }
 
-    suspend fun updateProfile(
-        displayName: String? = null,
-        handle: String? = null,
-        avatarSeed: String? = null,
+    override suspend fun updateProfile(
+        displayName: String?,
+        handle: String?,
+        avatarSeed: String?,
     ): Result<Unit> = runCatching {
         remote.updateProfile(displayName = displayName, handle = handle, avatarSeed = avatarSeed)
     }

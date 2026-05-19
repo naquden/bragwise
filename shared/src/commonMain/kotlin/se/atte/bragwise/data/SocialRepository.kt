@@ -18,12 +18,32 @@ data class ReconciliationSummary(
     val failed: Int,
 )
 
-open class SocialRepository(
+interface SocialRepository {
+    fun observeLocalFriends(): Flow<List<LocalFriend>>
+    fun localFriendSnapshot(): List<LocalFriend>
+    fun observeFriends(): Flow<List<Friend>>
+    fun observeFriendRequests(): Flow<FriendRequests>
+    fun observeHeadToHead(): Flow<HeadToHead>
+
+    fun addLocalFriend(displayName: String, avatarSeed: String): LocalFriend
+    fun editLocalFriend(localId: String, displayName: String, avatarSeed: String): Boolean
+    fun removeLocalFriend(localId: String): Boolean
+
+    suspend fun sendFriendRequest(handle: String): Result<Unit>
+    suspend fun acceptFriendRequest(requesterUid: String): Result<Unit>
+    suspend fun declineFriendRequest(requesterUid: String): Result<Unit>
+    suspend fun unfriend(otherUid: String): Result<Unit>
+
+    suspend fun reconcileLocalFriendToHandle(localId: String, handle: String): Result<Unit>
+    suspend fun reconcileLocalFriends(mappings: List<Pair<String, String?>>): ReconciliationSummary
+}
+
+class FirebaseSocialRepository(
     val remote: SocialRemoteDataSource,
     private val local: SocialLocalDataSource,
     private val auth: AuthRepository,
     private val localFriends: LocalFriendStore = LocalFriendStore(),
-) {
+) : SocialRepository {
     private fun observeCloudFriends(): Flow<List<CloudFriend>> =
         auth.authState.flatMapLatest { state ->
             when (state) {
@@ -32,16 +52,16 @@ open class SocialRepository(
             }
         }
 
-    fun observeLocalFriends(): Flow<List<LocalFriend>> = localFriends.friends
+    override fun observeLocalFriends(): Flow<List<LocalFriend>> = localFriends.friends
 
-    fun localFriendSnapshot(): List<LocalFriend> = localFriends.snapshot()
+    override fun localFriendSnapshot(): List<LocalFriend> = localFriends.snapshot()
 
-    fun observeFriends(): Flow<List<Friend>> =
+    override fun observeFriends(): Flow<List<Friend>> =
         combine(observeCloudFriends(), observeLocalFriends()) { cloud, local ->
             (cloud as List<Friend>) + local
         }
 
-    fun observeFriendRequests(): Flow<FriendRequests> =
+    override fun observeFriendRequests(): Flow<FriendRequests> =
         auth.authState.flatMapLatest { state ->
             when (state) {
                 is AuthState.SignedIn -> remote.observeFriendRequests(state.uid)
@@ -49,7 +69,7 @@ open class SocialRepository(
             }
         }
 
-    fun observeHeadToHead(): Flow<HeadToHead> =
+    override fun observeHeadToHead(): Flow<HeadToHead> =
         auth.authState.flatMapLatest { state ->
             when (state) {
                 is AuthState.SignedIn -> remote.observeHeadToHead(state.uid)
@@ -59,41 +79,41 @@ open class SocialRepository(
 
     // ── Local-friend mutations ───────────────────────────────────────────────
 
-    fun addLocalFriend(displayName: String, avatarSeed: String): LocalFriend =
+    override fun addLocalFriend(displayName: String, avatarSeed: String): LocalFriend =
         localFriends.add(displayName = displayName, avatarSeed = avatarSeed)
 
-    fun editLocalFriend(localId: String, displayName: String, avatarSeed: String): Boolean =
+    override fun editLocalFriend(localId: String, displayName: String, avatarSeed: String): Boolean =
         localFriends.edit(localId, displayName, avatarSeed)
 
-    fun removeLocalFriend(localId: String): Boolean = localFriends.remove(localId)
+    override fun removeLocalFriend(localId: String): Boolean = localFriends.remove(localId)
 
     // ── Cloud friend graph ───────────────────────────────────────────────────
 
-    open suspend fun sendFriendRequest(handle: String): Result<Unit> = runCatching {
+    override suspend fun sendFriendRequest(handle: String): Result<Unit> = runCatching {
         remote.sendFriendRequest(handle)
     }
 
-    suspend fun acceptFriendRequest(requesterUid: String): Result<Unit> = runCatching {
+    override suspend fun acceptFriendRequest(requesterUid: String): Result<Unit> = runCatching {
         remote.acceptFriendRequest(requesterUid)
     }
 
-    suspend fun declineFriendRequest(requesterUid: String): Result<Unit> = runCatching {
+    override suspend fun declineFriendRequest(requesterUid: String): Result<Unit> = runCatching {
         remote.declineFriendRequest(requesterUid)
     }
 
-    suspend fun unfriend(otherUid: String): Result<Unit> = runCatching {
+    override suspend fun unfriend(otherUid: String): Result<Unit> = runCatching {
         remote.unfriend(otherUid)
     }
 
     // ── Reconciliation (OB-06) ───────────────────────────────────────────────
 
-    suspend fun reconcileLocalFriendToHandle(localId: String, handle: String): Result<Unit> {
+    override suspend fun reconcileLocalFriendToHandle(localId: String, handle: String): Result<Unit> {
         val result = sendFriendRequest(handle)
         if (result.isSuccess) localFriends.remove(localId)
         return result
     }
 
-    suspend fun reconcileLocalFriends(mappings: List<Pair<String, String?>>): ReconciliationSummary {
+    override suspend fun reconcileLocalFriends(mappings: List<Pair<String, String?>>): ReconciliationSummary {
         var reconciled = 0; var skipped = 0; var failed = 0
         for ((localId, handle) in mappings) {
             if (handle.isNullOrBlank()) { skipped++; continue }

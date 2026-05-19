@@ -44,6 +44,32 @@ data class MigrationSummary(
     val droppedLocked: Int,
 )
 
+interface AuthRepository {
+    val authState: StateFlow<AuthState>
+    val pendingSignInEmail: StateFlow<String?>
+
+    /** True iff this link looks like a Firebase email sign-in link. */
+    fun isSignInLink(link: String): Boolean
+
+    /**
+     * Send the sign-in link. Persists the email locally so the deep-link
+     * leg (which may come back after process death) can replay it into
+     * `signInWithEmailLink`.
+     */
+    suspend fun sendSignInLink(email: String): Result<Unit>
+
+    /**
+     * Complete sign-in from the deep-link return. Pulls the email from
+     * local storage; fails fast if the user opened the link on a different
+     * device (no pending email locally).
+     */
+    suspend fun completeSignInWithLink(link: String): Result<Unit>
+
+    suspend fun signOut()
+    suspend fun deleteAccount(): Result<Unit>
+    suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary>
+}
+
 /**
  * Wraps the Firebase Auth lifecycle for the rest of the app. Auth-state is
  * observed off `FirebaseAuth.authStateChanged`; the pending email (typed at
@@ -54,19 +80,19 @@ data class MigrationSummary(
  * first link click. Profile bootstrap (handle, displayName) happens via the
  * `updateProfile` callable after the first sign-in, not here.
  */
-open class AuthRepository(
+class FirebaseAuthRepository(
     val remote: AuthRemoteDataSource,
     private val local: AuthLocalDataSource,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
-) {
+) : AuthRepository {
     private val _pendingSignInEmail = MutableStateFlow(local.pendingSignInEmail)
-    val pendingSignInEmail: StateFlow<String?> = _pendingSignInEmail
+    override val pendingSignInEmail: StateFlow<String?> = _pendingSignInEmail
 
     /**
      * Emits `Loading` once then switches to `SignedOut` / `SignedIn` based
      * on Firebase auth state.
      */
-    val authState: StateFlow<AuthState> = remote.authStateChanged
+    override val authState: StateFlow<AuthState> = remote.authStateChanged
         .map<_, AuthState> { user ->
             if (user == null) AuthState.SignedOut
             else AuthState.SignedIn(uid = user.uid, email = user.email)
@@ -78,26 +104,15 @@ open class AuthRepository(
             initialValue = AuthState.Loading,
         )
 
-    /**
-     * Send the sign-in link. Persists the email locally so the deep-link
-     * leg (which may come back after process death) can replay it into
-     * `signInWithEmailLink`.
-     */
-    suspend fun sendSignInLink(email: String): Result<Unit> = runCatching {
+    override fun isSignInLink(link: String): Boolean = remote.isSignInWithEmailLink(link)
+
+    override suspend fun sendSignInLink(email: String): Result<Unit> = runCatching {
         local.pendingSignInEmail = email
         _pendingSignInEmail.value = email
         remote.sendSignInLink(email)
     }
 
-    /** True iff this link looks like a Firebase email sign-in link. */
-    fun isSignInLink(link: String): Boolean = remote.isSignInWithEmailLink(link)
-
-    /**
-     * Complete sign-in from the deep-link return. Pulls the email from
-     * local storage; fails fast if the user opened the link on a different
-     * device (no pending email locally).
-     */
-    suspend fun completeSignInWithLink(link: String): Result<Unit> = runCatching {
+    override suspend fun completeSignInWithLink(link: String): Result<Unit> = runCatching {
         val email = local.pendingSignInEmail
             ?: error("no pending email — link may have been opened on a different device")
         remote.signInWithEmailLink(email = email, link = link)
@@ -105,15 +120,15 @@ open class AuthRepository(
         _pendingSignInEmail.value = null
     }
 
-    suspend fun signOut() {
+    override suspend fun signOut() {
         remote.signOut()
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
     }
 
-    suspend fun deleteAccount(): Result<Unit> =
+    override suspend fun deleteAccount(): Result<Unit> =
         Result.failure(NotImplementedError("deleteAccount callable not wired"))
 
-    suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary> =
+    override suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary> =
         Result.failure(NotImplementedError("migrateGuestData callable not wired"))
 }

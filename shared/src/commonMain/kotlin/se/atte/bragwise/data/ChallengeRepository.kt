@@ -16,6 +16,23 @@ import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.PredictionPayload
 
+interface ChallengeRepository {
+    fun observeMine(): Flow<List<Challenge>>
+    fun observePromoted(): Flow<List<Challenge>>
+    fun observeFromFriends(): Flow<List<Challenge>>
+    fun observePendingInvites(): Flow<List<Invitation>>
+    fun observeChallengeDetail(id: String): Flow<ChallengeDetail>
+    fun observeLeaderboard(challengeId: String, friendsOnly: Boolean = false): Flow<List<LeaderboardEntry>>
+
+    suspend fun createDraft(challenge: Challenge): Result<Challenge>
+    suspend fun updateDraft(challenge: Challenge): Result<Unit>
+    suspend fun publish(challengeId: String): Result<Unit>
+    suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit>
+    suspend fun postResults(challengeId: String, results: Map<String, PredictionPayload>): Result<Unit>
+    suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit>
+    suspend fun dismissInviteLocally(challengeId: String): Result<Unit>
+}
+
 // #region agent log
 private const val CR_DBG = "BRAGWISE_DBG_9c95cf"
 private fun crDbg(msg: String) { println("$CR_DBG $msg") }
@@ -31,11 +48,11 @@ private fun <T> Flow<T>.tagCR(name: String): Flow<T> = this
     }
 // #endregion
 
-open class ChallengeRepository(
+class FirebaseChallengeRepository(
     val remote: ChallengeRemoteDataSource,
     private val local: ChallengeLocalDataSource,
     private val auth: AuthRepository,
-) {
+) : ChallengeRepository {
     private val currentUid: String?
         get() = (auth.authState.value as? AuthState.SignedIn)?.uid
 
@@ -43,7 +60,7 @@ open class ChallengeRepository(
      * Combines challenges created by the user (including drafts) with challenges
      * the user has joined as a participant. Deduplicates by id.
      */
-    fun observeMine(): Flow<List<Challenge>> =
+    override fun observeMine(): Flow<List<Challenge>> =
         auth.authState.flatMapLatest { state ->
             // #region agent log
             crDbg("observeMine.authState type=${state::class.simpleName}")
@@ -60,7 +77,7 @@ open class ChallengeRepository(
             }
         }
 
-    fun observePromoted(): Flow<List<Challenge>> = remote.observePromoted()
+    override fun observePromoted(): Flow<List<Challenge>> = remote.observePromoted()
         .catch { emit(emptyList()) }
 
     /**
@@ -69,9 +86,9 @@ open class ChallengeRepository(
      * that sits above the single-shot auth state. Returns empty for now; a full
      * implementation will use SocialRepository.observeCloudFriends() → challenge query.
      */
-    fun observeFromFriends(): Flow<List<Challenge>> = flowOf(emptyList())
+    override fun observeFromFriends(): Flow<List<Challenge>> = flowOf(emptyList())
 
-    fun observePendingInvites(): Flow<List<Invitation>> =
+    override fun observePendingInvites(): Flow<List<Invitation>> =
         auth.authState.flatMapLatest { state ->
             when (state) {
                 is AuthState.SignedIn -> remote.observePendingInvites(state.uid)
@@ -80,38 +97,38 @@ open class ChallengeRepository(
             }
         }
 
-    fun observeChallengeDetail(id: String): Flow<ChallengeDetail> =
+    override fun observeChallengeDetail(id: String): Flow<ChallengeDetail> =
         auth.authState.flatMapLatest { state ->
             val uid = (state as? AuthState.SignedIn)?.uid ?: ""
             remote.observeChallengeDetail(challengeId = id, myUid = uid)
         }
 
-    fun observeLeaderboard(challengeId: String, friendsOnly: Boolean = false): Flow<List<LeaderboardEntry>> =
+    override fun observeLeaderboard(challengeId: String, friendsOnly: Boolean): Flow<List<LeaderboardEntry>> =
         remote.observeLeaderboard(challengeId)
 
     // ── Writes ────────────────────────────────────────────────────────────────
 
-    suspend fun createDraft(challenge: Challenge): Result<Challenge> = runCatching {
+    override suspend fun createDraft(challenge: Challenge): Result<Challenge> = runCatching {
         val id = remote.createChallenge(challenge)
         challenge.copy(id = id)
     }
 
-    suspend fun updateDraft(challenge: Challenge): Result<Unit> = runCatching {
+    override suspend fun updateDraft(challenge: Challenge): Result<Unit> = runCatching {
         remote.updateDraft(challenge)
     }
 
-    suspend fun publish(challengeId: String): Result<Unit> = runCatching {
+    override suspend fun publish(challengeId: String): Result<Unit> = runCatching {
         remote.publishChallenge(challengeId)
     }
 
-    suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit> =
+    override suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit> =
         runCatching { remote.submitPredictions(challengeId, predictions) }
 
-    suspend fun postResults(challengeId: String, results: Map<String, PredictionPayload>): Result<Unit> =
+    override suspend fun postResults(challengeId: String, results: Map<String, PredictionPayload>): Result<Unit> =
         runCatching { remote.postResults(challengeId, results) }
 
-    suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit> =
+    override suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit> =
         runCatching { remote.inviteFriends(challengeId, uids) }
 
-    suspend fun dismissInviteLocally(challengeId: String): Result<Unit> = Result.success(Unit)
+    override suspend fun dismissInviteLocally(challengeId: String): Result<Unit> = Result.success(Unit)
 }
