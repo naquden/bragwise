@@ -17,8 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -33,10 +35,11 @@ import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
+import se.atte.bragwise.ui.LocalSnackbarHost
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.BottomActionBar
-import se.atte.bragwise.ui.components.DragReorderColumn
+import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.components.flagEmoji
 
@@ -116,16 +119,17 @@ private fun PredictContent(
             }
         }
 
+        val completed = bets.count { drafts[it.id].isCompleteFor(it) }
         BottomActionBar {
             AppButton(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onSubmit,
-                enabled = !submitting && drafts.size == bets.size,
+                enabled = !submitting && completed == bets.size,
             ) {
                 Text(
                     text = when {
                         submitting -> "Submitting…"
-                        drafts.size < bets.size -> "Predict ${drafts.size}/${bets.size}"
+                        completed < bets.size -> "Predict $completed/${bets.size}"
                         else -> "Save predictions"
                     },
                 )
@@ -185,22 +189,13 @@ private fun BetCard(
                     label = { Text("No") },
                 )
             }
-            is Bet.Ranking -> {
-                val orderedIds = (draft as? PredictionPayload.Ranking)?.orderedOptionIds
-                    ?: bet.options.map { it.id }
-                val orderedOptions = orderedIds.mapNotNull { id -> bet.options.find { it.id == id } }
-                DragReorderColumn(
-                    items = orderedOptions,
-                    key = { it.id },
-                    onReorder = { reordered -> onRanking(bet.id, reordered.map { it.id }) },
-                ) { option, index ->
-                    RankingOptionRow(
-                        option = option,
-                        rank = index + 1,
-                        showFlag = bet.optionType == OptionType.COUNTRY,
-                    )
-                }
-            }
+            is Bet.Ranking -> RankingDragList(
+                options = bet.options,
+                topN = bet.topN,
+                orderedOptionIds = (draft as? PredictionPayload.Ranking)?.orderedOptionIds ?: emptyList(),
+                showFlag = bet.optionType == OptionType.COUNTRY,
+                onReorder = { ids -> onRanking(bet.id, ids) },
+            )
         }
     }
 }
@@ -259,41 +254,9 @@ private fun CountryOptionRow(
     }
 }
 
-@Composable
-private fun RankingOptionRow(
-    option: BetOption,
-    rank: Int,
-    showFlag: Boolean,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = "#$rank",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold,
-        )
-        if (showFlag && option.countryCode != null) {
-            Text(
-                text = flagEmoji(option.countryCode),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-        Text(
-            text = option.label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = "≡",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+internal fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
+    is Bet.Ranking -> (this as? PredictionPayload.Ranking)?.orderedOptionIds?.size == bet.topN
+    is Bet.SinglePick, is Bet.BooleanProp -> this != null
 }
 
 // region Previews
@@ -332,15 +295,17 @@ private val previewBets = listOf(
 @Composable
 private fun Predict_Ready_Empty_Preview() {
     ThemePreview {
-        PredictContent(
-            bets = previewBets,
-            drafts = emptyMap(),
-            submitting = false,
-            onSinglePick = { _, _ -> },
-            onBoolean = { _, _ -> },
-            onRanking = { _, _ -> },
-            onSubmit = {},
-        )
+        CompositionLocalProvider(LocalSnackbarHost provides remember { SnackbarHostState() }) {
+            PredictContent(
+                bets = previewBets,
+                drafts = emptyMap(),
+                submitting = false,
+                onSinglePick = { _, _ -> },
+                onBoolean = { _, _ -> },
+                onRanking = { _, _ -> },
+                onSubmit = {},
+            )
+        }
     }
 }
 
@@ -348,15 +313,38 @@ private fun Predict_Ready_Empty_Preview() {
 @Composable
 private fun Predict_Ready_Partial_Preview() {
     ThemePreview {
-        PredictContent(
-            bets = previewBets,
-            drafts = mapOf("b1" to PredictionPayload.BooleanProp(true)),
-            submitting = false,
-            onSinglePick = { _, _ -> },
-            onBoolean = { _, _ -> },
-            onRanking = { _, _ -> },
-            onSubmit = {},
-        )
+        CompositionLocalProvider(LocalSnackbarHost provides remember { SnackbarHostState() }) {
+            PredictContent(
+                bets = previewBets,
+                drafts = mapOf("b1" to PredictionPayload.BooleanProp(true)),
+                submitting = false,
+                onSinglePick = { _, _ -> },
+                onBoolean = { _, _ -> },
+                onRanking = { _, _ -> },
+                onSubmit = {},
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun Predict_Ranking_Active_Preview() {
+    ThemePreview {
+        CompositionLocalProvider(LocalSnackbarHost provides remember { SnackbarHostState() }) {
+            PredictContent(
+                bets = previewBets,
+                drafts = mapOf(
+                    "b1" to PredictionPayload.BooleanProp(true),
+                    "b4" to PredictionPayload.Ranking(orderedOptionIds = listOf("o1")),
+                ),
+                submitting = false,
+                onSinglePick = { _, _ -> },
+                onBoolean = { _, _ -> },
+                onRanking = { _, _ -> },
+                onSubmit = {},
+            )
+        }
     }
 }
 

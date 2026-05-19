@@ -17,6 +17,11 @@ struct iOSApp: App {
         #endif
 
         FirebaseApp.configure()
+
+        // Start Koin before any Composable is hosted. This makes the DI graph
+        // available to IosAuthBridge (Universal Link handler) and koinViewModel()
+        // calls in the Compose tree.
+        KoinInitializerKt.doInitKoin()
     }
 
     var body: some Scene {

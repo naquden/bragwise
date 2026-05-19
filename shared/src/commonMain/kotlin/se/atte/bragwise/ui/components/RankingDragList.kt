@@ -1,0 +1,1042 @@
+package se.atte.bragwise.ui.components
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.ranking_a11y_move_to_slot
+import bragwise.shared.generated.resources.ranking_a11y_return_to_pool
+import bragwise.shared.generated.resources.ranking_drop_here_hint
+import bragwise.shared.generated.resources.ranking_slot_removed
+import bragwise.shared.generated.resources.ranking_undo
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import se.atte.bragwise.domain.BetOption
+import se.atte.bragwise.ui.LocalSnackbarHost
+import se.atte.bragwise.ui.standardPadding
+import se.atte.bragwise.ui.standardPaddingSmall
+import kotlin.math.roundToInt
+
+// region Defaults
+
+private object RankingDragDefaults {
+    /** Plan §4: stack into a pager only when topN exceeds this many slots on compact widths. */
+    const val PagerStackTopN = 6
+    val AutoScrollEdgeZone = 64.dp
+    val AutoScrollSpeed = 8f
+    val PagerEdgeZone = 24.dp
+    val PagerAutoFlipDelayMs = 400L
+    val SlotHeight = 56.dp
+}
+
+// endregion
+
+// region Private state types
+
+internal sealed interface DragState {
+    data object Idle : DragState
+    data class Picking(val itemId: String) : DragState
+    data class Hovering(val itemId: String, val target: DropTarget) : DragState
+}
+
+internal sealed interface DropTarget {
+    data class Slot(val index: Int) : DropTarget
+    data object Pool : DropTarget
+}
+
+internal data class PendingUndo(val slotIndex: Int, val itemId: String)
+
+private val PendingUndoSaver = listSaver<PendingUndo?, Any>(
+    save = { undo -> if (undo == null) emptyList() else listOf(undo.slotIndex, undo.itemId) },
+    restore = { list -> if (list.size < 2) null else PendingUndo(slotIndex = list[0] as Int, itemId = list[1] as String) },
+)
+
+// endregion
+
+// region State holder
+
+/**
+ * Mutable drag state for one [RankingDragList]. All reads are exposed as
+ * immutable [List] / value properties; mutations go through methods only.
+ */
+internal class RankingDragStateHolder(
+    options: List<BetOption>,
+    private val topN: Int,
+    initialOrderedIds: List<String>,
+    initialPendingUndo: PendingUndo? = null,
+) {
+    private val _slots = mutableStateListOf<BetOption?>()
+    private val _pool = mutableStateListOf<BetOption>()
+    private val _drag = mutableStateOf<DragState>(DragState.Idle)
+    private val _pendingUndo = mutableStateOf<PendingUndo?>(null)
+
+    val slots: List<BetOption?> get() = _slots
+    val pool: List<BetOption> get() = _pool
+    val drag: DragState get() = _drag.value
+    val pendingUndo: PendingUndo? get() = _pendingUndo.value
+
+    val slotBounds = mutableMapOf<Int, Rect>()
+    val poolItemBounds = mutableMapOf<String, Rect>()
+    var poolColumnBounds: Rect = Rect.Zero
+    val poolListState: LazyListState = LazyListState()
+
+    init {
+        repeat(topN) { _slots.add(null) }
+        reconcile(options = options, orderedIds = initialOrderedIds, excludeFromPool = initialPendingUndo?.itemId)
+        if (initialPendingUndo != null) _pendingUndo.value = initialPendingUndo
+    }
+
+    fun reconcile(options: List<BetOption>, orderedIds: List<String>, excludeFromPool: String? = null) {
+        while (_slots.size < topN) _slots.add(null)
+        while (_slots.size > topN) _slots.removeAt(_slots.lastIndex)
+        for (i in 0 until topN) {
+            val id = orderedIds.getOrNull(i)
+            _slots[i] = if (id != null) options.find { it.id == id } else null
+        }
+        val placed = orderedIds.toSet()
+        _pool.clear()
+        options
+            .filter { it.id !in placed && it.id != excludeFromPool }
+            .sortedBy { it.label }
+            .forEach { _pool.add(it) }
+    }
+
+    fun startDrag(itemId: String) {
+        _drag.value = DragState.Picking(itemId)
+    }
+
+    fun hover(target: DropTarget?) {
+        val current = _drag.value
+        val itemId = when (current) {
+            is DragState.Picking -> current.itemId
+            is DragState.Hovering -> current.itemId
+            DragState.Idle -> return
+        }
+        _drag.value = if (target != null) DragState.Hovering(itemId = itemId, target = target) else DragState.Picking(itemId)
+    }
+
+    fun cancelDrag() {
+        _drag.value = DragState.Idle
+    }
+
+    /** Applies the four §4 drag rules and returns the new ordered option id list. */
+    fun applyDrop(sourceItemId: String, target: DropTarget): List<String> {
+        val sourceSlotIndex = _slots.indexOfFirst { it?.id == sourceItemId }.takeIf { it >= 0 }
+        val isFromPool = _pool.any { it.id == sourceItemId }
+
+        when {
+            isFromPool && target is DropTarget.Slot && _slots[target.index] == null -> {
+                val item = _pool.first { it.id == sourceItemId }
+                _pool.remove(item)
+                _slots[target.index] = item
+            }
+            isFromPool && target is DropTarget.Slot && _slots[target.index] != null -> {
+                val item = _pool.first { it.id == sourceItemId }
+                val occupant = _slots[target.index]!!
+                _pool.remove(item)
+                _slots[target.index] = item
+                insertSorted(occupant)
+            }
+            sourceSlotIndex != null && target is DropTarget.Pool -> {
+                val item = _slots[sourceSlotIndex]!!
+                _slots[sourceSlotIndex] = null
+                insertSorted(item)
+            }
+            sourceSlotIndex != null && target is DropTarget.Slot && target.index != sourceSlotIndex -> {
+                val sourceItem = _slots[sourceSlotIndex]
+                _slots[sourceSlotIndex] = _slots[target.index]
+                _slots[target.index] = sourceItem
+            }
+            else -> Unit
+        }
+        _drag.value = DragState.Idle
+        return currentOrderedIds()
+    }
+
+    fun removeFromSlot(index: Int): PendingUndo {
+        val item = _slots[index] ?: error("Slot $index is empty")
+        _slots[index] = null
+        val undo = PendingUndo(slotIndex = index, itemId = item.id)
+        _pendingUndo.value = undo
+        return undo
+    }
+
+    fun restoreUndo(options: List<BetOption>): List<String>? {
+        val undo = _pendingUndo.value ?: return null
+        val item = options.find { it.id == undo.itemId } ?: return null
+        val current = _slots.getOrNull(undo.slotIndex)
+        if (current != null) insertSorted(current)
+        _slots[undo.slotIndex] = item
+        _pendingUndo.value = null
+        return currentOrderedIds()
+    }
+
+    fun commitUndo(options: List<BetOption>) {
+        val undo = _pendingUndo.value ?: return
+        val item = options.find { it.id == undo.itemId }
+        if (item != null) insertSorted(item)
+        _pendingUndo.value = null
+    }
+
+    fun findTargetAt(pos: Offset): DropTarget? {
+        for ((index, bounds) in slotBounds) {
+            if (bounds.contains(pos)) return DropTarget.Slot(index)
+        }
+        if (poolColumnBounds != Rect.Zero && poolColumnBounds.contains(pos)) return DropTarget.Pool
+        return null
+    }
+
+    private fun insertSorted(item: BetOption) {
+        val insertIndex = _pool.indexOfFirst { it.label > item.label }.takeIf { it >= 0 } ?: _pool.size
+        _pool.add(insertIndex, item)
+    }
+
+    private fun currentOrderedIds(): List<String> = _slots.mapNotNull { it?.id }
+}
+
+// endregion
+
+// region Public composable
+
+/**
+ * Two-pane drag-and-drop for Ranking bets (plan §4).
+ *
+ * Left pane: [topN] numbered placement slots.
+ * Right pane: pool of remaining options, sorted A-Z.
+ *
+ * Drag rules:
+ * - Pool → empty slot: anchors the item.
+ * - Pool → occupied slot: bumps occupant back to pool (sorted).
+ * - Slot → pool: empties the slot.
+ * - Slot → slot: swaps occupants.
+ *
+ * Tap an occupied slot to remove it (undoable via snackbar for ~4 s).
+ * Snackbar host is consumed from [LocalSnackbarHost].
+ */
+@Composable
+fun RankingDragList(
+    options: List<BetOption>,
+    topN: Int,
+    orderedOptionIds: List<String>,
+    showFlag: Boolean,
+    onReorder: (List<String>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHost = LocalSnackbarHost.current
+    val scope = rememberCoroutineScope()
+
+    var savedUndo by rememberSaveable(stateSaver = PendingUndoSaver) { mutableStateOf<PendingUndo?>(null) }
+
+    val holder = remember(topN) {
+        RankingDragStateHolder(
+            options = options,
+            topN = topN,
+            initialOrderedIds = orderedOptionIds,
+            initialPendingUndo = savedUndo,
+        )
+    }
+
+    LaunchedEffect(options, orderedOptionIds) {
+        holder.reconcile(
+            options = options,
+            orderedIds = orderedOptionIds,
+            excludeFromPool = holder.pendingUndo?.itemId,
+        )
+    }
+
+    var undoJob by remember { mutableStateOf<Job?>(null) }
+    val removedText = stringResource(Res.string.ranking_slot_removed)
+    val undoText = stringResource(Res.string.ranking_undo)
+
+    fun launchSnackbar() {
+        undoJob = scope.launch {
+            val result = snackbarHost.showSnackbar(
+                message = removedText,
+                actionLabel = undoText,
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                val newOrder = holder.restoreUndo(options)
+                if (newOrder != null) {
+                    savedUndo = null
+                    onReorder(newOrder)
+                }
+            } else {
+                holder.commitUndo(options)
+                savedUndo = null
+            }
+        }
+    }
+
+    // Re-show snackbar after rotation if there was a pending undo
+    LaunchedEffect(Unit) {
+        if (savedUndo != null) launchSnackbar()
+    }
+
+    fun onTapSlot(index: Int) {
+        undoJob?.cancel()
+        val undo = holder.removeFromSlot(index)
+        savedUndo = undo
+        onReorder(holder.slots.mapNotNull { it?.id })
+        launchSnackbar()
+    }
+
+    // Ghost item state — two Animatables to allow snap-back spring without the Offset VectorConverter
+    var ghostItem by remember { mutableStateOf<BetOption?>(null) }
+    var ghostSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+    var ghostSourceLeft by remember { mutableStateOf(0f) }
+    var ghostSourceTop by remember { mutableStateOf(0f) }
+    val ghostX = remember { Animatable(0f) }
+    val ghostY = remember { Animatable(0f) }
+
+    val density = LocalDensity.current
+    val edgeZonePx = with(density) { RankingDragDefaults.AutoScrollEdgeZone.toPx() }
+
+    val isDragging = holder.drag !is DragState.Idle
+    // Absolute finger position in root coords, kept in sync with the ongoing drag
+    val fingerPos = remember { mutableStateOf(Offset.Zero) }
+
+    LaunchedEffect(isDragging) {
+        if (!isDragging) return@LaunchedEffect
+        while (isActive) {
+            val poolBounds = holder.poolColumnBounds
+            if (poolBounds != Rect.Zero) {
+                when {
+                    fingerPos.value.y < poolBounds.top + edgeZonePx ->
+                        holder.poolListState.scrollBy(-RankingDragDefaults.AutoScrollSpeed)
+                    fingerPos.value.y > poolBounds.bottom - edgeZonePx ->
+                        holder.poolListState.scrollBy(RankingDragDefaults.AutoScrollSpeed)
+                }
+            }
+            delay(16)
+        }
+    }
+
+    fun handleDragStart(item: BetOption, sourceBounds: Rect, startPosInRow: Offset) {
+        ghostItem = item
+        ghostSize = sourceBounds.size
+        ghostSourceLeft = sourceBounds.left
+        ghostSourceTop = sourceBounds.top
+        val fingerAbs = sourceBounds.topLeft + startPosInRow
+        fingerPos.value = fingerAbs
+        val centeredTopLeft = Offset(
+            x = fingerAbs.x - sourceBounds.width / 2f,
+            y = fingerAbs.y - sourceBounds.height / 2f,
+        )
+        scope.launch {
+            ghostX.snapTo(centeredTopLeft.x)
+            ghostY.snapTo(centeredTopLeft.y)
+        }
+        holder.startDrag(item.id)
+    }
+
+    fun handleDrag(delta: Offset) {
+        val newFinger = fingerPos.value + delta
+        fingerPos.value = newFinger
+        scope.launch {
+            ghostX.snapTo(newFinger.x - ghostSize.width / 2f)
+            ghostY.snapTo(newFinger.y - ghostSize.height / 2f)
+        }
+        holder.hover(holder.findTargetAt(newFinger))
+    }
+
+    fun handleDragEnd() {
+        val current = holder.drag
+        if (current is DragState.Hovering) {
+            val newOrder = holder.applyDrop(sourceItemId = current.itemId, target = current.target)
+            onReorder(newOrder)
+            ghostItem = null
+        } else {
+            holder.cancelDrag()
+            val snapSpec = spring<Float>(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+            scope.launch {
+                launch { ghostX.animateTo(targetValue = ghostSourceLeft, animationSpec = snapSpec) }
+                ghostY.animateTo(targetValue = ghostSourceTop, animationSpec = snapSpec)
+                ghostItem = null
+            }
+        }
+    }
+
+    fun handleDragCancel() {
+        holder.cancelDrag()
+        ghostItem = null
+    }
+
+    BoxWithConstraints(modifier = modifier) {
+        // Plan §4: side-by-side by default; stack into a swipe-pager only when topN > 6.
+        val isCompact = topN > RankingDragDefaults.PagerStackTopN
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (isCompact) {
+                PagerLayout(
+                    holder = holder,
+                    showFlag = showFlag,
+                    topN = topN,
+                    drag = holder.drag,
+                    ghostItemId = ghostItem?.id,
+                    fingerPos = fingerPos,
+                    edgeZonePx = with(density) { RankingDragDefaults.PagerEdgeZone.toPx() },
+                    onDragStart = ::handleDragStart,
+                    onDrag = ::handleDrag,
+                    onDragEnd = ::handleDragEnd,
+                    onDragCancel = ::handleDragCancel,
+                    onTapSlot = ::onTapSlot,
+                    onDropFromPool = { itemId, slotIndex ->
+                        val newOrder = holder.applyDrop(sourceItemId = itemId, target = DropTarget.Slot(slotIndex))
+                        onReorder(newOrder)
+                    },
+                )
+            } else {
+                SideBySideLayout(
+                    holder = holder,
+                    showFlag = showFlag,
+                    topN = topN,
+                    drag = holder.drag,
+                    ghostItemId = ghostItem?.id,
+                    onDragStart = ::handleDragStart,
+                    onDrag = ::handleDrag,
+                    onDragEnd = ::handleDragEnd,
+                    onDragCancel = ::handleDragCancel,
+                    onTapSlot = ::onTapSlot,
+                    onDropFromPool = { itemId, slotIndex ->
+                        val newOrder = holder.applyDrop(sourceItemId = itemId, target = DropTarget.Slot(slotIndex))
+                        onReorder(newOrder)
+                    },
+                )
+            }
+
+            // Ghost overlay — floats above both panes during a drag
+            val safeGhostItem = ghostItem
+            if (safeGhostItem != null) {
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(ghostX.value.roundToInt(), ghostY.value.roundToInt()) }
+                        .zIndex(10f)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .padding(horizontal = standardPaddingSmall, vertical = 10.dp),
+                ) {
+                    OptionRowContent(option = safeGhostItem, showFlag = showFlag)
+                }
+            }
+        }
+    }
+}
+
+// endregion
+
+// region Layouts
+
+@Composable
+private fun SideBySideLayout(
+    holder: RankingDragStateHolder,
+    showFlag: Boolean,
+    topN: Int,
+    drag: DragState,
+    ghostItemId: String?,
+    onDragStart: (BetOption, Rect, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onTapSlot: (Int) -> Unit,
+    onDropFromPool: (itemId: String, slotIndex: Int) -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        SlotsColumn(
+            holder = holder,
+            showFlag = showFlag,
+            topN = topN,
+            drag = drag,
+            ghostItemId = ghostItemId,
+            onDragStart = onDragStart,
+            onDrag = onDrag,
+            onDragEnd = onDragEnd,
+            onDragCancel = onDragCancel,
+            onTapSlot = onTapSlot,
+            modifier = Modifier.weight(1f),
+        )
+        VerticalDivider(modifier = Modifier.fillMaxHeight())
+        PoolList(
+            holder = holder,
+            showFlag = showFlag,
+            topN = topN,
+            drag = drag,
+            ghostItemId = ghostItemId,
+            onDragStart = onDragStart,
+            onDrag = onDrag,
+            onDragEnd = onDragEnd,
+            onDragCancel = onDragCancel,
+            onDropToSlot = onDropFromPool,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun PagerLayout(
+    holder: RankingDragStateHolder,
+    showFlag: Boolean,
+    topN: Int,
+    drag: DragState,
+    ghostItemId: String?,
+    fingerPos: androidx.compose.runtime.MutableState<Offset>,
+    edgeZonePx: Float,
+    onDragStart: (BetOption, Rect, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onTapSlot: (Int) -> Unit,
+    onDropFromPool: (itemId: String, slotIndex: Int) -> Unit,
+) {
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val scope = rememberCoroutineScope()
+
+    // Plan §4: auto-flip the pager when a drag is held near the horizontal edge for >400 ms.
+    var pagerBounds by remember { mutableStateOf(Rect.Zero) }
+    LaunchedEffect(drag) {
+        if (drag is DragState.Idle) return@LaunchedEffect
+        while (isActive) {
+            if (pagerBounds != Rect.Zero) {
+                val px = fingerPos.value.x
+                if (px > pagerBounds.right - edgeZonePx && pagerState.currentPage == 0) {
+                    delay(RankingDragDefaults.PagerAutoFlipDelayMs)
+                    if (drag !is DragState.Idle) scope.launch { pagerState.animateScrollToPage(1) }
+                } else if (px < pagerBounds.left + edgeZonePx && pagerState.currentPage == 1) {
+                    delay(RankingDragDefaults.PagerAutoFlipDelayMs)
+                    if (drag !is DragState.Idle) scope.launch { pagerState.animateScrollToPage(0) }
+                }
+            }
+            delay(100)
+        }
+    }
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize().onGloballyPositioned { coords -> pagerBounds = coords.boundsInRoot() },
+    ) { page ->
+        when (page) {
+            0 -> SlotsColumn(
+                holder = holder,
+                showFlag = showFlag,
+                topN = topN,
+                drag = drag,
+                ghostItemId = ghostItemId,
+                onDragStart = onDragStart,
+                onDrag = onDrag,
+                onDragEnd = onDragEnd,
+                onDragCancel = onDragCancel,
+                onTapSlot = onTapSlot,
+                modifier = Modifier.fillMaxSize(),
+            )
+            else -> PoolList(
+                holder = holder,
+                showFlag = showFlag,
+                topN = topN,
+                drag = drag,
+                ghostItemId = ghostItemId,
+                onDragStart = onDragStart,
+                onDrag = onDrag,
+                onDragEnd = onDragEnd,
+                onDragCancel = onDragCancel,
+                onDropToSlot = onDropFromPool,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+// endregion
+
+// region Slots column
+
+@Composable
+private fun SlotsColumn(
+    holder: RankingDragStateHolder,
+    showFlag: Boolean,
+    topN: Int,
+    drag: DragState,
+    ghostItemId: String?,
+    onDragStart: (BetOption, Rect, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onTapSlot: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val returnToPoolLabel = stringResource(Res.string.ranking_a11y_return_to_pool)
+
+    Column(modifier = modifier.padding(standardPaddingSmall)) {
+        for (i in 0 until topN) {
+            val occupant = holder.slots.getOrNull(i)
+            val dragItemId = when (drag) {
+                is DragState.Picking -> drag.itemId
+                is DragState.Hovering -> drag.itemId
+                DragState.Idle -> null
+            }
+            val isBeingDragged = occupant != null && occupant.id == dragItemId
+            val isHoverTarget = drag is DragState.Hovering && drag.target is DropTarget.Slot && drag.target.index == i
+
+            SlotRow(
+                index = i,
+                topN = topN,
+                occupant = occupant,
+                showFlag = showFlag,
+                isBeingDragged = isBeingDragged,
+                isHoverTarget = isHoverTarget,
+                returnToPoolLabel = returnToPoolLabel,
+                onBoundsChanged = { bounds -> holder.slotBounds[i] = bounds },
+                onDragStart = { bounds, startPos -> if (occupant != null) onDragStart(occupant, bounds, startPos) },
+                onDrag = onDrag,
+                onDragEnd = onDragEnd,
+                onDragCancel = onDragCancel,
+                onTap = { if (occupant != null) onTapSlot(i) },
+            )
+            if (i < topN - 1) Spacer(Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun SlotRow(
+    index: Int,
+    topN: Int,
+    occupant: BetOption?,
+    showFlag: Boolean,
+    isBeingDragged: Boolean,
+    isHoverTarget: Boolean,
+    returnToPoolLabel: String,
+    onBoundsChanged: (Rect) -> Unit,
+    onDragStart: (sourceBounds: Rect, startPosInRow: Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onTap: () -> Unit,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "slot_hover")
+    val pulseBorderAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.35f,
+        animationSpec = infiniteRepeatable(animation = tween(600)),
+        label = "border_alpha",
+    )
+    val borderColor = when {
+        isHoverTarget -> MaterialTheme.colorScheme.primary.copy(alpha = pulseBorderAlpha)
+        occupant != null -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+    }
+
+    var rowBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
+
+    val dragModifier = if (occupant != null) {
+        Modifier
+            .clickable { onTap() }
+            .pointerInput(occupant.id) {
+                detectDragGestures(
+                    onDragStart = { startPos -> onDragStart(rowBoundsInRoot, startPos) },
+                    onDrag = { _, delta -> onDrag(delta) },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragCancel() },
+                )
+            }
+    } else Modifier
+
+    val semanticsModifier = if (occupant != null) {
+        Modifier.semantics {
+            customActions = listOf(
+                CustomAccessibilityAction(label = returnToPoolLabel, action = { onTap(); true }),
+            )
+        }
+    } else Modifier
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(RankingDragDefaults.SlotHeight)
+            .onGloballyPositioned { coords ->
+                rowBoundsInRoot = coords.boundsInRoot()
+                onBoundsChanged(rowBoundsInRoot)
+            }
+            .then(
+                if (occupant == null) {
+                    Modifier.drawBehind {
+                        drawRoundRect(
+                            color = borderColor,
+                            style = Stroke(
+                                width = 2.dp.toPx(),
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f),
+                                cap = StrokeCap.Round,
+                            ),
+                            cornerRadius = CornerRadius(8.dp.toPx()),
+                        )
+                    }
+                } else {
+                    Modifier.border(
+                        width = if (isHoverTarget) 2.dp else 1.dp,
+                        color = borderColor,
+                        shape = MaterialTheme.shapes.small,
+                    )
+                },
+            )
+            .background(
+                color = if (occupant != null) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.small,
+            )
+            .alpha(if (isBeingDragged) 0.3f else 1f)
+            .then(dragModifier)
+            .then(semanticsModifier)
+            .padding(horizontal = standardPaddingSmall, vertical = 8.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        if (occupant != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SlotNumber(number = index + 1)
+                OptionRowContent(option = occupant, showFlag = showFlag, modifier = Modifier.weight(1f))
+                Text(text = "≡", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SlotNumber(number = index + 1, dim = true)
+                Text(
+                    text = stringResource(Res.string.ranking_drop_here_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Plain numbered slot indicator. A circle with the slot number — matches plan §4
+ * "1 / 2 / 3" placement labels (the leaderboard-style [RankChip] is intentionally
+ * not used here because it reads as "current rank out of N competitors").
+ */
+@Composable
+private fun SlotNumber(number: Int, dim: Boolean = false) {
+    val bg = if (dim) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary
+    val fg = if (dim) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onPrimary
+    Box(
+        modifier = Modifier
+            .background(color = bg, shape = androidx.compose.foundation.shape.CircleShape)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = "$number", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = fg)
+    }
+}
+
+// endregion
+
+// region Pool list
+
+@Composable
+private fun PoolList(
+    holder: RankingDragStateHolder,
+    showFlag: Boolean,
+    topN: Int,
+    drag: DragState,
+    ghostItemId: String?,
+    onDragStart: (BetOption, Rect, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onDropToSlot: (itemId: String, slotIndex: Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isDragActive = drag !is DragState.Idle
+
+    LazyColumn(
+        state = holder.poolListState,
+        modifier = modifier
+            .onGloballyPositioned { coords -> holder.poolColumnBounds = coords.boundsInRoot() }
+            .padding(horizontal = standardPaddingSmall),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = standardPaddingSmall),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        itemsIndexed(items = holder.pool, key = { _, item -> item.id }) { _, item ->
+            val dragItemId = when (drag) {
+                is DragState.Picking -> drag.itemId
+                is DragState.Hovering -> drag.itemId
+                DragState.Idle -> null
+            }
+            val isBeingDragged = item.id == dragItemId
+            PoolRow(
+                item = item,
+                showFlag = showFlag,
+                topN = topN,
+                isBeingDragged = isBeingDragged,
+                dimForDrag = isDragActive && !isBeingDragged,
+                onBoundsChanged = { bounds -> holder.poolItemBounds[item.id] = bounds },
+                onDragStart = { bounds, startPos -> onDragStart(item, bounds, startPos) },
+                onDrag = onDrag,
+                onDragEnd = onDragEnd,
+                onDragCancel = onDragCancel,
+                onDropToSlot = { slotIndex -> onDropToSlot(item.id, slotIndex) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PoolRow(
+    item: BetOption,
+    showFlag: Boolean,
+    topN: Int,
+    isBeingDragged: Boolean,
+    dimForDrag: Boolean,
+    onBoundsChanged: (Rect) -> Unit,
+    onDragStart: (sourceBounds: Rect, startPosInRow: Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onDropToSlot: (slotIndex: Int) -> Unit,
+) {
+    var rowBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(RankingDragDefaults.SlotHeight)
+            .onGloballyPositioned { coords ->
+                rowBoundsInRoot = coords.boundsInRoot()
+                onBoundsChanged(rowBoundsInRoot)
+            }
+            .alpha(
+                when {
+                    isBeingDragged -> 0.3f
+                    dimForDrag -> 0.6f
+                    else -> 1f
+                },
+            )
+            .background(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small)
+            .pointerInput(item.id) {
+                detectDragGestures(
+                    onDragStart = { startPos -> onDragStart(rowBoundsInRoot, startPos) },
+                    onDrag = { _, delta -> onDrag(delta) },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragCancel() },
+                )
+            }
+            .semantics {
+                customActions = buildList {
+                    repeat(topN) { j ->
+                        add(CustomAccessibilityAction(label = "Move to slot ${j + 1}", action = { onDropToSlot(j); true }))
+                    }
+                }
+            }
+            .padding(horizontal = standardPaddingSmall, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OptionRowContent(option = item, showFlag = showFlag, modifier = Modifier.weight(1f))
+        Text(text = "≡", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+// endregion
+
+// region Shared row content
+
+@Composable
+private fun OptionRowContent(
+    option: BetOption,
+    showFlag: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (showFlag && option.countryCode != null) {
+            Text(text = flagEmoji(option.countryCode), style = MaterialTheme.typography.titleMedium)
+        }
+        Text(
+            text = option.label,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+// endregion
+
+// region Previews
+
+private val previewOptions = listOf(
+    BetOption(id = "ar", label = "Argentina", countryCode = "AR"),
+    BetOption(id = "be", label = "Belgium", countryCode = "BE"),
+    BetOption(id = "hr", label = "Croatia", countryCode = "HR"),
+    BetOption(id = "dk", label = "Denmark", countryCode = "DK"),
+    BetOption(id = "fi", label = "Finland", countryCode = "FI"),
+    BetOption(id = "fr", label = "France", countryCode = "FR"),
+    BetOption(id = "de", label = "Germany", countryCode = "DE"),
+    BetOption(id = "it", label = "Italy", countryCode = "IT"),
+)
+
+@Composable
+private fun PreviewFrame(content: @Composable () -> Unit) {
+    se.atte.bragwise.theme.ThemePreview {
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalSnackbarHost provides androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() },
+        ) {
+            Box(modifier = Modifier.fillMaxWidth().height(420.dp).padding(standardPadding)) {
+                content()
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Side-by-side — empty", showBackground = true)
+@Composable
+private fun RankingDragList_Empty_Preview() {
+    PreviewFrame {
+        RankingDragList(
+            options = previewOptions,
+            topN = 3,
+            orderedOptionIds = emptyList(),
+            showFlag = true,
+            onReorder = {},
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Side-by-side — partial", showBackground = true)
+@Composable
+private fun RankingDragList_Partial_Preview() {
+    PreviewFrame {
+        RankingDragList(
+            options = previewOptions,
+            topN = 3,
+            orderedOptionIds = listOf("fr"),
+            showFlag = true,
+            onReorder = {},
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Side-by-side — full", showBackground = true)
+@Composable
+private fun RankingDragList_Full_Preview() {
+    PreviewFrame {
+        RankingDragList(
+            options = previewOptions,
+            topN = 3,
+            orderedOptionIds = listOf("fi", "fr", "de"),
+            showFlag = true,
+            onReorder = {},
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Side-by-side — no flags", showBackground = true)
+@Composable
+private fun RankingDragList_NoFlags_Preview() {
+    PreviewFrame {
+        RankingDragList(
+            options = listOf(
+                BetOption(id = "a", label = "Mbappe"),
+                BetOption(id = "b", label = "Messi"),
+                BetOption(id = "c", label = "Haaland"),
+                BetOption(id = "d", label = "Salah"),
+            ),
+            topN = 3,
+            orderedOptionIds = listOf("b"),
+            showFlag = false,
+            onReorder = {},
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Pager fallback — topN > 6", showBackground = true)
+@Composable
+private fun RankingDragList_Pager_Preview() {
+    PreviewFrame {
+        RankingDragList(
+            options = previewOptions,
+            topN = 8,
+            orderedOptionIds = listOf("ar", "be"),
+            showFlag = true,
+            onReorder = {},
+        )
+    }
+}
+
+// endregion

@@ -13,8 +13,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import se.atte.bragwise.ui.LocalSnackbarHost
 import androidx.compose.ui.Modifier
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -28,11 +30,11 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.User
 import org.jetbrains.compose.resources.stringResource
-import se.atte.bragwise.data.AuthRepository
-import se.atte.bragwise.data.ChallengeRepository
-import se.atte.bragwise.data.ProfileRepository
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import se.atte.bragwise.data.SocialRepository
-import se.atte.bragwise.platform.createPlatformShare
+import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.ui.screens.auth.SignInScreen
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesScreen
@@ -73,11 +75,10 @@ private sealed interface Route {
  * routing matures (deep links, predictive back, type-safe destinations).
  */
 @Composable
-fun AppNav(
-    deps: AppDeps = remember { AppDeps.stub() },
-) {
+fun AppNav() {
     val backStack = remember { mutableStateListOf<Route>(Route.Tabs(Tab.Challenges)) }
-    val platformShare = remember { createPlatformShare() }
+    val platformShare: PlatformShare = koinInject()
+    val social: SocialRepository = koinInject()
     val snackbarHostState = remember { SnackbarHostState() }
 
     fun push(next: Route) {
@@ -140,132 +141,84 @@ fun AppNav(
             }
         },
     ) { padding ->
-        androidx.compose.animation.Crossfade(
-            targetState = current,
-            modifier = Modifier.fillMaxSize().padding(padding),
-            animationSpec = androidx.compose.animation.core.tween(durationMillis = 220),
-            label = "route",
-        ) { r ->
-            when (r) {
-                is Route.Tabs -> when (r.tab) {
-                    Tab.Challenges -> ChallengesScreen(
-                        viewModel = remember { ChallengesViewModel(deps.challenges, deps.social) },
-                        onNavigateToChallenge = { push(Route.ChallengeDetail(it)) },
-                        onNavigateToCreate = { push(Route.Create) },
+        CompositionLocalProvider(LocalSnackbarHost provides snackbarHostState) {
+            androidx.compose.animation.Crossfade(
+                targetState = current,
+                modifier = Modifier.fillMaxSize().padding(padding),
+                animationSpec = androidx.compose.animation.core.tween(durationMillis = 220),
+                label = "route",
+            ) { r ->
+                when (r) {
+                    is Route.Tabs -> when (r.tab) {
+                        Tab.Challenges -> ChallengesScreen(
+                            viewModel = koinViewModel<ChallengesViewModel>(),
+                            onNavigateToChallenge = { push(Route.ChallengeDetail(it)) },
+                            onNavigateToCreate = { push(Route.Create) },
+                        )
+                        Tab.Me -> MeScreen(
+                            viewModel = koinViewModel<MeViewModel>(),
+                            onNavigateToSettings = {},
+                            onNavigateToFriends = { push(Route.Friends) },
+                            onNavigateToSignIn = { push(Route.SignIn) },
+                        )
+                    }
+                    is Route.ChallengeDetail -> ChallengeDetailScreen(
+                        viewModel = koinViewModel<ChallengeDetailViewModel>(key = r.id) { parametersOf(r.id) },
+                        platformShare = platformShare,
+                        onNavigateToBet = { push(Route.Predict(r.id)) },
+                        onNavigateToLeaderboard = { push(Route.Leaderboard(challengeId = r.id, isPromoted = false)) },
                     )
-                    Tab.Me -> MeScreen(
-                        viewModel = remember { MeViewModel(deps.profile, deps.auth) },
-                        onNavigateToSettings = {},
-                        onNavigateToFriends = { push(Route.Friends) },
-                        onNavigateToSignIn = { push(Route.SignIn) },
+                    is Route.Predict -> PredictScreen(
+                        viewModel = koinViewModel<PredictViewModel>(key = r.challengeId) { parametersOf(r.challengeId) },
+                        snackbarHostState = snackbarHostState,
+                        onSubmitted = { pop() },
+                    )
+                    is Route.Leaderboard -> LeaderboardScreen(
+                        viewModel = koinViewModel<LeaderboardViewModel>(key = "${r.challengeId}:${r.isPromoted}") {
+                            parametersOf(r.challengeId, r.isPromoted)
+                        },
+                    )
+                    Route.Create -> CreateChallengeScreen(
+                        viewModel = koinViewModel<CreateChallengeViewModel>(),
+                        snackbarHostState = snackbarHostState,
+                        onPublished = { id -> replaceTop(Route.ChallengeDetail(id)) },
+                        onDraftSaved = { pop() },
+                    )
+                    Route.SignIn -> SignInScreen(
+                        viewModel = koinViewModel<SignInViewModel>(),
+                        onSignedIn = {
+                            // OB-06 follow-on: if any local-friend rows survive,
+                            // route to ReconcileFriends; otherwise straight back to
+                            // the Me tab (where the user originated the sign-in
+                            // flow). ReconcileFriends.onDone also returns to Me.
+                            replaceTop(
+                                if (social.localFriendSnapshot().isNotEmpty()) {
+                                    Route.ReconcileFriends
+                                } else {
+                                    Route.Tabs(Tab.Me)
+                                },
+                            )
+                        },
+                        onGuest = { replaceTop(Route.Tabs(Tab.Challenges)) },
+                    )
+                    Route.Friends -> FriendsScreen(
+                        viewModel = koinViewModel<FriendsViewModel>(),
+                        onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
+                        onOpenCloudProfile = { /* TODO LB-04 */ },
+                        onOpenReconcile = { push(Route.ReconcileFriends) },
+                    )
+                    is Route.FriendEditor -> LocalFriendEditorScreen(
+                        social = social,
+                        localId = r.localId,
+                        onSaved = { pop() },
+                        onCancel = { pop() },
+                    )
+                    Route.ReconcileFriends -> ReconcileFriendsScreen(
+                        viewModel = koinViewModel<ReconcileFriendsViewModel>(),
+                        onDone = { replaceTop(Route.Tabs(Tab.Me)) },
                     )
                 }
-                is Route.ChallengeDetail -> ChallengeDetailScreen(
-                    viewModel = remember(r.id) {
-                        ChallengeDetailViewModel(r.id, deps.challenges, deps.auth)
-                    },
-                    platformShare = platformShare,
-                    onNavigateToBet = { push(Route.Predict(r.id)) },
-                    onNavigateToLeaderboard = { push(Route.Leaderboard(challengeId = r.id, isPromoted = false)) },
-                )
-                is Route.Predict -> PredictScreen(
-                    viewModel = remember(r.challengeId) {
-                        PredictViewModel(r.challengeId, deps.challenges)
-                    },
-                    snackbarHostState = snackbarHostState,
-                    onSubmitted = { pop() },
-                )
-                is Route.Leaderboard -> LeaderboardScreen(
-                    viewModel = remember(r.challengeId, r.isPromoted) {
-                        LeaderboardViewModel(r.challengeId, r.isPromoted, deps.challenges)
-                    },
-                )
-                Route.Create -> CreateChallengeScreen(
-                    viewModel = remember { CreateChallengeViewModel(deps.challenges) },
-                    snackbarHostState = snackbarHostState,
-                    onPublished = { id -> replaceTop(Route.ChallengeDetail(id)) },
-                    onDraftSaved = { pop() },
-                )
-                Route.SignIn -> SignInScreen(
-                    viewModel = remember { SignInViewModel(deps.auth) },
-                    onSignedIn = {
-                        // OB-06 follow-on: if any local-friend rows survive,
-                        // route to ReconcileFriends; otherwise straight back to
-                        // the Me tab (where the user originated the sign-in
-                        // flow). ReconcileFriends.onDone also returns to Me.
-                        replaceTop(
-                            if (deps.social.localFriendSnapshot().isNotEmpty()) {
-                                Route.ReconcileFriends
-                            } else {
-                                Route.Tabs(Tab.Me)
-                            },
-                        )
-                    },
-                    onGuest = { replaceTop(Route.Tabs(Tab.Challenges)) },
-                )
-                Route.Friends -> FriendsScreen(
-                    viewModel = remember { FriendsViewModel(deps.social, deps.auth) },
-                    onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
-                    onOpenCloudProfile = { /* TODO LB-04 */ },
-                    onOpenReconcile = { push(Route.ReconcileFriends) },
-                )
-                is Route.FriendEditor -> LocalFriendEditorScreen(
-                    social = deps.social,
-                    localId = r.localId,
-                    onSaved = { pop() },
-                    onCancel = { pop() },
-                )
-                Route.ReconcileFriends -> ReconcileFriendsScreen(
-                    viewModel = remember { ReconcileFriendsViewModel(deps.social) },
-                    onDone = { replaceTop(Route.Tabs(Tab.Me)) },
-                )
             }
-        }
-    }
-}
-
-/**
- * Direct construction stand-in for Koin. Plan §5 wires Koin modules; deferred
- * here — see decision.md.
- */
-class AppDeps(
-    val auth: AuthRepository,
-    val challenges: ChallengeRepository,
-    val social: SocialRepository,
-    val profile: ProfileRepository,
-) {
-    companion object {
-        /**
-         * Real Firebase wiring. Auth is fully implemented; the other three
-         * repositories still hold `*RemoteDataSource` placeholders and will
-         * be wired to real Firestore + callable-backed sources in Phase D.
-         *
-         * Construct once per process — App Check must already be initialised
-         * before first call (Android: `MainActivity.onCreate`).
-         */
-        fun stub(): AppDeps {
-            val authRepo = AuthRepository(
-                remote = se.atte.bragwise.data.AuthRemoteDataSource(),
-                local = se.atte.bragwise.data.AuthLocalDataSource(),
-            )
-            return AppDeps(
-                auth = authRepo,
-                challenges = ChallengeRepository(
-                    remote = se.atte.bragwise.data.ChallengeRemoteDataSource(),
-                    local = se.atte.bragwise.data.ChallengeLocalDataSource(),
-                    auth = authRepo,
-                ),
-                social = SocialRepository(
-                    remote = se.atte.bragwise.data.SocialRemoteDataSource(),
-                    local = se.atte.bragwise.data.SocialLocalDataSource(),
-                    auth = authRepo,
-                ),
-                profile = ProfileRepository(
-                    remote = se.atte.bragwise.data.ProfileRemoteDataSource(),
-                    local = se.atte.bragwise.data.ProfileLocalDataSource(),
-                    auth = authRepo,
-                ),
-            )
         }
     }
 }

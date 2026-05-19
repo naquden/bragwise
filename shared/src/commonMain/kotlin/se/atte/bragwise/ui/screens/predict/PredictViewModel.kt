@@ -14,10 +14,7 @@ import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
 
-/**
- * MC-03 Predict. Phase-1 implementation covers SinglePick + BooleanProp;
- * Ranking ships with `RankingDragList` (deferred — see decision.md).
- */
+/** MC-03 Predict — SinglePick, BooleanProp, and Ranking (via [RankingDragList]). */
 class PredictViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,

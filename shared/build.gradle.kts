@@ -41,8 +41,16 @@ kotlin {
             // GitLive's firebase-auth-android depends on com.google.firebase:firebase-auth
             // and firebase-common with NO version, expecting the Firebase BoM to provide them.
             implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.koin.android)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
         commonMain.dependencies {
+            api(libs.koin.core)
+            implementation(libs.koin.core.viewmodel)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

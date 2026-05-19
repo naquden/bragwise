@@ -4,10 +4,10 @@ import platform.Foundation.NSUserDefaults
 
 private const val KEY_PENDING_EMAIL = "bragwise.auth.pending_sign_in_email"
 
-actual class AuthLocalDataSource actual constructor() {
+class IosAuthLocalDataSource : AuthLocalDataSource {
     private val defaults = NSUserDefaults.standardUserDefaults
 
-    actual var pendingSignInEmail: String?
+    override var pendingSignInEmail: String?
         get() = defaults.stringForKey(KEY_PENDING_EMAIL)
         set(value) {
             if (value == null) defaults.removeObjectForKey(KEY_PENDING_EMAIL)

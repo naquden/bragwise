@@ -39,6 +39,13 @@
     <string name="nav_tab_challenges">Challenges</string>
     <string name="nav_tab_me">Me</string>
 
+    <!-- Ranking bet (MC-03). -->
+    <string name="ranking_drop_here_hint">Drop here</string>
+    <string name="ranking_slot_removed">Removed</string>
+    <string name="ranking_undo">Undo</string>
+    <string name="ranking_a11y_move_to_slot">Move to slot %1$d</string>
+    <string name="ranking_a11y_return_to_pool">Return to pool</string>
+
     <!-- Auth. -->
     <string name="auth_sign_in">Sign in</string>
     <string name="auth_continue_guest">Continue as guest</string>
