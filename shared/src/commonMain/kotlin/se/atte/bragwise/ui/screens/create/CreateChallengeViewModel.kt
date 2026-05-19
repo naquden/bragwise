@@ -14,22 +14,14 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
-/**
- * CR-01..03 Create wizard. Plan §5: a single VM with a `step` field rather
- * than three VMs sharing data. Bet composition is rudimentary in this
- * scaffold — the real composer is a Phase-1 deliverable that pairs with the
- * `CR-03 Bet Type Picker` bottom sheet.
- */
+/** Single-screen challenge creator — title, visibility and bets all on one form. */
 class CreateChallengeViewModel(
     private val challenges: ChallengeRepository,
 ) : ScreenViewModel<CreateChallengeViewModel.State, CreateChallengeViewModel.Intent, CreateChallengeViewModel.Effect>(
     initialState = State(),
 ) {
 
-    enum class Step { Metadata, Bets }
-
     data class State(
-        val step: Step = Step.Metadata,
         val title: String = "",
         val category: String = "Other",
         val visibility: Visibility = Visibility.FRIENDS,
@@ -44,8 +36,6 @@ class CreateChallengeViewModel(
         data class SetCategory(val category: String) : Intent
         data class SetVisibility(val visibility: Visibility) : Intent
         data class SetLocksAt(val locksAt: Instant) : Intent
-        data object NextStep : Intent
-        data object PrevStep : Intent
         data class AddSinglePick(
             val title: String,
             val options: List<BetOption>,
@@ -75,8 +65,6 @@ class CreateChallengeViewModel(
             is Intent.SetCategory -> update { it.copy(category = intent.category) }
             is Intent.SetVisibility -> update { it.copy(visibility = intent.visibility) }
             is Intent.SetLocksAt -> update { it.copy(locksAt = intent.locksAt) }
-            Intent.NextStep -> update { it.copy(step = Step.Bets) }
-            Intent.PrevStep -> update { it.copy(step = Step.Metadata) }
             is Intent.AddSinglePick -> update {
                 val opts = intent.options.mapIndexed { i, opt ->
                     opt.copy(id = "o$i")
