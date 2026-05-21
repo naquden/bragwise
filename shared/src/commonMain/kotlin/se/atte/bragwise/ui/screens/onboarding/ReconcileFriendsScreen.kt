@@ -15,8 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,13 +40,11 @@ fun ReconcileFriendsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is ReconcileFriendsViewModel.Effect.Done,
-                ReconcileFriendsViewModel.Effect.Skipped -> onDone()
-                is ReconcileFriendsViewModel.Effect.Snackbar -> { /* TODO */ }
-            }
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            is ReconcileFriendsViewModel.Effect.Done,
+            ReconcileFriendsViewModel.Effect.Skipped -> onDone()
+            is ReconcileFriendsViewModel.Effect.Snackbar -> { /* TODO */ }
         }
     }
 

@@ -158,7 +158,7 @@ class ChallengeRemoteDataSource(
             "description" to challenge.description,
             "category" to challenge.category,
             "visibility" to challenge.visibility.name,
-            "locksAt" to challenge.locksAt.toString(),
+            "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to create a challenge" }.toString(),
             "bets" to challenge.bets.map { it.toMap() },
         )
         val result = functions.httpsCallable("createChallenge")(data)
@@ -173,7 +173,7 @@ class ChallengeRemoteDataSource(
             "description" to challenge.description,
             "category" to challenge.category,
             "visibility" to challenge.visibility.name,
-            "locksAt" to challenge.locksAt.toString(),
+            "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to update a draft" }.toString(),
             "bets" to challenge.bets.map { it.toMap() },
         )
         functions.httpsCallable("updateDraft")(data)

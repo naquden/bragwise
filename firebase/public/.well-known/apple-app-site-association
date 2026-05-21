@@ -1,10 +1,9 @@
 {
+  "_comment": "Regenerate before deploy: TEAM_ID=<id> ./firebase/scripts/generate-aasa.sh. Operator-specific because bundle ID embeds TEAM_ID per Config.xcconfig.",
   "applinks": {
     "details": [
       {
-        "appIDs": [
-          "REPLACE_WITH_APPLE_TEAM_ID.REPLACE_WITH_IOS_BUNDLE_ID"
-        ],
+        "appIDs": ["REPLACE_WITH_TEAM_ID.se.atte.bragwise.BragwiseREPLACE_WITH_TEAM_ID"],
         "components": [
           { "/": "*" }
         ]

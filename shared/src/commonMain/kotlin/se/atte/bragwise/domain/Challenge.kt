@@ -10,7 +10,7 @@ data class Challenge(
     val visibility: Visibility,
     val createdBy: String,
     val createdAt: Instant,
-    val locksAt: Instant,
+    val locksAt: Instant?,
     val resultsPostedAt: Instant?,
     val status: ChallengeStatus,
     val joinedCount: Int,

@@ -15,8 +15,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,23 +50,27 @@ fun ChallengeDetailScreen(
     platformShare: PlatformShare,
     onNavigateToBet: (String) -> Unit,
     onNavigateToLeaderboard: (String) -> Unit,
+    onNavigateToBetList: (String) -> Unit,
+    onNavigateToSummary: (String) -> Unit,
+    onNavigateToManage: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is ChallengeDetailViewModel.Effect.GoToBet -> onNavigateToBet(effect.betId)
-                is ChallengeDetailViewModel.Effect.GoToLeaderboard -> onNavigateToLeaderboard(effect.challengeId)
-                is ChallengeDetailViewModel.Effect.ShareLink -> {
-                    val (title, subject) = when (val msg = effect.message) {
-                        is ChallengeDetailViewModel.ShareMessage.ChallengeShare ->
-                            msg.challengeTitle to "${msg.challengeTitle} on Bragwise"
-                    }
-                    platformShare.send(effect.url, title, subject)
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            is ChallengeDetailViewModel.Effect.GoToBet -> onNavigateToBet(effect.betId)
+            is ChallengeDetailViewModel.Effect.GoToLeaderboard -> onNavigateToLeaderboard(effect.challengeId)
+            is ChallengeDetailViewModel.Effect.GoToBetList -> onNavigateToBetList(effect.challengeId)
+            is ChallengeDetailViewModel.Effect.GoToSummary -> onNavigateToSummary(effect.challengeId)
+            is ChallengeDetailViewModel.Effect.GoToManage -> onNavigateToManage(effect.challengeId)
+            is ChallengeDetailViewModel.Effect.ShareLink -> {
+                val (title, subject) = when (val msg = effect.message) {
+                    is ChallengeDetailViewModel.ShareMessage.ChallengeShare ->
+                        msg.challengeTitle to "${msg.challengeTitle} on Bragwise"
                 }
-                is ChallengeDetailViewModel.Effect.Snackbar -> { /* TODO */ }
+                platformShare.send(effect.url, title, subject)
             }
+            is ChallengeDetailViewModel.Effect.Snackbar -> { /* TODO */ }
         }
     }
 
@@ -86,9 +90,13 @@ fun ChallengeDetailScreen(
         }
         is UiState.Ready -> DetailContent(
             data = ui.data,
+            isOwner = state.isOwner,
             onPredict = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPredict) },
             onBet = { id -> viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenBet(id)) },
             onLeaderboard = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenLeaderboard) },
+            onBetList = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenBetList) },
+            onSummary = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenSummary) },
+            onManage = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenManage) },
             onShare = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Share) },
         )
     }
@@ -97,9 +105,13 @@ fun ChallengeDetailScreen(
 @Composable
 private fun DetailContent(
     data: ChallengeDetail,
+    isOwner: Boolean,
     onPredict: () -> Unit,
     onBet: (String) -> Unit,
     onLeaderboard: () -> Unit,
+    onBetList: () -> Unit,
+    onSummary: () -> Unit,
+    onManage: () -> Unit,
     onShare: () -> Unit,
 ) {
     val joined = data.myPredictions.isNotEmpty()
@@ -186,6 +198,33 @@ private fun DetailContent(
                     ) { Text("Share") }
                 }
             }
+
+            if (data.challenge.bets.size > 1) {
+                item {
+                    AppOutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onBetList,
+                    ) { Text("See all bets") }
+                }
+            }
+
+            if (joined) {
+                item {
+                    AppOutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onSummary,
+                    ) { Text("See summary") }
+                }
+            }
+
+            if (isOwner) {
+                item {
+                    AppOutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onManage,
+                    ) { Text("Manage challenge") }
+                }
+            }
         }
 
         BottomActionBar {
@@ -223,7 +262,7 @@ private val previewChallenge = Challenge(
     visibility = Visibility.FRIENDS,
     createdBy = "u1",
     createdAt = Instant.fromEpochSeconds(0),
-    locksAt = Instant.DISTANT_FUTURE,
+    locksAt = null,
     resultsPostedAt = null,
     status = ChallengeStatus.OPEN,
     joinedCount = 12,
@@ -255,9 +294,13 @@ private fun Detail_Ready_NotJoined_Preview() {
     ThemePreview {
         DetailContent(
             data = ChallengeDetail(challenge = previewChallenge, myPredictions = emptyMap(), myRank = null),
+            isOwner = false,
             onPredict = {},
             onBet = {},
             onLeaderboard = {},
+            onBetList = {},
+            onSummary = {},
+            onManage = {},
             onShare = {},
         )
     }
@@ -273,9 +316,13 @@ private fun Detail_Ready_Joined_Preview() {
                 myPredictions = mapOf("b1" to PredictionPayload.BooleanProp(true)),
                 myRank = 3,
             ),
+            isOwner = true,
             onPredict = {},
             onBet = {},
             onLeaderboard = {},
+            onBetList = {},
+            onSummary = {},
+            onManage = {},
             onShare = {},
         )
     }

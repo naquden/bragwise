@@ -14,11 +14,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,19 +49,18 @@ fun FriendsScreen(
     onLocalAddOrEdit: (localId: String?) -> Unit,
     onOpenCloudProfile: (handle: String) -> Unit,
     onOpenReconcile: () -> Unit,
+    onOpenFriendRequests: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var rowMenuFor by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                FriendsViewModel.Effect.OpenLocalAdd -> onLocalAddOrEdit(null)
-                is FriendsViewModel.Effect.OpenLocalEdit -> onLocalAddOrEdit(effect.localId)
-                is FriendsViewModel.Effect.OpenCloudProfile -> onOpenCloudProfile(effect.uid)
-                FriendsViewModel.Effect.OpenReconcile -> onOpenReconcile()
-                is FriendsViewModel.Effect.Snackbar -> { /* TODO */ }
-            }
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            FriendsViewModel.Effect.OpenLocalAdd -> onLocalAddOrEdit(null)
+            is FriendsViewModel.Effect.OpenLocalEdit -> onLocalAddOrEdit(effect.localId)
+            is FriendsViewModel.Effect.OpenCloudProfile -> onOpenCloudProfile(effect.uid)
+            FriendsViewModel.Effect.OpenReconcile -> onOpenReconcile()
+            is FriendsViewModel.Effect.Snackbar -> { /* TODO */ }
         }
     }
 
@@ -70,6 +69,7 @@ fun FriendsScreen(
         rowMenuFor = rowMenuFor,
         onRowMenu = { rowMenuFor = it },
         onIntent = { viewModel.onIntent(it) },
+        onOpenFriendRequests = onOpenFriendRequests,
     )
 }
 
@@ -79,6 +79,7 @@ private fun FriendsBody(
     rowMenuFor: String?,
     onRowMenu: (String?) -> Unit,
     onIntent: (FriendsViewModel.Intent) -> Unit,
+    onOpenFriendRequests: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
         androidx.compose.animation.Crossfade(
@@ -104,6 +105,7 @@ private fun FriendsBody(
                     rowMenuFor = rowMenuFor,
                     onRowMenu = onRowMenu,
                     onIntent = onIntent,
+                    onOpenFriendRequests = onOpenFriendRequests,
                 )
             }
         }
@@ -158,6 +160,7 @@ private fun FriendsList(
     rowMenuFor: String?,
     onRowMenu: (String?) -> Unit,
     onIntent: (FriendsViewModel.Intent) -> Unit,
+    onOpenFriendRequests: () -> Unit,
 ) {
     val locals = friends.filterIsInstance<LocalFriend>()
     val cloud = friends.filterIsInstance<CloudFriend>()
@@ -167,6 +170,14 @@ private fun FriendsList(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
         verticalArrangement = Arrangement.spacedBy(standardPadding),
     ) {
+        item {
+            ListGroup {
+                ListRow(
+                    title = "Friend requests",
+                    onClick = onOpenFriendRequests,
+                )
+            }
+        }
         if (cloud.isNotEmpty()) {
             item {
                 SectionCard(title = "Friends (${cloud.size})") {
@@ -265,6 +276,7 @@ private fun Friends_Empty_Guest_Preview() {
             rowMenuFor = null,
             onRowMenu = {},
             onIntent = {},
+            onOpenFriendRequests = {},
         )
     }
 }
@@ -283,6 +295,7 @@ private fun Friends_Ready_Preview() {
             rowMenuFor = null,
             onRowMenu = {},
             onIntent = {},
+            onOpenFriendRequests = {},
         )
     }
 }

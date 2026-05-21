@@ -85,6 +85,7 @@ fun AppButton(
     val cornerRadius = 8.dp
 
     Box(
+        contentAlignment = Alignment.Center,
         modifier = modifier
             .heightIn(min = 44.dp)
             .offset(y = pressOffset)
@@ -169,6 +170,7 @@ fun AppOutlinedButton(
     val shape = MaterialTheme.shapes.small
 
     Box(
+        contentAlignment = Alignment.Center,
         modifier = modifier
             .heightIn(min = 44.dp)
             .border(BorderStroke(1.dp, outline), shape)

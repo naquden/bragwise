@@ -10,7 +10,7 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "lint": "echo \"linting deferred\" && exit 0",
-    "test": "echo \"tests deferred — see decision.md\" && exit 0",
+    "test": "vitest run",
     "test:integration": "echo \"emulator tests deferred — see decision.md\" && exit 0",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }

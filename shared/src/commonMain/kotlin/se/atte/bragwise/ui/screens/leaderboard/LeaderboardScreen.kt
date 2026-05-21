@@ -1,5 +1,6 @@
 package se.atte.bragwise.ui.screens.leaderboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,11 +31,12 @@ import se.atte.bragwise.ui.components.PointsPill
 import se.atte.bragwise.ui.components.RankChip
 
 @Composable
-fun LeaderboardScreen(viewModel: LeaderboardViewModel) {
+fun LeaderboardScreen(viewModel: LeaderboardViewModel, onOpenProfile: (uid: String) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LeaderboardBody(
         state = state,
         onSetFriendsOnly = { viewModel.onIntent(LeaderboardViewModel.Intent.SetFriendsOnly(it)) },
+        onOpenProfile = onOpenProfile,
     )
 }
 
@@ -42,6 +44,7 @@ fun LeaderboardScreen(viewModel: LeaderboardViewModel) {
 private fun LeaderboardBody(
     state: LeaderboardViewModel.State,
     onSetFriendsOnly: (Boolean) -> Unit,
+    onOpenProfile: (uid: String) -> Unit = {},
 ) {
     Column(Modifier.fillMaxSize().padding(standardPadding)) {
         if (state.showTabs) {
@@ -73,16 +76,16 @@ private fun LeaderboardBody(
                 )
             }
             is UiState.Ready -> LazyColumn(Modifier.fillMaxSize()) {
-                items(items = ui.data, key = { it.uid }) { entry -> EntryRow(entry) }
+                items(items = ui.data, key = { it.uid }) { entry -> EntryRow(entry, onClick = { onOpenProfile(entry.uid) }) }
             }
         }
     }
 }
 
 @Composable
-private fun EntryRow(entry: LeaderboardEntry) {
+private fun EntryRow(entry: LeaderboardEntry, onClick: () -> Unit = {}) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = standardPaddingSmall),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = standardPaddingSmall),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

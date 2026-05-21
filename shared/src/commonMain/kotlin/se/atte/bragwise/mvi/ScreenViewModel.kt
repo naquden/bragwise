@@ -2,12 +2,12 @@ package se.atte.bragwise.mvi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -15,16 +15,18 @@ import kotlinx.coroutines.launch
  * Base for one-VM-per-screen MVI. State flows out, intents flow in, effects
  * are one-shot side-channel events (navigation, snackbar, haptics).
  *
- * `replay = 0` on the effects flow so a resubscribing collector does not get
- * stale events — see plan §5 ChallengeDetailViewModel.
+ * Channel-based effects: each event is delivered exactly once to a single
+ * collector. If the collector is temporarily absent (recomposition), the
+ * event is queued and delivered when the collector resumes — unlike
+ * SharedFlow(replay=0) which would silently drop it.
  */
 abstract class ScreenViewModel<S, I, E>(initialState: S) : ViewModel() {
 
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<S> = _state.asStateFlow()
 
-    private val _effects = MutableSharedFlow<E>(extraBufferCapacity = 16)
-    val effects: SharedFlow<E> = _effects.asSharedFlow()
+    private val _effects = Channel<E>(Channel.BUFFERED)
+    val effects: Flow<E> = _effects.receiveAsFlow()
 
     abstract fun onIntent(intent: I)
 
@@ -32,8 +34,12 @@ abstract class ScreenViewModel<S, I, E>(initialState: S) : ViewModel() {
         _state.update(block)
     }
 
-    /** Always use this — `tryEmit` silently drops on buffer overflow. */
     protected fun emitEffect(effect: E) {
-        viewModelScope.launch { _effects.emit(effect) }
+        viewModelScope.launch { _effects.send(effect) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        _effects.close()
     }
 }

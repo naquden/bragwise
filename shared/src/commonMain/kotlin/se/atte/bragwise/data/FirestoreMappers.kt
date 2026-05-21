@@ -99,7 +99,7 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
         }.getOrDefault(Visibility.FRIENDS),
         createdBy = strOrNull("createdBy") ?: "",
         createdAt = timestampOrNull("createdAt") ?: Instant.DISTANT_PAST,
-        locksAt = timestampOrNull("locksAt") ?: Instant.DISTANT_FUTURE,
+        locksAt = timestampOrNull("locksAt"),
         resultsPostedAt = timestampOrNull("resultsPostedAt"),
         status = runCatching {
             ChallengeStatus.valueOf(strOrNull("status") ?: "DRAFT")

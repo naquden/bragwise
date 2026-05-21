@@ -113,6 +113,11 @@ export const ClaimHandleSchema = z.object({
   handle: z.string().regex(/^[a-z0-9_]{3,20}$/),
 });
 
+export const RegisterPushTokenSchema = z.object({
+  token: z.string().min(1).max(4096),
+  platform: z.enum(['fcm', 'apns']),
+});
+
 export const MigrateGuestDataSchema = z.object({
   predictions: z
     .array(

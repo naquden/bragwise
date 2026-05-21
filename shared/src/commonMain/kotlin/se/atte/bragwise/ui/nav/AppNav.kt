@@ -33,25 +33,46 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.ui.screens.auth.SignInScreen
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
+import se.atte.bragwise.ui.screens.bets.BetListScreen
+import se.atte.bragwise.ui.screens.bets.BetListViewModel
+import se.atte.bragwise.ui.screens.bets.ChallengeSummaryScreen
+import se.atte.bragwise.ui.screens.invite.InviteFriendsScreen
+import se.atte.bragwise.ui.screens.invite.InviteFriendsViewModel
+import se.atte.bragwise.ui.screens.manage.ManageChallengeScreen
+import se.atte.bragwise.ui.screens.manage.ManageChallengeViewModel
+import se.atte.bragwise.ui.screens.postresults.PostResultsScreen
+import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesScreen
 import se.atte.bragwise.ui.screens.challenges.ChallengesViewModel
 import se.atte.bragwise.ui.screens.create.CreateChallengeScreen
 import se.atte.bragwise.ui.screens.create.CreateChallengeViewModel
 import se.atte.bragwise.ui.screens.detail.ChallengeDetailScreen
 import se.atte.bragwise.ui.screens.detail.ChallengeDetailViewModel
+import se.atte.bragwise.ui.screens.friends.FriendRequestsScreen
+import se.atte.bragwise.ui.screens.friends.FriendRequestsViewModel
 import se.atte.bragwise.ui.screens.friends.FriendsScreen
 import se.atte.bragwise.ui.screens.friends.FriendsViewModel
 import se.atte.bragwise.ui.screens.friends.LocalFriendEditorScreen
+import se.atte.bragwise.ui.screens.about.AboutScreen
+import se.atte.bragwise.ui.screens.profile.EditProfileScreen
+import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
+import se.atte.bragwise.ui.screens.profile.PlayerProfileScreen
+import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
+import se.atte.bragwise.ui.screens.settings.SettingsScreen
+import se.atte.bragwise.ui.screens.settings.SettingsViewModel
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardScreen
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeScreen
 import se.atte.bragwise.ui.screens.me.MeViewModel
+import se.atte.bragwise.ui.screens.onboarding.MigrationDialog
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsScreen
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
+import se.atte.bragwise.ui.screens.onboarding.WelcomeScreen
 import se.atte.bragwise.ui.screens.predict.PredictScreen
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
 
@@ -67,6 +88,18 @@ private sealed interface Route {
     data object Friends : Route
     data class FriendEditor(val localId: String?) : Route
     data object ReconcileFriends : Route
+    data object Welcome : Route
+    data object Migration : Route
+    data class BetList(val challengeId: String) : Route
+    data class ChallengeSummary(val challengeId: String) : Route
+    data class Manage(val challengeId: String) : Route
+    data class Invite(val challengeId: String) : Route
+    data class PostResults(val challengeId: String) : Route
+    data object FriendRequests : Route
+    data class PlayerProfile(val uid: String) : Route
+    data object EditProfile : Route
+    data object Settings : Route
+    data object About : Route
 }
 
 /**
@@ -76,7 +109,9 @@ private sealed interface Route {
  */
 @Composable
 fun AppNav() {
-    val backStack = remember { mutableStateListOf<Route>(Route.Tabs(Tab.Challenges)) }
+    val onboardingPrefs: OnboardingPrefs = koinInject()
+    val startRoute = if (onboardingPrefs.hasSeenWelcome) Route.Tabs(Tab.Challenges) else Route.Welcome
+    val backStack = remember { mutableStateListOf<Route>(startRoute) }
     val platformShare: PlatformShare = koinInject()
     val social: SocialRepository = koinInject()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -157,7 +192,7 @@ fun AppNav() {
                         )
                         Tab.Me -> MeScreen(
                             viewModel = koinViewModel<MeViewModel>(),
-                            onNavigateToSettings = {},
+                            onNavigateToSettings = { push(Route.Settings) },
                             onNavigateToFriends = { push(Route.Friends) },
                             onNavigateToSignIn = { push(Route.SignIn) },
                         )
@@ -167,16 +202,20 @@ fun AppNav() {
                         platformShare = platformShare,
                         onNavigateToBet = { push(Route.Predict(r.id)) },
                         onNavigateToLeaderboard = { push(Route.Leaderboard(challengeId = r.id, isPromoted = false)) },
+                        onNavigateToBetList = { push(Route.BetList(r.id)) },
+                        onNavigateToSummary = { push(Route.ChallengeSummary(r.id)) },
+                        onNavigateToManage = { push(Route.Manage(r.id)) },
                     )
                     is Route.Predict -> PredictScreen(
                         viewModel = koinViewModel<PredictViewModel>(key = r.challengeId) { parametersOf(r.challengeId) },
                         snackbarHostState = snackbarHostState,
-                        onSubmitted = { pop() },
+                        onSubmitted = { replaceTop(Route.ChallengeSummary(r.challengeId)) },
                     )
                     is Route.Leaderboard -> LeaderboardScreen(
                         viewModel = koinViewModel<LeaderboardViewModel>(key = "${r.challengeId}:${r.isPromoted}") {
                             parametersOf(r.challengeId, r.isPromoted)
                         },
+                        onOpenProfile = { uid -> push(Route.PlayerProfile(uid)) },
                     )
                     Route.Create -> CreateChallengeScreen(
                         viewModel = koinViewModel<CreateChallengeViewModel>(),
@@ -187,26 +226,43 @@ fun AppNav() {
                     Route.SignIn -> SignInScreen(
                         viewModel = koinViewModel<SignInViewModel>(),
                         onSignedIn = {
-                            // OB-06 follow-on: if any local-friend rows survive,
-                            // route to ReconcileFriends; otherwise straight back to
-                            // the Me tab (where the user originated the sign-in
-                            // flow). ReconcileFriends.onDone also returns to Me.
-                            replaceTop(
-                                if (social.localFriendSnapshot().isNotEmpty()) {
-                                    Route.ReconcileFriends
-                                } else {
-                                    Route.Tabs(Tab.Me)
-                                },
-                            )
+                            // Sign-in success → run guest-data migration first
+                            // (OB-05); on completion the dialog routes onward
+                            // to ReconcileFriends (OB-06) or Me as appropriate.
+                            replaceTop(Route.Migration)
                         },
                         onGuest = { replaceTop(Route.Tabs(Tab.Challenges)) },
                     )
                     Route.Friends -> FriendsScreen(
                         viewModel = koinViewModel<FriendsViewModel>(),
                         onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
-                        onOpenCloudProfile = { /* TODO LB-04 */ },
+                        onOpenCloudProfile = { uid -> push(Route.PlayerProfile(uid)) },
                         onOpenReconcile = { push(Route.ReconcileFriends) },
+                        onOpenFriendRequests = { push(Route.FriendRequests) },
                     )
+                    Route.FriendRequests -> FriendRequestsScreen(
+                        viewModel = koinViewModel<FriendRequestsViewModel>(),
+                        snackbarHostState = snackbarHostState,
+                    )
+                    is Route.PlayerProfile -> PlayerProfileScreen(
+                        viewModel = koinViewModel<PlayerProfileViewModel>(key = "profile:${r.uid}") {
+                            parametersOf(r.uid)
+                        },
+                    )
+                    Route.EditProfile -> EditProfileScreen(
+                        viewModel = koinViewModel<EditProfileViewModel>(),
+                        snackbarHostState = snackbarHostState,
+                        onSaved = { pop() },
+                    )
+                    Route.Settings -> SettingsScreen(
+                        viewModel = koinViewModel<SettingsViewModel>(),
+                        snackbarHostState = snackbarHostState,
+                        onEditProfile = { push(Route.EditProfile) },
+                        onAbout = { push(Route.About) },
+                        onSignedOut = { replaceTop(Route.Tabs(Tab.Me)) },
+                        onDeleted = { replaceTop(Route.Welcome) },
+                    )
+                    Route.About -> AboutScreen()
                     is Route.FriendEditor -> LocalFriendEditorScreen(
                         social = social,
                         localId = r.localId,
@@ -216,6 +272,64 @@ fun AppNav() {
                     Route.ReconcileFriends -> ReconcileFriendsScreen(
                         viewModel = koinViewModel<ReconcileFriendsViewModel>(),
                         onDone = { replaceTop(Route.Tabs(Tab.Me)) },
+                    )
+                    is Route.Manage -> ManageChallengeScreen(
+                        viewModel = koinViewModel<ManageChallengeViewModel>(key = "manage:${r.challengeId}") {
+                            parametersOf(r.challengeId)
+                        },
+                        onInvite = { id -> push(Route.Invite(id)) },
+                        onPostResults = { id -> push(Route.PostResults(id)) },
+                    )
+                    is Route.Invite -> InviteFriendsScreen(
+                        viewModel = koinViewModel<InviteFriendsViewModel>(key = "invite:${r.challengeId}") {
+                            parametersOf(r.challengeId)
+                        },
+                        snackbarHostState = snackbarHostState,
+                        onSent = { pop() },
+                    )
+                    is Route.PostResults -> PostResultsScreen(
+                        viewModel = koinViewModel<PostResultsViewModel>(key = "postresults:${r.challengeId}") {
+                            parametersOf(r.challengeId)
+                        },
+                        snackbarHostState = snackbarHostState,
+                        onPosted = { replaceTop(Route.ChallengeDetail(r.challengeId)) },
+                    )
+                    is Route.BetList -> BetListScreen(
+                        viewModel = koinViewModel<BetListViewModel>(key = "betlist:${r.challengeId}") {
+                            parametersOf(r.challengeId)
+                        },
+                        onOpenPredict = { id -> push(Route.Predict(id)) },
+                    )
+                    is Route.ChallengeSummary -> ChallengeSummaryScreen(
+                        viewModel = koinViewModel<BetListViewModel>(key = "summary:${r.challengeId}") {
+                            parametersOf(r.challengeId)
+                        },
+                        onEdit = { id -> push(Route.Predict(id)) },
+                        onLeaderboard = { id ->
+                            push(Route.Leaderboard(challengeId = id, isPromoted = false))
+                        },
+                    )
+                    Route.Welcome -> WelcomeScreen(
+                        onSignIn = {
+                            onboardingPrefs.hasSeenWelcome = true
+                            replaceTop(Route.SignIn)
+                        },
+                        onContinueAsGuest = {
+                            onboardingPrefs.hasSeenWelcome = true
+                            replaceTop(Route.Tabs(Tab.Challenges))
+                        },
+                    )
+                    Route.Migration -> MigrationDialog(
+                        onComplete = {
+                            replaceTop(
+                                if (social.localFriendSnapshot().isNotEmpty()) {
+                                    Route.ReconcileFriends
+                                } else {
+                                    Route.Tabs(Tab.Me)
+                                },
+                            )
+                        },
+                        onSkip = { replaceTop(Route.Tabs(Tab.Me)) },
                     )
                 }
             }

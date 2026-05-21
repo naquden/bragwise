@@ -4,23 +4,43 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
+import se.atte.bragwise.ui.screens.bets.BetListViewModel
+import se.atte.bragwise.ui.screens.friends.FriendRequestsViewModel
+import se.atte.bragwise.ui.screens.invite.InviteFriendsViewModel
+import se.atte.bragwise.ui.screens.manage.ManageChallengeViewModel
+import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
+import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
+import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
+import se.atte.bragwise.ui.screens.settings.SettingsViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesViewModel
 import se.atte.bragwise.ui.screens.create.CreateChallengeViewModel
 import se.atte.bragwise.ui.screens.detail.ChallengeDetailViewModel
 import se.atte.bragwise.ui.screens.friends.FriendsViewModel
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeViewModel
+import se.atte.bragwise.ui.screens.onboarding.MigrationViewModel
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
 
 val viewModelModule = module {
     // No route params — constructor references resolve all deps from the graph.
+    viewModelOf(::MigrationViewModel)
     viewModelOf(::ChallengesViewModel)
     viewModelOf(::MeViewModel)
     viewModelOf(::CreateChallengeViewModel)
     viewModelOf(::SignInViewModel)
     viewModelOf(::FriendsViewModel)
     viewModelOf(::ReconcileFriendsViewModel)
+    viewModelOf(::FriendRequestsViewModel)
+    viewModelOf(::EditProfileViewModel)
+    viewModelOf(::SettingsViewModel)
+    viewModel<PlayerProfileViewModel> { params ->
+        PlayerProfileViewModel(
+            uid = params.get<String>(),
+            profiles = get(),
+            social = get(),
+        )
+    }
 
     // Route-param VMs — deps injected from the graph, route args via parametersOf().
     viewModel<ChallengeDetailViewModel> { params ->
@@ -32,6 +52,32 @@ val viewModelModule = module {
     }
     viewModel<PredictViewModel> { params ->
         PredictViewModel(
+            challengeId = params.get<String>(),
+            challenges = get(),
+        )
+    }
+    viewModel<BetListViewModel> { params ->
+        BetListViewModel(
+            challengeId = params.get<String>(),
+            challenges = get(),
+        )
+    }
+    viewModel<ManageChallengeViewModel> { params ->
+        ManageChallengeViewModel(
+            challengeId = params.get<String>(),
+            challenges = get(),
+            auth = get(),
+        )
+    }
+    viewModel<InviteFriendsViewModel> { params ->
+        InviteFriendsViewModel(
+            challengeId = params.get<String>(),
+            social = get(),
+            challenges = get(),
+        )
+    }
+    viewModel<PostResultsViewModel> { params ->
+        PostResultsViewModel(
             challengeId = params.get<String>(),
             challenges = get(),
         )

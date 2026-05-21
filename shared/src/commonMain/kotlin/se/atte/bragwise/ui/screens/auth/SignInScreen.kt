@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -45,12 +46,10 @@ fun SignInScreen(
         if (state.signedIn) onSignedIn()
     }
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                SignInViewModel.Effect.ContinuedAsGuest -> onGuest()
-                is SignInViewModel.Effect.Snackbar -> { /* TODO host snackbar */ }
-            }
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            SignInViewModel.Effect.ContinuedAsGuest -> onGuest()
+            is SignInViewModel.Effect.Snackbar -> { /* TODO host snackbar */ }
         }
     }
 

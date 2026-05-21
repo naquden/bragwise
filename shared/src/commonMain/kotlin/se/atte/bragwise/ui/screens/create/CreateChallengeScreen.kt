@@ -15,12 +15,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -52,13 +52,11 @@ fun CreateChallengeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is CreateChallengeViewModel.Effect.Published -> onPublished(effect.challengeId)
-                is CreateChallengeViewModel.Effect.DraftSaved -> onDraftSaved(effect.challengeId)
-                is CreateChallengeViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
-            }
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            is CreateChallengeViewModel.Effect.Published -> onPublished(effect.challengeId)
+            is CreateChallengeViewModel.Effect.DraftSaved -> onDraftSaved(effect.challengeId)
+            is CreateChallengeViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
     }
 

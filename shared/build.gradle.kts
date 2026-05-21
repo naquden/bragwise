@@ -45,6 +45,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.serialization.json)
         }
         commonMain.dependencies {
             api(libs.koin.core)
@@ -64,10 +65,48 @@ kotlin {
             implementation(libs.gitlive.firebase.auth)
             implementation(libs.gitlive.firebase.firestore)
             implementation(libs.gitlive.firebase.functions)
+            implementation(libs.kotlinx.serialization.json)
         }
     }
 }
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+}
+
+abstract class GenerateScoringFixturesTask : org.gradle.api.DefaultTask() {
+    @get:org.gradle.api.tasks.InputFile
+    abstract val fixtureFile: org.gradle.api.file.RegularFileProperty
+
+    @get:org.gradle.api.tasks.OutputDirectory
+    abstract val outputDir: org.gradle.api.file.DirectoryProperty
+
+    @org.gradle.api.tasks.TaskAction
+    fun generate() {
+        val outDir = outputDir.get().asFile
+        outDir.mkdirs()
+        val json = fixtureFile.get().asFile.readText()
+        val escaped = json
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("$", "\${'$'}")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        val source = "package se.atte.bragwise.domain.scoring\n\n" +
+            "internal val SCORING_FIXTURES_JSON: String = \"$escaped\"\n"
+        outDir.resolve("ScoringFixtures.kt").writeText(source)
+    }
+}
+
+val generatedScoringFixturesDir =
+    layout.buildDirectory.dir("generated/scoringFixtures/commonTest/kotlin")
+
+val generateScoringFixtures = tasks.register<GenerateScoringFixturesTask>("generateScoringFixtures") {
+    fixtureFile.set(rootProject.layout.projectDirectory.file("functions/test/fixtures/scoring/cases.json"))
+    outputDir.set(generatedScoringFixturesDir)
+}
+
+kotlin.sourceSets.named("commonTest") {
+    kotlin.srcDir(generateScoringFixtures.map { it.outputDir })
 }

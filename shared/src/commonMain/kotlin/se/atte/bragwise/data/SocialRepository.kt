@@ -42,7 +42,7 @@ class FirebaseSocialRepository(
     val remote: SocialRemoteDataSource,
     private val local: SocialLocalDataSource,
     private val auth: AuthRepository,
-    private val localFriends: LocalFriendStore = LocalFriendStore(),
+    private val localFriends: LocalFriendStore,
 ) : SocialRepository {
     private fun observeCloudFriends(): Flow<List<CloudFriend>> =
         auth.authState.flatMapLatest { state ->

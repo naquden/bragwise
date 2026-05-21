@@ -11,8 +11,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,12 +40,10 @@ fun MeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                MeViewModel.Effect.GoToSettings -> onNavigateToSettings()
-                MeViewModel.Effect.GoToFriends -> onNavigateToFriends()
-            }
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            MeViewModel.Effect.GoToSettings -> onNavigateToSettings()
+            MeViewModel.Effect.GoToFriends -> onNavigateToFriends()
         }
     }
 

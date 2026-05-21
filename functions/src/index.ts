@@ -25,6 +25,7 @@ import {
   MigrateGuestDataSchema,
   PostResultsSchema,
   PublishChallengeSchema,
+  RegisterPushTokenSchema,
   SendFriendRequestSchema,
   SubmitPredictionsSchema,
   UnfriendSchema,
@@ -223,7 +224,8 @@ export const submitPredictions = onCall(async (req: CallableRequest<unknown>) =>
     if (challenge.status !== 'OPEN') {
       throw new HttpsError('failed-precondition', 'challenge-not-open');
     }
-    const locksAt: FirebaseFirestore.Timestamp = challenge.locksAt;
+    const locksAt: FirebaseFirestore.Timestamp | undefined = challenge.locksAt;
+    if (!locksAt) throw new HttpsError('failed-precondition', 'no-locks-at');
     if (locksAt.toMillis() <= Date.now()) {
       throw new HttpsError('failed-precondition', 'challenge-locked');
     }
@@ -282,7 +284,8 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
     if (data.resultsPostedAt !== null && data.resultsPostedAt !== undefined) {
       throw new HttpsError('already-exists', 'results-already-posted');
     }
-    const locksAt: FirebaseFirestore.Timestamp = data.locksAt;
+    const locksAt: FirebaseFirestore.Timestamp | undefined = data.locksAt;
+    if (!locksAt) throw new HttpsError('failed-precondition', 'no-locks-at');
     if (locksAt.toMillis() > Date.now()) {
       throw new HttpsError('failed-precondition', 'challenge-not-locked');
     }
@@ -530,6 +533,22 @@ export const migrateGuestData = onCall(async (req: CallableRequest<unknown>) => 
   const migrated = results.filter((r) => r.status === 'fulfilled').length;
   const failed = results.filter((r) => r.status === 'rejected').length;
   return { migrated, failed };
+});
+
+// ─── registerPushToken ────────────────────────────────────────────────────────
+
+export const registerPushToken = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  await rateLimit(uid, 'registerPushToken', 86400, 100);
+  const { token, platform } = validate(RegisterPushTokenSchema, req.data);
+
+  await db.doc(`players/${uid}/pushTokens/${token}`).set({
+    token,
+    platform,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true };
 });
 
 export * from './triggers';

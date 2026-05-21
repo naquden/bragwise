@@ -26,21 +26,25 @@ import kotlin.time.Instant
  * here since we only need wall-clock seconds remaining.
  */
 @Composable
-fun CountdownChip(locksAt: Instant, modifier: Modifier = Modifier) {
+fun CountdownChip(locksAt: Instant?, modifier: Modifier = Modifier) {
     var nowMs by remember { mutableLongStateOf(Clock.System.now().toEpochMilliseconds()) }
 
     LaunchedEffect(locksAt) {
-        while (true) {
-            delay(1000)
-            nowMs = Clock.System.now().toEpochMilliseconds()
+        if (locksAt != null) {
+            while (true) {
+                delay(1000)
+                nowMs = Clock.System.now().toEpochMilliseconds()
+            }
         }
     }
 
-    val remainingSec = ((locksAt.toEpochMilliseconds() - nowMs) / 1000L).coerceAtLeast(0L)
-    val isUrgent = remainingSec in 1..3600 // last hour gets the tertiary accent
+    val remainingSec = locksAt?.let {
+        ((it.toEpochMilliseconds() - nowMs) / 1000L).coerceAtLeast(0L)
+    }
+    val isUrgent = remainingSec != null && remainingSec in 1..3600
 
     Text(
-        text = "⏱ ${formatRemaining(remainingSec)}",
+        text = "⏱ ${if (remainingSec != null) formatRemaining(remainingSec) else "—"}",
         color = if (isUrgent) MaterialTheme.colorScheme.tertiary
                 else MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),

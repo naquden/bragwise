@@ -26,9 +26,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -59,12 +59,10 @@ fun PredictScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                PredictViewModel.Effect.Submitted -> onSubmitted()
-                is PredictViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
-            }
+    ObserveEffects(viewModel.effects) { effect ->
+        when (effect) {
+            PredictViewModel.Effect.Submitted -> onSubmitted()
+            is PredictViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
     }
 
