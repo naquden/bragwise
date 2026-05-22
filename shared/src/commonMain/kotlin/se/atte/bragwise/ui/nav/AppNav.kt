@@ -2,8 +2,10 @@ package se.atte.bragwise.ui.nav
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -11,7 +13,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
@@ -25,6 +26,7 @@ import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.nav_back
 import bragwise.shared.generated.resources.nav_tab_challenges
 import bragwise.shared.generated.resources.nav_tab_me
+import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Target
@@ -63,8 +65,6 @@ import se.atte.bragwise.ui.screens.profile.EditProfileScreen
 import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
 import se.atte.bragwise.ui.screens.profile.PlayerProfileScreen
 import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
-import se.atte.bragwise.ui.screens.settings.SettingsScreen
-import se.atte.bragwise.ui.screens.settings.SettingsViewModel
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardScreen
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeScreen
@@ -98,7 +98,6 @@ private sealed interface Route {
     data object FriendRequests : Route
     data class PlayerProfile(val uid: String) : Route
     data object EditProfile : Route
-    data object Settings : Route
     data object About : Route
 }
 
@@ -141,8 +140,14 @@ fun AppNav() {
     Scaffold(
         topBar = {
             if (!isAtTabs) {
-                TextButton(onClick = { pop() }) {
-                    Text(stringResource(Res.string.nav_back))
+                IconButton(
+                    onClick = { pop() },
+                    modifier = Modifier.statusBarsPadding(),
+                ) {
+                    Icon(
+                        imageVector = Lucide.ArrowLeft,
+                        contentDescription = stringResource(Res.string.nav_back),
+                    )
                 }
             }
         },
@@ -166,7 +171,7 @@ fun AppNav() {
             }
         },
         floatingActionButton = {
-            if (isAtTabs) {
+            if (currentTab == Tab.Challenges) {
                 FloatingActionButton(
                     onClick = { push(Route.Create) },
                     shape = MaterialTheme.shapes.extraLarge,
@@ -192,9 +197,12 @@ fun AppNav() {
                         )
                         Tab.Me -> MeScreen(
                             viewModel = koinViewModel<MeViewModel>(),
-                            onNavigateToSettings = { push(Route.Settings) },
+                            snackbarHostState = snackbarHostState,
                             onNavigateToFriends = { push(Route.Friends) },
                             onNavigateToSignIn = { push(Route.SignIn) },
+                            onNavigateToEditProfile = { push(Route.EditProfile) },
+                            onNavigateToAbout = { push(Route.About) },
+                            onDeleted = { replaceTop(Route.Welcome) },
                         )
                     }
                     is Route.ChallengeDetail -> ChallengeDetailScreen(
@@ -253,14 +261,6 @@ fun AppNav() {
                         viewModel = koinViewModel<EditProfileViewModel>(),
                         snackbarHostState = snackbarHostState,
                         onSaved = { pop() },
-                    )
-                    Route.Settings -> SettingsScreen(
-                        viewModel = koinViewModel<SettingsViewModel>(),
-                        snackbarHostState = snackbarHostState,
-                        onEditProfile = { push(Route.EditProfile) },
-                        onAbout = { push(Route.About) },
-                        onSignedOut = { replaceTop(Route.Tabs(Tab.Me)) },
-                        onDeleted = { replaceTop(Route.Welcome) },
                     )
                     Route.About -> AboutScreen()
                     is Route.FriendEditor -> LocalFriendEditorScreen(

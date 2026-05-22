@@ -67,7 +67,7 @@ fun ListRow(
         if (trailing != null) {
             Text(
                 text = trailing,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

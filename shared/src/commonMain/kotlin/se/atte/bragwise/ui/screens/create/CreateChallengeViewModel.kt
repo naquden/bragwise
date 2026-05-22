@@ -1,12 +1,18 @@
 package se.atte.bragwise.ui.screens.create
 
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.ChallengeRepository
+import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.mvi.ScreenViewModel
@@ -17,9 +23,14 @@ import kotlin.time.Instant
 /** Single-screen challenge creator — title, visibility and bets all on one form. */
 class CreateChallengeViewModel(
     private val challenges: ChallengeRepository,
+    private val social: SocialRepository,
 ) : ScreenViewModel<CreateChallengeViewModel.State, CreateChallengeViewModel.Intent, CreateChallengeViewModel.Effect>(
     initialState = State(),
 ) {
+
+    val friends: StateFlow<List<CloudFriend>> = social.observeFriends()
+        .map { list -> list.filterIsInstance<CloudFriend>() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     data class State(
         val title: String = "",
@@ -27,6 +38,7 @@ class CreateChallengeViewModel(
         val visibility: Visibility = Visibility.FRIENDS,
         val locksAt: Instant = Clock.System.now() + 7.days,
         val bets: List<Bet> = emptyList(),
+        val invitedUids: Set<String> = emptySet(),
         val submitting: Boolean = false,
         val error: String? = null,
     )
@@ -49,6 +61,8 @@ class CreateChallengeViewModel(
         ) : Intent
         data class AddBoolean(val title: String) : Intent
         data class RemoveBet(val betId: String) : Intent
+        data class UpdateBet(val bet: Bet) : Intent
+        data class SetInvitedUids(val uids: Set<String>) : Intent
         data object Publish : Intent
         data object SaveDraft : Intent
     }
@@ -95,6 +109,10 @@ class CreateChallengeViewModel(
                 it.copy(bets = it.bets + bet)
             }
             is Intent.RemoveBet -> update { it.copy(bets = it.bets.filterNot { b -> b.id == intent.betId }) }
+            is Intent.UpdateBet -> update {
+                it.copy(bets = it.bets.map { b -> if (b.id == intent.bet.id) intent.bet else b })
+            }
+            is Intent.SetInvitedUids -> update { it.copy(invitedUids = intent.uids) }
             Intent.Publish -> persist(publish = true)
             Intent.SaveDraft -> persist(publish = false)
         }
@@ -133,6 +151,10 @@ class CreateChallengeViewModel(
             update { it.copy(submitting = false) }
             created.fold(
                 onSuccess = { saved ->
+                    if (s.visibility == Visibility.INVITE_ONLY && s.invitedUids.isNotEmpty()) {
+                        challenges.inviteFriends(saved.id, s.invitedUids.toList())
+                            .onFailure { e -> emitEffect(Effect.Snackbar(e.message ?: "Invite failed")) }
+                    }
                     if (publish) {
                         challenges.publish(saved.id).fold(
                             onSuccess = { emitEffect(Effect.Published(saved.id)) },

@@ -1,5 +1,6 @@
 package se.atte.bragwise.ui.screens.create
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
@@ -32,6 +37,7 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.X
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
+import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppFilterChip
@@ -39,7 +45,6 @@ import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.SectionCard
-import se.atte.bragwise.ui.components.SectionGap
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 
@@ -51,6 +56,7 @@ fun CreateChallengeScreen(
     onDraftSaved: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val friends by viewModel.friends.collectAsStateWithLifecycle()
 
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -64,8 +70,50 @@ fun CreateChallengeScreen(
     var options by remember { mutableStateOf(listOf("", "")) }
     var topN by remember { mutableIntStateOf(3) }
     var betType by remember { mutableStateOf(BetType.YesNo) }
+    var editingBetId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showFriendPicker by rememberSaveable { mutableStateOf(false) }
+
+    val isEditing = editingBetId != null && editingBetId != ""
+    val resetEditor = {
+        newBetTitle = ""
+        options = listOf("", "")
+        topN = 3
+        betType = BetType.YesNo
+    }
+    val seedEditorFrom = { bet: Bet ->
+        newBetTitle = bet.title
+        when (bet) {
+            is Bet.BooleanProp -> {
+                betType = BetType.YesNo
+                options = listOf("", "")
+                topN = 3
+            }
+            is Bet.SinglePick -> {
+                betType = BetType.SinglePick
+                options = bet.options.map { it.label }
+                topN = 3
+            }
+            is Bet.Ranking -> {
+                betType = BetType.Ranking
+                options = bet.options.map { it.label }
+                topN = bet.topN
+            }
+        }
+    }
 
     val validOptions = options.map { it.trim() }.filter { it.isNotEmpty() }
+
+    if (showFriendPicker) {
+        FriendPickerDialog(
+            friends = friends,
+            initial = state.invitedUids,
+            onDismiss = { showFriendPicker = false },
+            onConfirm = { uids ->
+                viewModel.onIntent(CreateChallengeViewModel.Intent.SetInvitedUids(uids))
+                showFriendPicker = false
+            },
+        )
+    }
 
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -74,7 +122,7 @@ fun CreateChallengeScreen(
             verticalArrangement = Arrangement.spacedBy(standardPadding),
         ) {
             item {
-                SectionCard(title = "Details") {
+                SectionCard {
                     OutlinedTextField(
                         value = state.title,
                         onValueChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetTitle(it)) },
@@ -95,7 +143,10 @@ fun CreateChallengeScreen(
                         )
                         AppFilterChip(
                             selected = state.visibility == Visibility.INVITE_ONLY,
-                            onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetVisibility(Visibility.INVITE_ONLY)) },
+                            onClick = {
+                                viewModel.onIntent(CreateChallengeViewModel.Intent.SetVisibility(Visibility.INVITE_ONLY))
+                                showFriendPicker = true
+                            },
                             label = { Text("Invite only") },
                         )
                     }
@@ -109,116 +160,139 @@ fun CreateChallengeScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 12.dp),
                     )
+                    if (state.visibility == Visibility.INVITE_ONLY) {
+                        Text(
+                            text = "You can also share the challenge link with anyone after creating it.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                        val inviteLabel = if (state.invitedUids.isNotEmpty()) {
+                            "${state.invitedUids.size} friends invited — Edit"
+                        } else {
+                            "Pick friends"
+                        }
+                        Text(
+                            text = inviteLabel,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .clickable { showFriendPicker = true },
+                        )
+                    }
                 }
             }
 
-            item {
-                SectionCard(title = "Bets (${state.bets.size})") {
-                    if (state.bets.isEmpty()) {
-                        Text(
-                            text = "Add at least one bet to publish.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
-                            state.bets.forEach { bet ->
-                                BetRow(
-                                    bet = bet,
-                                    onRemove = { viewModel.onIntent(CreateChallengeViewModel.Intent.RemoveBet(bet.id)) },
+            items(items = state.bets, key = { it.id }) { bet ->
+                if (editingBetId == bet.id) {
+                    BetEditor(
+                        title = "Edit bet",
+                        betType = betType,
+                        onBetTypeChange = { newType ->
+                            betType = newType
+                            if (newType == BetType.YesNo) options = listOf("", "")
+                        },
+                        question = newBetTitle,
+                        onQuestionChange = { newBetTitle = it },
+                        options = options,
+                        onOptionsChange = { options = it },
+                        topN = topN,
+                        onTopNChange = { topN = it },
+                        canSave = newBetTitle.isNotBlank() && when (betType) {
+                            BetType.YesNo -> true
+                            BetType.SinglePick -> validOptions.size >= 2
+                            BetType.Ranking -> validOptions.size >= topN
+                        },
+                        saveLabel = "Save bet",
+                        onCancel = {
+                            editingBetId = null
+                            resetEditor()
+                        },
+                        onSave = {
+                            val updated: Bet = when (betType) {
+                                BetType.YesNo -> Bet.BooleanProp(id = bet.id, title = newBetTitle)
+                                BetType.SinglePick -> Bet.SinglePick(
+                                    id = bet.id,
+                                    title = newBetTitle,
+                                    options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                )
+                                BetType.Ranking -> Bet.Ranking(
+                                    id = bet.id,
+                                    title = newBetTitle,
+                                    options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                    topN = topN,
                                 )
                             }
-                        }
-                    }
+                            viewModel.onIntent(CreateChallengeViewModel.Intent.UpdateBet(updated))
+                            editingBetId = null
+                            resetEditor()
+                        },
+                    )
+                } else {
+                    BetCard(
+                        bet = bet,
+                        onRemove = { viewModel.onIntent(CreateChallengeViewModel.Intent.RemoveBet(bet.id)) },
+                        onClick = {
+                            seedEditorFrom(bet)
+                            editingBetId = bet.id
+                        },
+                    )
                 }
             }
 
             item {
-                SectionCard(title = "Add bet") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
-                        AppFilterChip(
-                            selected = betType == BetType.YesNo,
-                            onClick = {
-                                betType = BetType.YesNo
-                                options = listOf("", "")
-                            },
-                            label = { Text("Yes / No") },
-                        )
-                        AppFilterChip(
-                            selected = betType == BetType.SinglePick,
-                            onClick = { betType = BetType.SinglePick },
-                            label = { Text("Single pick") },
-                        )
-                        AppFilterChip(
-                            selected = betType == BetType.Ranking,
-                            onClick = { betType = BetType.Ranking },
-                            label = { Text("Ranking") },
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = newBetTitle,
-                        onValueChange = { newBetTitle = it },
-                        label = { Text("Question") },
-                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                        singleLine = true,
-                    )
-
-                    if (betType == BetType.SinglePick || betType == BetType.Ranking) {
-                        OptionsEditor(
-                            options = options,
-                            onOptionsChange = { options = it },
-                            modifier = Modifier.padding(top = standardPaddingSmall),
-                        )
-                    }
-
-                    if (betType == BetType.Ranking) {
-                        TopNStepper(
-                            value = topN,
-                            onValueChange = { topN = it },
-                            modifier = Modifier.padding(top = standardPaddingSmall),
-                        )
-                    }
-
-                    val canAdd = newBetTitle.isNotBlank() && when (betType) {
-                        BetType.YesNo -> true
-                        BetType.SinglePick -> validOptions.size >= 2
-                        BetType.Ranking -> validOptions.size >= topN
-                    }
-
-                    AppOutlinedButton(
-                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                        onClick = {
-                            when (betType) {
-                                BetType.YesNo -> {
-                                    viewModel.onIntent(CreateChallengeViewModel.Intent.AddBoolean(title = newBetTitle))
-                                    newBetTitle = ""
-                                }
-                                BetType.SinglePick -> {
-                                    viewModel.onIntent(
-                                        CreateChallengeViewModel.Intent.AddSinglePick(
-                                            title = newBetTitle,
-                                            options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
-                                        ),
-                                    )
-                                    newBetTitle = ""
-                                    options = listOf("", "")
-                                }
-                                BetType.Ranking -> {
-                                    viewModel.onIntent(
-                                        CreateChallengeViewModel.Intent.AddRanking(
-                                            title = newBetTitle,
-                                            options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
-                                            topN = topN,
-                                        ),
-                                    )
-                                    newBetTitle = ""
-                                    options = listOf("", "")
-                                    topN = 3
-                                }
-                            }
+                if (editingBetId == "") {
+                    BetEditor(
+                        title = "Add bet",
+                        betType = betType,
+                        onBetTypeChange = { newType ->
+                            betType = newType
+                            if (newType == BetType.YesNo) options = listOf("", "")
                         },
-                        enabled = canAdd,
+                        question = newBetTitle,
+                        onQuestionChange = { newBetTitle = it },
+                        options = options,
+                        onOptionsChange = { options = it },
+                        topN = topN,
+                        onTopNChange = { topN = it },
+                        canSave = newBetTitle.isNotBlank() && when (betType) {
+                            BetType.YesNo -> true
+                            BetType.SinglePick -> validOptions.size >= 2
+                            BetType.Ranking -> validOptions.size >= topN
+                        },
+                        saveLabel = "Save bet",
+                        onCancel = {
+                            editingBetId = null
+                            resetEditor()
+                        },
+                        onSave = {
+                            when (betType) {
+                                BetType.YesNo -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddBoolean(title = newBetTitle),
+                                )
+                                BetType.SinglePick -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddSinglePick(
+                                        title = newBetTitle,
+                                        options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                    ),
+                                )
+                                BetType.Ranking -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddRanking(
+                                        title = newBetTitle,
+                                        options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                        topN = topN,
+                                    ),
+                                )
+                            }
+                            editingBetId = null
+                            resetEditor()
+                        },
+                    )
+                } else if (!isEditing) {
+                    AppOutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { editingBetId = "" },
                     ) { Text("+ Add bet") }
                 }
             }
@@ -240,6 +314,195 @@ fun CreateChallengeScreen(
 }
 
 private enum class BetType { YesNo, SinglePick, Ranking }
+
+@Composable
+private fun BetEditor(
+    title: String,
+    betType: BetType,
+    onBetTypeChange: (BetType) -> Unit,
+    question: String,
+    onQuestionChange: (String) -> Unit,
+    options: List<String>,
+    onOptionsChange: (List<String>) -> Unit,
+    topN: Int,
+    onTopNChange: (Int) -> Unit,
+    canSave: Boolean,
+    saveLabel: String,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    SectionCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            IconButton(onClick = onCancel) {
+                Icon(
+                    imageVector = Lucide.X,
+                    contentDescription = "Cancel",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+            modifier = Modifier.padding(top = standardPaddingSmall),
+        ) {
+            AppFilterChip(
+                selected = betType == BetType.YesNo,
+                onClick = { onBetTypeChange(BetType.YesNo) },
+                label = { Text("Yes / No") },
+            )
+            AppFilterChip(
+                selected = betType == BetType.SinglePick,
+                onClick = { onBetTypeChange(BetType.SinglePick) },
+                label = { Text("Single pick") },
+            )
+            AppFilterChip(
+                selected = betType == BetType.Ranking,
+                onClick = { onBetTypeChange(BetType.Ranking) },
+                label = { Text("Ranking") },
+            )
+        }
+        OutlinedTextField(
+            value = question,
+            onValueChange = onQuestionChange,
+            label = { Text("Question") },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            singleLine = true,
+        )
+        if (betType == BetType.SinglePick || betType == BetType.Ranking) {
+            OptionsEditor(
+                options = options,
+                onOptionsChange = onOptionsChange,
+                modifier = Modifier.padding(top = standardPaddingSmall),
+            )
+        }
+        if (betType == BetType.Ranking) {
+            TopNStepper(
+                value = topN,
+                onValueChange = onTopNChange,
+                modifier = Modifier.padding(top = standardPaddingSmall),
+            )
+        }
+        AppOutlinedButton(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            onClick = onSave,
+            enabled = canSave,
+        ) { Text(saveLabel) }
+    }
+}
+
+@Composable
+private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = when (bet) {
+        is Bet.SinglePick -> bet.options
+        is Bet.Ranking -> bet.options
+        is Bet.BooleanProp -> emptyList()
+    }
+    val showExpand = options.size > 4
+
+    SectionCard(modifier = Modifier.clickable(onClick = onClick)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Text(
+                text = bet.title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f).padding(top = 4.dp),
+            )
+            IconButton(onClick = onRemove) {
+                Icon(
+                    imageVector = Lucide.X,
+                    contentDescription = "Remove bet",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Text(
+            text = bet.kindLabel(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        if (options.isNotEmpty()) {
+            val visibleOptions = if (showExpand && !expanded) options.take(4) else options
+            Column(
+                modifier = Modifier.padding(top = standardPaddingSmall),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                visibleOptions.forEach { opt ->
+                    Text(
+                        text = opt.label,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (showExpand) {
+                val remaining = options.size - 4
+                AppTextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Show less" else "… $remaining more · Tap to expand")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendPickerDialog(
+    friends: List<CloudFriend>,
+    initial: Set<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (Set<String>) -> Unit,
+) {
+    var selected by remember(initial) { mutableStateOf(initial) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Invite friends") },
+        text = {
+            if (friends.isEmpty()) {
+                Text("No friends yet — add some first.")
+            } else {
+                LazyColumn {
+                    items(items = friends, key = { it.id }) { friend ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selected = if (friend.id in selected) selected - friend.id else selected + friend.id
+                                }
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(friend.displayName, style = MaterialTheme.typography.bodyLarge)
+                            Checkbox(
+                                checked = friend.id in selected,
+                                onCheckedChange = {
+                                    selected = if (friend.id in selected) selected - friend.id else selected + friend.id
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            AppTextButton(onClick = { onConfirm(selected) }) { Text("Done") }
+        },
+        dismissButton = {
+            AppTextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
 
 @Composable
 private fun OptionsEditor(
@@ -317,33 +580,6 @@ private fun TopNStepper(
         ) {
             Icon(imageVector = Lucide.Plus, contentDescription = "Increase top N")
         }
-    }
-}
-
-@Composable
-private fun BetRow(bet: Bet, onRemove: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = bet.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = bet.kindLabel(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        AppTextButton(
-            onClick = onRemove,
-            color = MaterialTheme.colorScheme.error,
-        ) { Text("Remove") }
     }
 }
 

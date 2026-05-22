@@ -11,7 +11,6 @@ import se.atte.bragwise.ui.screens.manage.ManageChallengeViewModel
 import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
 import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
 import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
-import se.atte.bragwise.ui.screens.settings.SettingsViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesViewModel
 import se.atte.bragwise.ui.screens.create.CreateChallengeViewModel
 import se.atte.bragwise.ui.screens.detail.ChallengeDetailViewModel
@@ -33,7 +32,6 @@ val viewModelModule = module {
     viewModelOf(::ReconcileFriendsViewModel)
     viewModelOf(::FriendRequestsViewModel)
     viewModelOf(::EditProfileViewModel)
-    viewModelOf(::SettingsViewModel)
     viewModel<PlayerProfileViewModel> { params ->
         PlayerProfileViewModel(
             uid = params.get<String>(),

@@ -9,14 +9,17 @@ import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ProfileRepository
+import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.mvi.ScreenViewModel
+import se.atte.bragwise.theme.ThemeMode
 
 class MeViewModel(
     private val profile: ProfileRepository,
     private val auth: AuthRepository,
+    private val themePrefs: ThemePrefs,
 ) : ScreenViewModel<MeViewModel.State, MeViewModel.Intent, MeViewModel.Effect>(
-    initialState = State(),
+    initialState = State(themeMode = themePrefs.mode.value),
 ) {
 
     /**
@@ -36,35 +39,45 @@ class MeViewModel(
         val isLoading: Boolean = true,
         val player: Player? = null,
         val email: String? = null,
+        val themeMode: ThemeMode = ThemeMode.System,
+        val confirmingDelete: Boolean = false,
     )
 
     sealed interface Intent {
-        data object OpenSettings : Intent
         data object OpenFriends : Intent
+        data object OpenEditProfile : Intent
+        data object OpenAbout : Intent
         data object SignOut : Intent
+        data class SetTheme(val mode: ThemeMode) : Intent
+        data object RequestDelete : Intent
+        data object CancelDelete : Intent
+        data object ConfirmDelete : Intent
     }
 
     sealed interface Effect {
-        data object GoToSettings : Effect
         data object GoToFriends : Effect
+        data object GoToEditProfile : Effect
+        data object GoToAbout : Effect
+        data object Deleted : Effect
+        data class Snackbar(val text: String) : Effect
     }
 
     init {
         combine(auth.authState, profile.observeMe()) { authState, player ->
             when (authState) {
-                AuthState.Loading -> State(
+                AuthState.Loading -> StateAuth(
                     isSignedIn = false,
                     isLoading = true,
                     player = null,
                     email = null,
                 )
-                AuthState.SignedOut -> State(
+                AuthState.SignedOut -> StateAuth(
                     isSignedIn = false,
                     isLoading = false,
                     player = null,
                     email = null,
                 )
-                is AuthState.SignedIn -> State(
+                is AuthState.SignedIn -> StateAuth(
                     isSignedIn = true,
                     isLoading = false,
                     player = player,
@@ -72,22 +85,46 @@ class MeViewModel(
                 )
             }
         }
-            .onEach { newState -> update { newState } }
-            .catch { _ ->
+            .onEach { s ->
                 update {
                     it.copy(
-                        isLoading = false,
+                        isSignedIn = s.isSignedIn,
+                        isLoading = s.isLoading,
+                        player = s.player,
+                        email = s.email,
                     )
                 }
             }
+            .catch { _ -> update { it.copy(isLoading = false) } }
+            .launchIn(viewModelScope)
+
+        themePrefs.mode
+            .onEach { m -> update { it.copy(themeMode = m) } }
             .launchIn(viewModelScope)
     }
 
     override fun onIntent(intent: Intent) {
         when (intent) {
-            Intent.OpenSettings -> emitEffect(Effect.GoToSettings)
             Intent.OpenFriends -> emitEffect(Effect.GoToFriends)
+            Intent.OpenEditProfile -> emitEffect(Effect.GoToEditProfile)
+            Intent.OpenAbout -> emitEffect(Effect.GoToAbout)
             Intent.SignOut -> viewModelScope.launch { auth.signOut() }
+            is Intent.SetTheme -> themePrefs.set(intent.mode)
+            Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }
+            Intent.CancelDelete -> update { it.copy(confirmingDelete = false) }
+            Intent.ConfirmDelete -> viewModelScope.launch {
+                update { it.copy(confirmingDelete = false) }
+                auth.deleteAccount()
+                    .onSuccess { emitEffect(Effect.Deleted) }
+                    .onFailure { emitEffect(Effect.Snackbar("Delete failed: ${it.message ?: "unknown"}")) }
+            }
         }
     }
+
+    private data class StateAuth(
+        val isSignedIn: Boolean,
+        val isLoading: Boolean,
+        val player: Player?,
+        val email: String?,
+    )
 }

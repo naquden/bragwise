@@ -53,4 +53,34 @@
     <string name="auth_password_label">Password</string>
     <string name="auth_google">Sign in with Google</string>
     <string name="auth_apple">Sign in with Apple</string>
+
+    <!-- Me / Settings. -->
+    <string name="me_logged_in">Logged in</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+
+    <!-- Create Challenge screen (cc_). -->
+    <string name="cc_title_field_label">Title</string>
+    <string name="cc_who_can_join">Who can join</string>
+    <string name="cc_visibility_friends">Friends</string>
+    <string name="cc_visibility_invite_only">Invite only</string>
+    <string name="cc_visibility_friends_hint">Auto-invites all your current and future friends.</string>
+    <string name="cc_visibility_invite_only_hint">Only people you explicitly invite can join.</string>
+    <string name="cc_share_after_create_hint">You can also share the challenge link with anyone after creating it.</string>
+    <string name="cc_pick_friends">Pick friends</string>
+    <string name="cc_invited_summary">%1$d friends invited — Edit</string>
+    <string name="cc_invite_dialog_title">Invite friends</string>
+    <string name="cc_no_friends_yet">No friends yet — add some first.</string>
+    <string name="cc_done">Done</string>
+    <string name="cc_cancel">Cancel</string>
+    <string name="cc_add_bet">+ Add bet</string>
+    <string name="cc_add_bet_question">Question</string>
+    <string name="cc_bet_type_yes_no">Yes / No</string>
+    <string name="cc_bet_type_single_pick">Single pick</string>
+    <string name="cc_bet_type_ranking">Ranking</string>
+    <string name="cc_bet_remove">Remove bet</string>
+    <string name="cc_save_draft">Save draft</string>
+    <string name="cc_publish">Publish</string>
 </resources>
