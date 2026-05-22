@@ -1,0 +1,141 @@
+{
+  "$comment": "Scoring engine parity fixtures. Drives both Kotlin (commonTest) and TS (Vitest) tests. Expected values computed from spec, not from either engine.",
+  "cases": [
+    {
+      "name": "single_pick_correct",
+      "bet": {
+        "kind": "SINGLE_PICK",
+        "id": "b1",
+        "title": "Who wins?",
+        "options": [
+          {"id": "a", "label": "Alice"},
+          {"id": "b", "label": "Bob"}
+        ]
+      },
+      "prediction": {"kind": "SINGLE_PICK", "optionId": "a"},
+      "result": {"kind": "SINGLE_PICK", "optionId": "a"},
+      "expected": 1
+    },
+    {
+      "name": "single_pick_wrong",
+      "bet": {
+        "kind": "SINGLE_PICK",
+        "id": "b2",
+        "title": "Who wins?",
+        "options": [
+          {"id": "a", "label": "Alice"},
+          {"id": "b", "label": "Bob"}
+        ]
+      },
+      "prediction": {"kind": "SINGLE_PICK", "optionId": "a"},
+      "result": {"kind": "SINGLE_PICK", "optionId": "b"},
+      "expected": 0
+    },
+    {
+      "name": "boolean_prop_true_correct",
+      "bet": {"kind": "BOOLEAN_PROP", "id": "b3", "title": "Will it rain?"},
+      "prediction": {"kind": "BOOLEAN_PROP", "value": true},
+      "result": {"kind": "BOOLEAN_PROP", "value": true},
+      "expected": 1
+    },
+    {
+      "name": "boolean_prop_false_correct",
+      "bet": {"kind": "BOOLEAN_PROP", "id": "b4", "title": "Will it rain?"},
+      "prediction": {"kind": "BOOLEAN_PROP", "value": false},
+      "result": {"kind": "BOOLEAN_PROP", "value": false},
+      "expected": 1
+    },
+    {
+      "name": "boolean_prop_wrong",
+      "bet": {"kind": "BOOLEAN_PROP", "id": "b5", "title": "Will it rain?"},
+      "prediction": {"kind": "BOOLEAN_PROP", "value": true},
+      "result": {"kind": "BOOLEAN_PROP", "value": false},
+      "expected": 0
+    },
+    {
+      "name": "ranking_exact_match_3",
+      "bet": {
+        "kind": "RANKING",
+        "id": "b6",
+        "title": "Rank 3",
+        "topN": 3,
+        "options": [
+          {"id": "x", "label": "X"},
+          {"id": "y", "label": "Y"},
+          {"id": "z", "label": "Z"}
+        ]
+      },
+      "prediction": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
+      "result": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
+      "expected": 3
+    },
+    {
+      "name": "ranking_partial_first_only",
+      "bet": {
+        "kind": "RANKING",
+        "id": "b7",
+        "title": "Rank 3",
+        "topN": 3,
+        "options": [
+          {"id": "x", "label": "X"},
+          {"id": "y", "label": "Y"},
+          {"id": "z", "label": "Z"}
+        ]
+      },
+      "prediction": {"kind": "RANKING", "orderedOptionIds": ["x", "z", "y"]},
+      "result": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
+      "expected": 1
+    },
+    {
+      "name": "ranking_partial_middle_match",
+      "bet": {
+        "kind": "RANKING",
+        "id": "b8",
+        "title": "Rank 3",
+        "topN": 3,
+        "options": [
+          {"id": "x", "label": "X"},
+          {"id": "y", "label": "Y"},
+          {"id": "z", "label": "Z"}
+        ]
+      },
+      "prediction": {"kind": "RANKING", "orderedOptionIds": ["z", "y", "x"]},
+      "result": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
+      "expected": 1
+    },
+    {
+      "name": "ranking_no_match",
+      "bet": {
+        "kind": "RANKING",
+        "id": "b9",
+        "title": "Rank 3",
+        "topN": 3,
+        "options": [
+          {"id": "x", "label": "X"},
+          {"id": "y", "label": "Y"},
+          {"id": "z", "label": "Z"}
+        ]
+      },
+      "prediction": {"kind": "RANKING", "orderedOptionIds": ["z", "x", "y"]},
+      "result": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
+      "expected": 0
+    },
+    {
+      "name": "ranking_uneven_lengths_zip_truncates",
+      "bet": {
+        "kind": "RANKING",
+        "id": "b10",
+        "title": "Rank top 2",
+        "topN": 2,
+        "options": [
+          {"id": "x", "label": "X"},
+          {"id": "y", "label": "Y"},
+          {"id": "z", "label": "Z"}
+        ]
+      },
+      "prediction": {"kind": "RANKING", "orderedOptionIds": ["x", "y"]},
+      "result": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
+      "expected": 2
+    }
+  ]
+}
