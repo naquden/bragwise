@@ -76,3 +76,6 @@ Podfile.lock
 
 # Personal work-in-progress notes
 plan.md
+
+# Claude Code local worktrees
+.claude/worktrees/
