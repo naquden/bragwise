@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -190,10 +191,16 @@ fun AppNav() {
                 }
             }
         },
+        contentWindowInsets = WindowInsets(0),
     ) { padding ->
         CompositionLocalProvider(LocalSnackbarHost provides snackbarHostState) {
             val transition = navEventState.transitionState
-            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(padding),
+            ) {
                 val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
                 if (
                     transition is NavigationEventTransitionState.InProgress &&
@@ -207,7 +214,8 @@ fun AppNav() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer { translationX = -edgeSign * (1f - progress) * widthPx * 0.25f },
+                            .graphicsLayer { translationX = -edgeSign * (1f - progress) * widthPx * 0.25f }
+                            .background(MaterialTheme.colorScheme.background),
                     ) {
                         RouteContent(
                             route = previous,
@@ -228,7 +236,8 @@ fun AppNav() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer { translationX = edgeSign * progress * widthPx },
+                            .graphicsLayer { translationX = edgeSign * progress * widthPx }
+                            .background(MaterialTheme.colorScheme.background),
                     ) {
                         RouteContent(
                             route = current,

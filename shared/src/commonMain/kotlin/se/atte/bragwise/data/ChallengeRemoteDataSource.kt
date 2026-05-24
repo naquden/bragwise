@@ -190,7 +190,15 @@ class ChallengeRemoteDataSource(
                 hashMapOf("betId" to p.betId, "payload" to p.payload.toMap())
             },
         )
-        functions.httpsCallable("submitPredictions")(data)
+        println("$REMOTE_DBG submitPredictions.call challengeId=$challengeId count=${predictions.size}")
+        try {
+            functions.httpsCallable("submitPredictions")(data)
+            println("$REMOTE_DBG submitPredictions.ok challengeId=$challengeId")
+        } catch (e: Throwable) {
+            println("$REMOTE_DBG submitPredictions.err class=${e::class.simpleName} message=${e.message}")
+            println("$REMOTE_DBG submitPredictions.err.stack ${e.stackTraceToString()}")
+            throw e
+        }
     }
 
     suspend fun postResults(challengeId: String, results: Map<String, se.atte.bragwise.domain.PredictionPayload>) {
@@ -221,3 +229,5 @@ private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this)
         "kind" to "BOOLEAN_PROP", "id" to id, "title" to title,
     )
 }
+
+private const val REMOTE_DBG = "BRAGWISE_REMOTE_9c95cf"

@@ -8,6 +8,19 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 // `onUserDeleted` is a 1st-gen function with a constrained region (us-east1)
 // and is unaffected.
 setGlobalOptions({ region: 'europe-west1' });
+
+function locksAtMillis(v: unknown): number | null {
+  if (v == null) return null;
+  if (typeof v === 'string') {
+    const ms = Date.parse(v);
+    return Number.isNaN(ms) ? null : ms;
+  }
+  if (typeof (v as { toMillis?: () => number }).toMillis === 'function') {
+    return (v as { toMillis: () => number }).toMillis();
+  }
+  return null;
+}
+
 import {
   audit,
   rateLimit,
@@ -224,9 +237,9 @@ export const submitPredictions = onCall(async (req: CallableRequest<unknown>) =>
     if (challenge.status !== 'OPEN') {
       throw new HttpsError('failed-precondition', 'challenge-not-open');
     }
-    const locksAt: FirebaseFirestore.Timestamp | undefined = challenge.locksAt;
-    if (!locksAt) throw new HttpsError('failed-precondition', 'no-locks-at');
-    if (locksAt.toMillis() <= Date.now()) {
+    const locksAtMs = locksAtMillis(challenge.locksAt);
+    if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
+    if (locksAtMs <= Date.now()) {
       throw new HttpsError('failed-precondition', 'challenge-locked');
     }
 
@@ -284,9 +297,9 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
     if (data.resultsPostedAt !== null && data.resultsPostedAt !== undefined) {
       throw new HttpsError('already-exists', 'results-already-posted');
     }
-    const locksAt: FirebaseFirestore.Timestamp | undefined = data.locksAt;
-    if (!locksAt) throw new HttpsError('failed-precondition', 'no-locks-at');
-    if (locksAt.toMillis() > Date.now()) {
+    const locksAtMs = locksAtMillis(data.locksAt);
+    if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
+    if (locksAtMs > Date.now()) {
       throw new HttpsError('failed-precondition', 'challenge-not-locked');
     }
     tx.update(ref, {
@@ -503,8 +516,8 @@ export const migrateGuestData = onCall(async (req: CallableRequest<unknown>) => 
         if (!challengeSnap.exists) throw new Error('not-found');
         const c = challengeSnap.data()!;
         if (c.status !== 'OPEN') throw new Error('not-open');
-        const locksAt: FirebaseFirestore.Timestamp = c.locksAt;
-        if (locksAt.toMillis() <= Date.now()) throw new Error('locked');
+        const locksAtMs = locksAtMillis(c.locksAt);
+        if (locksAtMs == null || locksAtMs <= Date.now()) throw new Error('locked');
 
         const eligible =
           c.createdBy === uid ||

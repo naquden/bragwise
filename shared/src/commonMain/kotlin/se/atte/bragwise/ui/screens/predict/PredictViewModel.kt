@@ -81,12 +81,22 @@ class PredictViewModel(
         viewModelScope.launch {
             val drafts = state.value.drafts
             val predictions = drafts.map { (betId, payload) -> Prediction(betId, payload) }
+            println("$PRED_DBG submit.start challengeId=$challengeId drafts=${predictions.size} payloads=$drafts")
             val result = challenges.submitPredictions(challengeId, predictions)
             update { it.copy(submitting = false) }
             result.fold(
-                onSuccess = { emitEffect(Effect.Submitted) },
-                onFailure = { e -> emitEffect(Effect.Snackbar(e.message ?: "Submit failed")) },
+                onSuccess = {
+                    println("$PRED_DBG submit.success challengeId=$challengeId")
+                    emitEffect(Effect.Submitted)
+                },
+                onFailure = { e ->
+                    println("$PRED_DBG submit.failure class=${e::class.simpleName} message=${e.message}")
+                    println("$PRED_DBG submit.failure.stack ${e.stackTraceToString()}")
+                    emitEffect(Effect.Snackbar("Submit failed: ${e::class.simpleName}: ${e.message}"))
+                },
             )
         }
     }
 }
+
+private const val PRED_DBG = "BRAGWISE_PRED_9c95cf"

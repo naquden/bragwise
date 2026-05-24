@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 @Composable
 fun BragwiseTheme(
@@ -11,12 +12,15 @@ fun BragwiseTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(
-        colorScheme = colors,
-        shapes = AppShapes,
-        typography = AppTypography,
-        content = content,
-    )
+    val sectionColors = if (darkTheme) DarkSectionColors else LightSectionColors
+    CompositionLocalProvider(LocalSectionColors provides sectionColors) {
+        MaterialTheme(
+            colorScheme = colors,
+            shapes = AppShapes,
+            typography = AppTypography,
+            content = content,
+        )
+    }
 }
 
 @Composable

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -69,7 +70,7 @@ fun MeScreen(
     when {
         // Initial auth resolution or signed-in but profile still loading
         state.isLoading -> Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().statusBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator()
@@ -130,6 +131,7 @@ private fun MeContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(standardPadding),
     ) {

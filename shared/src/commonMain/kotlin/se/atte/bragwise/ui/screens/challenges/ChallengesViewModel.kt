@@ -72,7 +72,8 @@ class ChallengesViewModel(
             challenges.observeFromFriends().tag("fromFriends"),
             challenges.observePendingInvites().tag("invites"),
         ) { mine, promoted, fromFriends, invites ->
-            Sections(mine, promoted, fromFriends, invites)
+            fun List<Challenge>.byLockAsc() = sortedWith(compareBy(nullsLast()) { it.locksAt })
+            Sections(mine.byLockAsc(), promoted.byLockAsc(), fromFriends.byLockAsc(), invites)
         }
             .onEach { sections ->
                 val isEmpty = sections.mine.isEmpty() &&

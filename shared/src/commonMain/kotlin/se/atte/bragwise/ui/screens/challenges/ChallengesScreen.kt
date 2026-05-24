@@ -1,23 +1,31 @@
 package se.atte.bragwise.ui.screens.challenges
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,9 +39,14 @@ import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.theme.Elevation
+import se.atte.bragwise.theme.LocalSectionColors
 import se.atte.bragwise.theme.ThemePreview
+import se.atte.bragwise.theme.appShadow
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.ChallengeCard
+import se.atte.bragwise.ui.components.ColoredSection
+import se.atte.bragwise.ui.components.WaveSeparator
 import kotlin.time.Instant
 
 @Composable
@@ -73,11 +86,17 @@ private fun ChallengesContentRoot(
     onChallenge: (String) -> Unit,
 ) {
     when (ui) {
-        UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        UiState.Loading -> Box(
+            modifier = Modifier.fillMaxSize().statusBarsPadding(),
+            contentAlignment = Alignment.Center,
+        ) {
             CircularProgressIndicator()
         }
         is UiState.Empty -> EmptyState(onCreate = onCreate)
-        is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        is UiState.Failed -> Box(
+            modifier = Modifier.fillMaxSize().statusBarsPadding(),
+            contentAlignment = Alignment.Center,
+        ) {
             Text(
                 text = ui.cause.toUserMessage(),
                 style = MaterialTheme.typography.bodyLarge,
@@ -94,7 +113,7 @@ private fun ChallengesContentRoot(
 @Composable
 private fun EmptyState(onCreate: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(standardPaddingLarge),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(standardPaddingLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -119,59 +138,103 @@ private fun EmptyState(onCreate: () -> Unit) {
     }
 }
 
+private data class SectionEntry(val bg: Color, val render: @Composable (topInset: Boolean) -> Unit)
+
 @Composable
 private fun ChallengesContent(
     sections: ChallengesViewModel.Sections,
     onChallenge: (String) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
-        verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
-    ) {
-        if (sections.mine.isNotEmpty()) {
-            item { SectionHeader("My Challenges") }
-            items(items = sections.mine, key = { it.id }) { ChallengeCard(challenge = it, onClick = { onChallenge(it.id) }) }
-        }
-        if (sections.promoted.isNotEmpty()) {
-            item { SectionHeader("Promoted") }
-            items(items = sections.promoted, key = { it.id }) { ChallengeCard(challenge = it, onClick = { onChallenge(it.id) }) }
-        }
-        if (sections.fromFriends.isNotEmpty()) {
-            item { SectionHeader("From friends") }
-            items(items = sections.fromFriends, key = { it.id }) { ChallengeCard(challenge = it, onClick = { onChallenge(it.id) }) }
-        }
-        if (sections.invites.isNotEmpty()) {
-            item { SectionHeader("Invites") }
-            items(items = sections.invites, key = { it.challengeId }) { invitation ->
-                InvitationRow(invitation = invitation, onClick = onChallenge)
+    val sc = LocalSectionColors.current
+    val entries = buildList {
+        if (sections.mine.isNotEmpty()) add(SectionEntry(sc.mineBg) { topInset ->
+            ColoredSection(
+                bg = sc.mineBg,
+                title = "My Challenges",
+                icon = "🎯",
+                onTitleColor = sc.onMine,
+                trailing = if (sections.mine.size == 1) "1 active" else "${sections.mine.size} active",
+                topInset = topInset,
+            ) {
+                sections.mine.forEach { c ->
+                    ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, surfaceColor = sc.mineCard)
+                }
+            }
+        })
+        if (sections.promoted.isNotEmpty()) add(SectionEntry(sc.promotedBg) { topInset ->
+            ColoredSection(bg = sc.promotedBg, title = "Promoted", icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
+                sections.promoted.forEach { c ->
+                    ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, accent = true, surfaceColor = sc.promotedCard)
+                }
+            }
+        })
+        if (sections.fromFriends.isNotEmpty()) add(SectionEntry(sc.friendsBg) { topInset ->
+            ColoredSection(bg = sc.friendsBg, title = "From friends", icon = "👥", onTitleColor = sc.onFriends, topInset = topInset) {
+                sections.fromFriends.forEach { c ->
+                    ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, surfaceColor = sc.friendsCard)
+                }
+            }
+        })
+        if (sections.invites.isNotEmpty()) add(SectionEntry(sc.invitesBg) { topInset ->
+            ColoredSection(bg = sc.invitesBg, title = "Invites", icon = "✉️", onTitleColor = sc.onInvites, topInset = topInset) {
+                sections.invites.forEach { inv ->
+                    InvitationRow(invitation = inv, onClick = onChallenge, surfaceColor = sc.invitesCard)
+                }
+            }
+        })
+    }
+
+    val lastBg = entries.lastOrNull()?.bg ?: MaterialTheme.colorScheme.background
+    Box(modifier = Modifier.fillMaxSize().background(lastBg)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            entries.forEachIndexed { i, entry ->
+                if (i > 0) {
+                    WaveSeparator(topColor = entries[i - 1].bg, bottomColor = entry.bg)
+                }
+                entry.render(i == 0)
             }
         }
     }
 }
 
 @Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = standardPaddingSmall, bottom = 4.dp),
-    )
-}
-
-@Composable
-private fun InvitationRow(invitation: Invitation, onClick: (String) -> Unit) {
-    androidx.compose.material3.Surface(
+private fun InvitationRow(invitation: Invitation, onClick: (String) -> Unit, surfaceColor: Color) {
+    val isDark = isSystemInDarkTheme()
+    val shape = MaterialTheme.shapes.medium
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shape = androidx.compose.ui.graphics.RectangleShape,
+            .padding(vertical = 4.dp)
+            .appShadow(Elevation.Card, isDark = isDark, shape = shape)
+            .clickable { onClick(invitation.challengeId) },
+        color = surfaceColor,
+        shape = shape,
     ) {
-        Column(Modifier.padding(standardPadding)) {
-            Text(text = "Invitation to ${invitation.challengeId}", style = MaterialTheme.typography.titleLarge)
-            Text(text = "from ${invitation.invitedBy}", style = MaterialTheme.typography.bodyLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(64.dp)
+                    .background(MaterialTheme.colorScheme.tertiary),
+            )
+            Spacer(Modifier.width(standardPadding))
+            Text(
+                text = "✉️",
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Spacer(Modifier.width(standardPaddingSmall))
+            Column(Modifier.padding(vertical = standardPadding, horizontal = 0.dp)) {
+                Text(
+                    text = "Invitation to ${invitation.challengeId}",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "from ${invitation.invitedBy}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
