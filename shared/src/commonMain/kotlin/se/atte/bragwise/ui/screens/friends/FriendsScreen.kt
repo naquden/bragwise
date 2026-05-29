@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +47,7 @@ import kotlin.time.Instant
 @Composable
 fun FriendsScreen(
     viewModel: FriendsViewModel,
+    snackbarHostState: SnackbarHostState,
     onLocalAddOrEdit: (localId: String?) -> Unit,
     onOpenCloudProfile: (handle: String) -> Unit,
     onOpenReconcile: () -> Unit,
@@ -60,7 +62,7 @@ fun FriendsScreen(
             is FriendsViewModel.Effect.OpenLocalEdit -> onLocalAddOrEdit(effect.localId)
             is FriendsViewModel.Effect.OpenCloudProfile -> onOpenCloudProfile(effect.uid)
             FriendsViewModel.Effect.OpenReconcile -> onOpenReconcile()
-            is FriendsViewModel.Effect.Snackbar -> { /* TODO */ }
+            is FriendsViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
     }
 

@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +36,7 @@ import se.atte.bragwise.ui.components.SectionGap
 @Composable
 fun SignInScreen(
     viewModel: SignInViewModel,
+    snackbarHostState: SnackbarHostState,
     onSignedIn: () -> Unit,
     onGuest: () -> Unit,
 ) {
@@ -49,7 +51,7 @@ fun SignInScreen(
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             SignInViewModel.Effect.ContinuedAsGuest -> onGuest()
-            is SignInViewModel.Effect.Snackbar -> { /* TODO host snackbar */ }
+            is SignInViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
     }
 

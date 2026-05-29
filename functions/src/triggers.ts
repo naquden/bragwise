@@ -3,6 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { auth } from 'firebase-functions/v1';
 import { db, FieldValue } from './lib/admin';
 import { score, Bet, PredictionPayload } from './scoring';
+import { sendToUser, CHANNEL_RESULTS, CHANNEL_CHALLENGES, CHANNEL_SOCIAL } from './push';
 
 // ─── onResultsPosted ──────────────────────────────────────────────────────────
 
@@ -54,7 +55,23 @@ export const onResultsPosted = onDocumentUpdated(
 
     await db.doc(`challenges/${challengeId}`).update({ leaderboard });
 
-    // 2. Head-to-head deltas — best-effort, NOT retried.
+    // 2. Notify each participant of their result — best-effort.
+    const challengeTitle: string = after.title ?? 'A challenge';
+    const sortedUids = Object.entries(leaderboard)
+      .sort(([, a], [, b]) => b - a)
+      .map(([uid]) => uid);
+    await Promise.allSettled(
+      sortedUids.map((uid, idx) =>
+        sendToUser(uid, {
+          title: 'Results are in!',
+          body: `${challengeTitle} — you finished #${idx + 1} with ${leaderboard[uid]} pts`,
+          channel: CHANNEL_RESULTS,
+          deepLink: `https://bragwise.firebaseapp.com/challenge/${challengeId}`,
+        }),
+      ),
+    );
+
+    // 3. Head-to-head deltas — best-effort, NOT retried.
     const participants = Object.keys(leaderboard);
     await Promise.allSettled(
       participants.map(async (pid) => {
@@ -95,9 +112,26 @@ export const onMemberJoin = onDocumentCreated(
     const data = event.data?.data();
     // Creator auto-join is excluded from the count — they set isCreator=true.
     if (!data || data.isCreator === true) return;
-    await db.doc(`challenges/${event.params.challengeId}`).update({
+
+    const { challengeId, uid } = event.params;
+    await db.doc(`challenges/${challengeId}`).update({
       joinedCount: FieldValue.increment(1),
     });
+
+    // Notify the challenge creator — best-effort.
+    const challengeSnap = await db.doc(`challenges/${challengeId}`).get();
+    const creatorUid: string | undefined = challengeSnap.data()?.createdBy;
+    if (creatorUid && creatorUid !== uid) {
+      const joinerSnap = await db.doc(`players/${uid}`).get();
+      const joinerName: string = joinerSnap.data()?.displayName ?? 'Someone';
+      const challengeTitle: string = challengeSnap.data()?.title ?? 'your challenge';
+      await sendToUser(creatorUid, {
+        title: 'New participant!',
+        body: `${joinerName} joined ${challengeTitle}`,
+        channel: CHANNEL_CHALLENGES,
+        deepLink: `https://bragwise.firebaseapp.com/challenge/${challengeId}`,
+      }).catch(() => {/* best-effort */});
+    }
   },
 );
 
@@ -127,6 +161,19 @@ export const onFriendAccepted = onDocumentWritten(
         createInvitationsForNewFriend(friendUid, uid),
       ]);
     }
+
+    // Notify each new friend that their request was accepted — best-effort.
+    const acceptorSnap = await db.doc(`players/${uid}`).get();
+    const acceptorName: string = acceptorSnap.data()?.displayName ?? 'Someone';
+    await Promise.allSettled(
+      newFriendUids.map((friendUid) =>
+        sendToUser(friendUid, {
+          title: 'Friend request accepted!',
+          body: `${acceptorName} accepted your friend request`,
+          channel: CHANNEL_SOCIAL,
+        }),
+      ),
+    );
   },
 );
 

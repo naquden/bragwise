@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import kotlin.time.Instant
 @Composable
 fun ReconcileFriendsScreen(
     viewModel: ReconcileFriendsViewModel,
+    snackbarHostState: SnackbarHostState,
     onDone: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -44,7 +46,7 @@ fun ReconcileFriendsScreen(
         when (effect) {
             is ReconcileFriendsViewModel.Effect.Done,
             ReconcileFriendsViewModel.Effect.Skipped -> onDone()
-            is ReconcileFriendsViewModel.Effect.Snackbar -> { /* TODO */ }
+            is ReconcileFriendsViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
     }
 

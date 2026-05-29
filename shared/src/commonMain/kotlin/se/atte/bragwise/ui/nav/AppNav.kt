@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -165,18 +166,27 @@ fun AppNav() {
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             if (isAtTabs) {
+                val navItemColors = NavigationBarItemDefaults.colors(
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 NavigationBar {
                     NavigationBarItem(
                         selected = currentTab == Tab.Challenges,
                         onClick = { replaceTop(Route.Tabs(Tab.Challenges)) },
                         icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
                         label = { Text(stringResource(Res.string.nav_tab_challenges)) },
+                        colors = navItemColors,
                     )
                     NavigationBarItem(
                         selected = currentTab == Tab.Me,
                         onClick = { replaceTop(Route.Tabs(Tab.Me)) },
                         icon = { Icon(imageVector = Lucide.User, contentDescription = null) },
                         label = { Text(stringResource(Res.string.nav_tab_me)) },
+                        colors = navItemColors,
                     )
                 }
             }
@@ -305,6 +315,7 @@ private fun RouteContent(
         is Route.ChallengeDetail -> ChallengeDetailScreen(
             viewModel = koinViewModel<ChallengeDetailViewModel>(key = route.id) { parametersOf(route.id) },
             platformShare = platformShare,
+            snackbarHostState = snackbarHostState,
             onNavigateToBet = { push(Route.Predict(route.id)) },
             onNavigateToLeaderboard = { push(Route.Leaderboard(challengeId = route.id, isPromoted = false)) },
             onNavigateToBetList = { push(Route.BetList(route.id)) },
@@ -330,6 +341,7 @@ private fun RouteContent(
         )
         Route.SignIn -> SignInScreen(
             viewModel = koinViewModel<SignInViewModel>(),
+            snackbarHostState = snackbarHostState,
             onSignedIn = {
                 // Sign-in success → run guest-data migration first
                 // (OB-05); on completion the dialog routes onward
@@ -340,6 +352,7 @@ private fun RouteContent(
         )
         Route.Friends -> FriendsScreen(
             viewModel = koinViewModel<FriendsViewModel>(),
+            snackbarHostState = snackbarHostState,
             onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
             onOpenCloudProfile = { uid -> push(Route.PlayerProfile(uid)) },
             onOpenReconcile = { push(Route.ReconcileFriends) },
@@ -368,6 +381,7 @@ private fun RouteContent(
         )
         Route.ReconcileFriends -> ReconcileFriendsScreen(
             viewModel = koinViewModel<ReconcileFriendsViewModel>(),
+            snackbarHostState = snackbarHostState,
             onDone = { replaceTop(Route.Tabs(Tab.Me)) },
         )
         is Route.Manage -> ManageChallengeScreen(

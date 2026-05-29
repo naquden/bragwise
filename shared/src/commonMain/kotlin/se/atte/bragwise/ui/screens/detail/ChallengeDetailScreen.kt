@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +49,7 @@ import kotlin.time.Instant
 fun ChallengeDetailScreen(
     viewModel: ChallengeDetailViewModel,
     platformShare: PlatformShare,
+    snackbarHostState: SnackbarHostState,
     onNavigateToBet: (String) -> Unit,
     onNavigateToLeaderboard: (String) -> Unit,
     onNavigateToBetList: (String) -> Unit,
@@ -70,7 +72,12 @@ fun ChallengeDetailScreen(
                 }
                 platformShare.send(effect.url, title, subject)
             }
-            is ChallengeDetailViewModel.Effect.Snackbar -> { /* TODO */ }
+            is ChallengeDetailViewModel.Effect.Snackbar -> {
+                val text = when (effect.message) {
+                    ChallengeDetailViewModel.SnackbarMessage.ShareFailed -> "Couldn't share challenge"
+                }
+                snackbarHostState.showSnackbar(text)
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 import { onCall, CallableRequest } from 'firebase-functions/v2/https';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2';
+import { sendToUser, CHANNEL_SOCIAL } from './push';
 
 // Co-locate all 2nd-gen functions with Firestore (europe-west1). Without this,
 // onCall + onSchedule default to us-central1 — every callable would do a
@@ -392,6 +393,15 @@ export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) =>
     tx.set(mySocialRef, { requestsOut: { [targetUid]: now } }, { merge: true });
     tx.set(theirSocialRef, { requestsIn: { [uid]: now } }, { merge: true });
   });
+
+  // Notify target — best-effort, outside the transaction.
+  const senderSnap = await db.doc(`players/${uid}`).get();
+  const senderName: string = senderSnap.data()?.displayName ?? 'Someone';
+  await sendToUser(targetUid, {
+    title: 'New friend request',
+    body: `${senderName} wants to be your friend`,
+    channel: CHANNEL_SOCIAL,
+  }).catch(() => {/* best-effort */});
 });
 
 // ─── acceptFriendRequest ──────────────────────────────────────────────────────
