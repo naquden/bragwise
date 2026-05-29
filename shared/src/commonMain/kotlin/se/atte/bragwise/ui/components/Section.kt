@@ -129,7 +129,7 @@ fun ColoredSection(
                 Column {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = onTitleColor,
                     )
                     if (trailing != null) {

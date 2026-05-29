@@ -267,12 +267,6 @@ private fun previewChallenge(id: String, title: String, promoted: Boolean = fals
 
 @Preview
 @Composable
-private fun Challenges_Loading_Preview() {
-    ThemePreview { ChallengesContentRoot(ui = UiState.Loading, onCreate = {}, onChallenge = {}) }
-}
-
-@Preview
-@Composable
 private fun Challenges_Empty_Preview() {
     ThemePreview { ChallengesContentRoot(ui = UiState.Empty(), onCreate = {}, onChallenge = {}) }
 }

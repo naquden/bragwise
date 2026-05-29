@@ -69,13 +69,13 @@ fun ChallengeCard(
                     if (accent) {
                         Text(
                             text = "⭐",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Spacer(Modifier.width(standardPaddingSmall))
                     }
                     Text(
                         text = challenge.title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
