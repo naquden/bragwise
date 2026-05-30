@@ -66,7 +66,7 @@ export const onResultsPosted = onDocumentUpdated(
           title: 'Results are in!',
           body: `${challengeTitle} — you finished #${idx + 1} with ${leaderboard[uid]} pts`,
           channel: CHANNEL_RESULTS,
-          deepLink: `https://bragwise.firebaseapp.com/challenge/${challengeId}`,
+          deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}`,
         }),
       ),
     );
@@ -129,7 +129,7 @@ export const onMemberJoin = onDocumentCreated(
         title: 'New participant!',
         body: `${joinerName} joined ${challengeTitle}`,
         channel: CHANNEL_CHALLENGES,
-        deepLink: `https://bragwise.firebaseapp.com/challenge/${challengeId}`,
+        deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}`,
       }).catch(() => {/* best-effort */});
     }
   },

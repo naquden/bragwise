@@ -1,7 +1,9 @@
 package se.atte.bragwise.ui.screens.me
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.me_logged_in
+import bragwise.shared.generated.resources.me_section_account
+import bragwise.shared.generated.resources.settings_about_title
+import bragwise.shared.generated.resources.settings_notifications_title
+import bragwise.shared.generated.resources.settings_section_title
 import bragwise.shared.generated.resources.settings_theme_dark
 import bragwise.shared.generated.resources.settings_theme_light
 import bragwise.shared.generated.resources.settings_theme_system
@@ -36,6 +43,7 @@ import org.jetbrains.compose.resources.stringResource
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.theme.ThemeMode
 import se.atte.bragwise.ui.standardPadding
+import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.ListGroup
@@ -80,12 +88,14 @@ fun MeScreen(
             email = state.email,
             isSignedIn = state.isSignedIn,
             themeMode = state.themeMode,
+            notificationsEnabled = state.notificationsEnabled,
             onFriends = { viewModel.onIntent(MeViewModel.Intent.OpenFriends) },
             onEditProfile = { viewModel.onIntent(MeViewModel.Intent.OpenEditProfile) },
             onAbout = { viewModel.onIntent(MeViewModel.Intent.OpenAbout) },
             onSignOut = { viewModel.onIntent(MeViewModel.Intent.SignOut) },
             onSignIn = onNavigateToSignIn,
             onSetTheme = { viewModel.onIntent(MeViewModel.Intent.SetTheme(it)) },
+            onSetNotifications = { viewModel.onIntent(MeViewModel.Intent.SetNotifications(it)) },
             onRequestDelete = { viewModel.onIntent(MeViewModel.Intent.RequestDelete) },
         )
     }
@@ -120,12 +130,14 @@ private fun MeContent(
     email: String?,
     isSignedIn: Boolean,
     themeMode: ThemeMode,
+    notificationsEnabled: Boolean,
     onFriends: () -> Unit,
     onEditProfile: () -> Unit,
     onAbout: () -> Unit,
     onSignOut: () -> Unit,
     onSignIn: () -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
+    onSetNotifications: (Boolean) -> Unit,
     onRequestDelete: () -> Unit,
 ) {
     Column(
@@ -174,6 +186,7 @@ private fun MeContent(
 
         SectionGap()
 
+        SectionHeader(stringResource(Res.string.me_section_account))
         ListGroup {
             ListRow(
                 title = "Friends",
@@ -184,14 +197,19 @@ private fun MeContent(
                 ListGroupDivider()
                 ListRow(title = "Edit profile", onClick = onEditProfile)
             }
-            ListGroupDivider()
-            ListRow(title = "About", onClick = onAbout)
         }
 
         SectionGap()
 
+        SectionHeader(stringResource(Res.string.settings_section_title))
         ListGroup {
+            ListRow(title = stringResource(Res.string.settings_about_title), onClick = onAbout)
+            ListGroupDivider()
             ThemePickerRow(current = themeMode, onSelect = onSetTheme)
+            if (isSignedIn) {
+                ListGroupDivider()
+                NotificationToggleRow(enabled = notificationsEnabled, onToggle = onSetNotifications)
+            }
         }
 
         if (isSignedIn) {
@@ -216,6 +234,16 @@ private fun MeContent(
 }
 
 @Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = standardPadding, bottom = standardPaddingSmall),
+    )
+}
+
+@Composable
 private fun ThemeMode.label(): String = stringResource(
     when (this) {
         ThemeMode.System -> Res.string.settings_theme_system
@@ -223,6 +251,23 @@ private fun ThemeMode.label(): String = stringResource(
         ThemeMode.Dark -> Res.string.settings_theme_dark
     },
 )
+
+@Composable
+private fun NotificationToggleRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = standardPadding, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = stringResource(Res.string.settings_notifications_title),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Switch(checked = enabled, onCheckedChange = onToggle)
+    }
+}
 
 @Composable
 private fun ThemePickerRow(current: ThemeMode, onSelect: (ThemeMode) -> Unit) {
@@ -258,12 +303,14 @@ private fun MeContent_Guest_Preview() {
             email = null,
             isSignedIn = false,
             themeMode = ThemeMode.System,
+            notificationsEnabled = true,
             onFriends = {},
             onEditProfile = {},
             onAbout = {},
             onSignOut = {},
             onSignIn = {},
             onSetTheme = {},
+            onSetNotifications = {},
             onRequestDelete = {},
         )
     }
@@ -284,12 +331,14 @@ private fun MeContent_SignedIn_Preview() {
             email = "atte@example.com",
             isSignedIn = true,
             themeMode = ThemeMode.System,
+            notificationsEnabled = true,
             onFriends = {},
             onEditProfile = {},
             onAbout = {},
             onSignOut = {},
             onSignIn = {},
             onSetTheme = {},
+            onSetNotifications = {},
             onRequestDelete = {},
         )
     }

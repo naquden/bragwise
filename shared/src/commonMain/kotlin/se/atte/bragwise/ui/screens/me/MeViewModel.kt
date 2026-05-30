@@ -40,6 +40,7 @@ class MeViewModel(
         val player: Player? = null,
         val email: String? = null,
         val themeMode: ThemeMode = ThemeMode.System,
+        val notificationsEnabled: Boolean = true,
         val confirmingDelete: Boolean = false,
     )
 
@@ -49,6 +50,7 @@ class MeViewModel(
         data object OpenAbout : Intent
         data object SignOut : Intent
         data class SetTheme(val mode: ThemeMode) : Intent
+        data class SetNotifications(val enabled: Boolean) : Intent
         data object RequestDelete : Intent
         data object CancelDelete : Intent
         data object ConfirmDelete : Intent
@@ -101,6 +103,11 @@ class MeViewModel(
         themePrefs.mode
             .onEach { m -> update { it.copy(themeMode = m) } }
             .launchIn(viewModelScope)
+
+        profile.observeNotificationsEnabled()
+            .onEach { enabled -> update { it.copy(notificationsEnabled = enabled) } }
+            .catch { /* keep last known */ }
+            .launchIn(viewModelScope)
     }
 
     override fun onIntent(intent: Intent) {
@@ -110,6 +117,16 @@ class MeViewModel(
             Intent.OpenAbout -> emitEffect(Effect.GoToAbout)
             Intent.SignOut -> viewModelScope.launch { auth.signOut() }
             is Intent.SetTheme -> themePrefs.set(intent.mode)
+            is Intent.SetNotifications -> viewModelScope.launch {
+                // Optimistic: reflect immediately; the observe flow corrects on
+                // server confirmation, and we revert + snackbar on failure.
+                update { it.copy(notificationsEnabled = intent.enabled) }
+                profile.setNotificationsEnabled(intent.enabled)
+                    .onFailure {
+                        update { s -> s.copy(notificationsEnabled = !intent.enabled) }
+                        emitEffect(Effect.Snackbar("Couldn't update notifications"))
+                    }
+            }
             Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }
             Intent.CancelDelete -> update { it.copy(confirmingDelete = false) }
             Intent.ConfirmDelete -> viewModelScope.launch {

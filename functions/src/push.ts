@@ -26,7 +26,11 @@ export async function sendToUser(uid: string, payload: PushPayload): Promise<voi
     : true;
   if (!notifEnabled) return;
 
-  const tokens = tokensSnap.docs.map((d) => d.data().token as string);
+  // Keep doc refs aligned with the token array so stale ones can be reaped
+  // by ref (the doc ID is the token, but deleting by ref avoids any
+  // path-reconstruction mismatch for tokens with special characters).
+  const docs = tokensSnap.docs;
+  const tokens = docs.map((d) => d.data().token as string);
 
   const message: admin.messaging.MulticastMessage = {
     tokens,
@@ -41,26 +45,21 @@ export async function sendToUser(uid: string, payload: PushPayload): Promise<voi
 
   const result = await messaging.sendEachForMulticast(message);
 
-  const staleTokens: string[] = [];
-  result.responses.forEach((resp, idx) => {
-    if (!resp.success) {
+  const staleRefs = result.responses
+    .map((resp, idx) => ({ resp, ref: docs[idx].ref }))
+    .filter(({ resp }) => {
+      if (resp.success) return false;
       const code = resp.error?.code;
-      if (
+      return (
         code === 'messaging/registration-token-not-registered' ||
         code === 'messaging/invalid-argument' ||
         code === 'messaging/invalid-registration-token'
-      ) {
-        staleTokens.push(tokens[idx]);
-      }
-    }
-  });
+      );
+    })
+    .map(({ ref }) => ref);
 
-  if (staleTokens.length > 0) {
-    await Promise.all(
-      staleTokens.map((token) =>
-        db.doc(`players/${uid}/pushTokens/${token}`).delete(),
-      ),
-    );
+  if (staleRefs.length > 0) {
+    await Promise.all(staleRefs.map((ref) => ref.delete()));
   }
 }
 

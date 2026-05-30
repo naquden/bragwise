@@ -22,6 +22,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import se.atte.bragwise.ui.LocalSnackbarHost
@@ -50,6 +51,7 @@ import org.koin.core.parameter.parametersOf
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
+import se.atte.bragwise.push.PushNotifications
 import se.atte.bragwise.ui.screens.auth.SignInScreen
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
 import se.atte.bragwise.ui.screens.bets.BetListScreen
@@ -113,6 +115,16 @@ private sealed interface Route {
     data object About : Route
 }
 
+/** Maps a trusted deep-link URL to a [Route], or null if unrecognised. */
+private fun parseDeepLink(url: String): Route? {
+    val slash = url.indexOf('/', url.indexOf("://") + 3)
+    if (slash < 0) return null
+    val path = url.substring(slash)
+    val challengeMatch = Regex("^/c/([a-zA-Z0-9_-]+)$").find(path)
+    if (challengeMatch != null) return Route.ChallengeDetail(challengeMatch.groupValues[1])
+    return null
+}
+
 /**
  * 2-tab bottom nav + global `+` FAB per plan §4. Hand-rolled nav state —
  * navigation-compose-multiplatform isn't wired yet. Replace when Phase 1
@@ -125,6 +137,7 @@ fun AppNav() {
     val backStack = remember { mutableStateListOf<Route>(startRoute) }
     val platformShare: PlatformShare = koinInject()
     val social: SocialRepository = koinInject()
+    val pushNotifications: PushNotifications = koinInject()
     val snackbarHostState = remember { SnackbarHostState() }
 
     fun push(next: Route) {
@@ -135,6 +148,12 @@ fun AppNav() {
     }
     fun pop() {
         if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
+    }
+
+    LaunchedEffect(Unit) {
+        pushNotifications.incomingDeepLinks.collect { url ->
+            parseDeepLink(url)?.let { push(it) }
+        }
     }
 
     val current: Route = backStack.last()

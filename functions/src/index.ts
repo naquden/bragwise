@@ -40,6 +40,7 @@ import {
   PostResultsSchema,
   PublishChallengeSchema,
   RegisterPushTokenSchema,
+  SetNotificationPrefSchema,
   SendFriendRequestSchema,
   SubmitPredictionsSchema,
   UnfriendSchema,
@@ -571,6 +572,21 @@ export const registerPushToken = onCall(async (req: CallableRequest<unknown>) =>
     platform,
     updatedAt: FieldValue.serverTimestamp(),
   });
+  return { ok: true };
+});
+
+// ─── setNotificationPref ──────────────────────────────────────────────────────
+
+export const setNotificationPref = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  await rateLimit(uid, 'setNotificationPref', 3600, 50);
+  const { enabled } = validate(SetNotificationPrefSchema, req.data);
+
+  await db.doc(`players/${uid}/private/preferences`).set(
+    { notifications: enabled, updatedAt: FieldValue.serverTimestamp() },
+    { merge: true },
+  );
   return { ok: true };
 });
 

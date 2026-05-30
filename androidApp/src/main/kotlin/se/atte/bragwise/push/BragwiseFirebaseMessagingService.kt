@@ -21,9 +21,6 @@ class BragwiseFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         val deepLink = message.data["deepLink"]?.takeIf { isTrustedDeepLink(it) }
-        if (deepLink != null) {
-            push.onIncomingDeepLink(deepLink)
-        }
 
         val title = message.notification?.title ?: message.data["title"] ?: return
         val body = message.notification?.body ?: message.data["body"] ?: ""

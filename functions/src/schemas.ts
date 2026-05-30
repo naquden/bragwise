@@ -118,6 +118,10 @@ export const RegisterPushTokenSchema = z.object({
   platform: z.enum(['fcm', 'apns']),
 });
 
+export const SetNotificationPrefSchema = z.object({
+  enabled: z.boolean(),
+});
+
 export const MigrateGuestDataSchema = z.object({
   predictions: z
     .array(

@@ -17,12 +17,15 @@ interface ProfileRepository {
      */
     fun observeMe(): Flow<Player?>
     fun observePublicProfile(uid: String): Flow<PublicProfile?>
+    /** Notifications-enabled pref for the signed-in user. Emits true when signed out. */
+    fun observeNotificationsEnabled(): Flow<Boolean>
     suspend fun claimHandle(handle: String): Result<Unit>
     suspend fun updateProfile(
         displayName: String? = null,
         handle: String? = null,
         avatarSeed: String? = null,
     ): Result<Unit>
+    suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit>
 }
 
 class FirebaseProfileRepository(
@@ -41,8 +44,20 @@ class FirebaseProfileRepository(
     override fun observePublicProfile(uid: String): Flow<PublicProfile?> =
         remote.observePublicProfile(uid)
 
+    override fun observeNotificationsEnabled(): Flow<Boolean> =
+        auth.authState.flatMapLatest { state ->
+            when (state) {
+                is AuthState.SignedIn -> remote.observeNotificationsEnabled(state.uid).catch { emit(true) }
+                else -> flowOf(true)
+            }
+        }
+
     override suspend fun claimHandle(handle: String): Result<Unit> = runCatching {
         remote.claimHandle(handle)
+    }
+
+    override suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit> = runCatching {
+        remote.setNotificationsEnabled(enabled)
     }
 
     override suspend fun updateProfile(

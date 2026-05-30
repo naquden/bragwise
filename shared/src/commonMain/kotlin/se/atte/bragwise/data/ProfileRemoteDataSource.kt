@@ -30,6 +30,20 @@ class ProfileRemoteDataSource(
         )
     }
 
+    /** Notifications-enabled pref. Defaults to true when the doc/field is absent. */
+    fun observeNotificationsEnabled(uid: String): Flow<Boolean> = flow {
+        emitAll(
+            db.document("players/$uid/private/preferences").snapshots.map { snap ->
+                if (!snap.exists) return@map true
+                snap.boolOrNull("notifications") ?: true
+            },
+        )
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        functions.httpsCallable("setNotificationPref")(hashMapOf("enabled" to enabled))
+    }
+
     suspend fun claimHandle(handle: String) {
         functions.httpsCallable("claimHandle")(hashMapOf("handle" to handle))
     }

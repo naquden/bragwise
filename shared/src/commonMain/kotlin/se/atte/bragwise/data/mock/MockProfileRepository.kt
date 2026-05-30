@@ -11,8 +11,11 @@ import se.atte.bragwise.domain.PublicProfile
 
 class MockProfileRepository : ProfileRepository {
     private val _player = MutableStateFlow(mockPlayer)
+    private val _notificationsEnabled = MutableStateFlow(true)
 
     override fun observeMe(): Flow<Player?> = _player.asStateFlow()
+
+    override fun observeNotificationsEnabled(): Flow<Boolean> = _notificationsEnabled.asStateFlow()
 
     override fun observePublicProfile(uid: String): Flow<PublicProfile?> = flowOf(
         when (uid) {
@@ -38,6 +41,11 @@ class MockProfileRepository : ProfileRepository {
             handle = handle ?: _player.value.handle,
             avatarSeed = avatarSeed ?: _player.value.avatarSeed,
         )
+        return Result.success(Unit)
+    }
+
+    override suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit> {
+        _notificationsEnabled.value = enabled
         return Result.success(Unit)
     }
 }

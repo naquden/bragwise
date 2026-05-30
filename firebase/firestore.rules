@@ -34,6 +34,11 @@ service cloud.firestore {
         allow read: if isSelf(uid);
         allow write: if false;        // sendFriendRequest / acceptFriendRequest / declineFriendRequest / unfriend callables
       }
+      match /private/preferences {
+        // Notification toggle etc. Self-readable; written via setNotificationPref callable.
+        allow read: if isSelf(uid);
+        allow write: if false;        // setNotificationPref callable only
+      }
     }
 
     match /publicProfiles/{uid} {

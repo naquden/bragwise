@@ -56,10 +56,14 @@
 
     <!-- Me / Settings. -->
     <string name="me_logged_in">Logged in</string>
+    <string name="me_section_account">Account</string>
+    <string name="settings_section_title">Settings</string>
+    <string name="settings_about_title">About</string>
     <string name="settings_theme_title">Theme</string>
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_notifications_title">Notifications</string>
 
     <!-- Create Challenge screen (cc_). -->
     <string name="cc_title_field_label">Title</string>
