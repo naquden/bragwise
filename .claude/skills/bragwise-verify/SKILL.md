@@ -39,15 +39,34 @@ Note: the existing generic [adb-ui-agent](../adb-ui-agent/SKILL.md) skill mentio
 
 Run once per verification session, in order:
 
+0. **Allowlist check (mandatory first step).** Before any other action, read
+   `.claude/settings.local.json` and `.claude/settings.json`. Identify every
+   binary this run will need: `adb`, `sleep`, `sips`, `python3`, `grep`,
+   `sed`, `awk`, `xargs`, `tee`, `tr`, `wc`, `sort`, `head`, `tail`, `cat`,
+   `rm`, `cp`, `mv`, `mkdir`, `touch`, `chmod`, `bash`, `curl`, `find`, `ls`,
+   `echo`, `printf`, `git`, `./gradlew`. For any binary not covered by a
+   `Bash(<name> *)` entry in either file, add it via the `update-config` skill
+   **before proceeding**. Never discover a missing allowlist entry at runtime —
+   that causes permission prompts that interrupt the run.
+
 1. `adb devices` → confirm a single device, capture serial if needed.
 2. `./gradlew :androidApp:installDebug` → fresh APK installed.
 3. (Optional, for a fully clean run) `adb shell pm clear se.atte.bragwise`.
 4. `adb shell am start -n se.atte.bragwise/.MainActivity` → app launches.
-5. Sleep 2 s, then start the logcat watcher per [adb-ui-agent → Logcat — Background Watcher](../adb-ui-agent/SKILL.md):
+5. Sleep 2 s, then start the logcat watcher per [adb-ui-agent → Logcat — Background Watcher](../adb-ui-agent/SKILL.md). Run as **four separate Bash calls** — one command per call, never chained:
    ```bash
-   adb logcat -c && adb logcat --pid=$(adb shell pidof se.atte.bragwise) -v time > /tmp/ast-logcat.txt
+   sleep 2
    ```
-   Run this with `block_until_ms: 0` so it backgrounds.
+   ```bash
+   adb logcat -c
+   ```
+   ```bash
+   APP_PID=$(adb shell pidof se.atte.bragwise)
+   ```
+   ```bash
+   adb logcat --pid=$APP_PID -v time > /tmp/bragwise-verify/logcat.txt
+   ```
+   The last call uses `block_until_ms: 0` so it backgrounds.
 6. First screenshot for evidence → see **Screenshots** below; Read the resulting PNG to confirm the Sign In screen is showing.
 
 ## Screenshots — capture and pull
@@ -407,14 +426,27 @@ If the build fails, fix the build error first (treat it as a new failure within 
 
 ### 5. Relaunch + re-arm watcher
 
+Run as **separate Bash calls** — one command per call, never chained:
 ```bash
 adb shell am force-stop se.atte.bragwise
+```
+```bash
 adb shell am start -n se.atte.bragwise/.MainActivity
+```
+```bash
 sleep 2
-adb logcat -c && adb logcat --pid=$(adb shell pidof se.atte.bragwise) -v time > /tmp/ast-logcat.txt
+```
+```bash
+adb logcat -c
+```
+```bash
+APP_PID=$(adb shell pidof se.atte.bragwise)
+```
+```bash
+adb logcat --pid=$APP_PID -v time > /tmp/bragwise-verify/logcat.txt
 ```
 
-(background the logcat command with `block_until_ms: 0`.)
+(background the last logcat command with `block_until_ms: 0`.)
 
 ### 6. Retry the failing scenario only
 

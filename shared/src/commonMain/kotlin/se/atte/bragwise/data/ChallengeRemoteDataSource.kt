@@ -102,11 +102,15 @@ class ChallengeRemoteDataSource(
     fun observeChallengeDetail(challengeId: String, myUid: String): Flow<ChallengeDetail> = flow {
         val challengeFlow = db.document("challenges/$challengeId").snapshots
             .map { snap -> snap.toChallenge() }
-        val playerFlow = db.document("challenges/$challengeId/players/$myUid").snapshots
-            .map { snap ->
-                if (!snap.exists) return@map emptyMap<String, se.atte.bragwise.domain.PredictionPayload>()
-                snap.toPredictionsMap()
-            }
+        val playerFlow = if (myUid.isEmpty()) {
+            flowOf(emptyMap<String, se.atte.bragwise.domain.PredictionPayload>())
+        } else {
+            db.document("challenges/$challengeId/players/$myUid").snapshots
+                .map { snap ->
+                    if (!snap.exists) return@map emptyMap<String, se.atte.bragwise.domain.PredictionPayload>()
+                    snap.toPredictionsMap()
+                }
+        }
 
         emitAll(
             combine(challengeFlow, playerFlow) { challenge, myPredictions ->

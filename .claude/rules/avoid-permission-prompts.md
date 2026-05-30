@@ -5,6 +5,8 @@ permission-checked independently against the allowlist (`.claude/settings.local.
 A piped/chained command prompts the user if **any** segment misses the allowlist — even
 when the leading command does not.
 
+**Default: one command per Bash call.** Never chain (`&&`, `;`, `|`) across multiple logical operations unless shell composition is semantically required (see below). Each call is checked independently — splitting always wins.
+
 **Before running:** ask whether the same result can be obtained by:
 
 1. Running each segment as a separate Bash call (storing intermediate output to
