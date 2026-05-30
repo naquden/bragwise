@@ -1,0 +1,40 @@
+CREATE TABLE LocalFriend (
+    localId TEXT NOT NULL PRIMARY KEY,
+    displayName TEXT NOT NULL,
+    avatarSeed TEXT NOT NULL,
+    addedAtEpochMillis INTEGER NOT NULL
+);
+
+friendsAll:
+SELECT * FROM LocalFriend ORDER BY addedAtEpochMillis ASC;
+
+friendUpsert:
+INSERT OR REPLACE INTO LocalFriend VALUES (?, ?, ?, ?);
+
+friendDelete:
+DELETE FROM LocalFriend WHERE localId = ?;
+
+CREATE TABLE LocalPrediction (
+    challengeId TEXT NOT NULL,
+    betId TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    optionId TEXT,
+    orderedOptionIds TEXT NOT NULL,
+    boolValue INTEGER,
+    PRIMARY KEY (challengeId, betId)
+);
+
+predictionsAll:
+SELECT * FROM LocalPrediction;
+
+predictionsForChallenge:
+SELECT * FROM LocalPrediction WHERE challengeId = ?;
+
+predictionUpsert:
+INSERT OR REPLACE INTO LocalPrediction VALUES (?, ?, ?, ?, ?, ?);
+
+predictionDeleteForChallenge:
+DELETE FROM LocalPrediction WHERE challengeId = ?;
+
+predictionClear:
+DELETE FROM LocalPrediction;

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -42,6 +43,10 @@ kotlin {
             // and firebase-common with NO version, expecting the Firebase BoM to provide them.
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.koin.android)
+            implementation(libs.sqldelight.android.driver)
+        }
+        iosMain.dependencies {
+            implementation(libs.sqldelight.native.driver)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -66,6 +71,16 @@ kotlin {
             implementation(libs.gitlive.firebase.firestore)
             implementation(libs.gitlive.firebase.functions)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines.extensions)
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("BragwiseDatabase") {
+            packageName.set("se.atte.bragwise.db")
         }
     }
 }

@@ -99,10 +99,18 @@ class PredictViewModel(
             // Guests can't reach the cloud callable — persist locally and let
             // OB-05 migration replay these on sign-in.
             if (isGuest) {
-                localPredictions.put(challengeId, drafts)
+                val saved = runCatching { localPredictions.put(challengeId, drafts) }
                 update { it.copy(submitting = false) }
-                println("$PRED_DBG submit.local challengeId=$challengeId drafts=${drafts.size}")
-                emitEffect(Effect.Submitted)
+                saved.fold(
+                    onSuccess = {
+                        println("$PRED_DBG submit.local challengeId=$challengeId drafts=${drafts.size}")
+                        emitEffect(Effect.Submitted)
+                    },
+                    onFailure = { e ->
+                        println("$PRED_DBG submit.local.failure class=${e::class.simpleName} message=${e.message}")
+                        emitEffect(Effect.Snackbar("Submit failed: ${e::class.simpleName}: ${e.message}"))
+                    },
+                )
                 return@launch
             }
             val predictions = drafts.map { (betId, payload) -> Prediction(betId, payload) }

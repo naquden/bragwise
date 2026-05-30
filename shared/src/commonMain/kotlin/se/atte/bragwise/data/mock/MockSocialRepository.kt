@@ -2,11 +2,8 @@ package se.atte.bragwise.data.mock
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import se.atte.bragwise.data.LocalFriendPersistence
 import se.atte.bragwise.data.LocalFriendStore
 import se.atte.bragwise.data.ReconciliationSummary
 import se.atte.bragwise.data.SocialRepository
@@ -16,9 +13,8 @@ import se.atte.bragwise.domain.FriendRequests
 import se.atte.bragwise.domain.HeadToHead
 import se.atte.bragwise.domain.LocalFriend
 
-class MockSocialRepository : SocialRepository {
+class MockSocialRepository(private val localFriends: LocalFriendStore) : SocialRepository {
     private val _cloudFriends = MutableStateFlow<List<CloudFriend>>(mockCloudFriends)
-    private val localFriends = LocalFriendStore(InMemoryPersistence())
 
     override fun observeLocalFriends(): Flow<List<LocalFriend>> = localFriends.friends
 
@@ -66,11 +62,5 @@ class MockSocialRepository : SocialRepository {
             reconciled++
         }
         return ReconciliationSummary(reconciled = reconciled, skipped = skipped, failed = 0)
-    }
-
-    private class InMemoryPersistence : LocalFriendPersistence {
-        private var blob: String? = null
-        override fun load(): String? = blob
-        override fun save(json: String?) { blob = json }
     }
 }
