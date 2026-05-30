@@ -6,7 +6,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import se.atte.bragwise.data.AuthRepository
+import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
+import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.Prediction
@@ -18,9 +21,14 @@ import se.atte.bragwise.mvi.toCause
 class PredictViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,
+    private val auth: AuthRepository,
+    private val localPredictions: LocalPredictionStore,
 ) : ScreenViewModel<PredictViewModel.State, PredictViewModel.Intent, PredictViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
+
+    private val isGuest: Boolean
+        get() = auth.authState.value !is AuthState.SignedIn
 
     data class State(
         val ui: UiState<Bets>,
@@ -49,10 +57,18 @@ class PredictViewModel(
         challenges.observeChallengeDetail(challengeId)
             .distinctUntilChanged()
             .onEach { detail ->
+                // Guests have no cloud player doc, so myPredictions is empty —
+                // seed from the on-device store instead so re-opening the
+                // screen keeps their picks.
+                val existing = if (isGuest) {
+                    localPredictions.forChallenge(challengeId)
+                } else {
+                    detail.myPredictions
+                }
                 update {
                     it.copy(
-                        ui = UiState.Ready(Bets(detail.challenge.bets, detail.myPredictions)),
-                        drafts = detail.myPredictions,
+                        ui = UiState.Ready(Bets(detail.challenge.bets, existing)),
+                        drafts = existing,
                     )
                 }
             }
@@ -80,6 +96,15 @@ class PredictViewModel(
         update { it.copy(submitting = true) }
         viewModelScope.launch {
             val drafts = state.value.drafts
+            // Guests can't reach the cloud callable — persist locally and let
+            // OB-05 migration replay these on sign-in.
+            if (isGuest) {
+                localPredictions.put(challengeId, drafts)
+                update { it.copy(submitting = false) }
+                println("$PRED_DBG submit.local challengeId=$challengeId drafts=${drafts.size}")
+                emitEffect(Effect.Submitted)
+                return@launch
+            }
             val predictions = drafts.map { (betId, payload) -> Prediction(betId, payload) }
             println("$PRED_DBG submit.start challengeId=$challengeId drafts=${predictions.size} payloads=$drafts")
             val result = challenges.submitPredictions(challengeId, predictions)

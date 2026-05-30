@@ -14,8 +14,16 @@ import se.atte.bragwise.data.MigrationMode
 
 class MigrationViewModel(
     private val auth: AuthRepository,
-    private val mode: MigrationMode = MigrationMode.RESTORE,
 ) : ViewModel() {
+
+    /**
+     * A brand-new account SYNCs guest predictions up to the cloud; signing
+     * back into an existing account RESTOREs from the cloud, dropping local
+     * guest data (the cloud is authoritative). `null` is treated as existing
+     * (RESTORE) so we never push stale local data over a real account.
+     */
+    private val mode: MigrationMode
+        get() = if (auth.lastSignInCreatedNewUser == true) MigrationMode.SYNC else MigrationMode.RESTORE
 
     sealed interface Phase {
         data object Loading : Phase

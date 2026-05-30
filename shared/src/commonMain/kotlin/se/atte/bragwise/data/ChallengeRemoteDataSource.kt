@@ -212,6 +212,26 @@ class ChallengeRemoteDataSource(
     suspend fun inviteFriends(challengeId: String, uids: List<String>) {
         functions.httpsCallable("inviteFriends")(hashMapOf("challengeId" to challengeId, "uids" to uids))
     }
+
+    /**
+     * Replay guest predictions into the cloud on authenticate (OB-05 Sync).
+     * Per-item eligibility/lock filtering happens server-side; the callable
+     * returns `{migrated, failed}`. Locked / ineligible items count as
+     * `failed` and are intentionally dropped (see `migrateGuestData` in
+     * `functions/src/index.ts`).
+     */
+    suspend fun migrateGuestData(predictions: List<LocalPrediction>): MigrationSummary {
+        val data = hashMapOf(
+            "predictions" to predictions.map { p ->
+                hashMapOf("challengeId" to p.challengeId, "betId" to p.betId, "payload" to p.payload.toMap())
+            },
+        )
+        val result = functions.httpsCallable("migrateGuestData")(data)
+        val counts = result.data(MapSerializer(String.serializer(), Int.serializer()))
+        val migrated = counts["migrated"] ?: 0
+        val failed = counts["failed"] ?: 0
+        return MigrationSummary(migrated = migrated, deferredKeptLocal = 0, droppedLocked = failed)
+    }
 }
 
 private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this) {

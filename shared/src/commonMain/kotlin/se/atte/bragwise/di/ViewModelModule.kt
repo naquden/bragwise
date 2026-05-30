@@ -52,6 +52,8 @@ val viewModelModule = module {
         PredictViewModel(
             challengeId = params.get<String>(),
             challenges = get(),
+            auth = get(),
+            localPredictions = get(),
         )
     }
     viewModel<BetListViewModel> { params ->

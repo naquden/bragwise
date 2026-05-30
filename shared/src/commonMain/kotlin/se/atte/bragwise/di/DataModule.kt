@@ -12,6 +12,7 @@ import se.atte.bragwise.data.FirebaseChallengeRepository
 import se.atte.bragwise.data.FirebaseProfileRepository
 import se.atte.bragwise.data.FirebaseSocialRepository
 import se.atte.bragwise.data.LocalFriendStore
+import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.push.PushTokenRegistrar
 import se.atte.bragwise.data.ProfileLocalDataSource
 import se.atte.bragwise.data.ProfileRemoteDataSource
@@ -29,13 +30,21 @@ val dataModule = module {
     single { SocialRemoteDataSource() }
     singleOf(::SocialLocalDataSource)
     single { LocalFriendStore(persistence = get()) }
+    single { LocalPredictionStore(persistence = get()) }
     single { PushTokenRegistrar(push = get(), auth = get()) }
     single { ProfileRemoteDataSource() }
     singleOf(::ProfileLocalDataSource)
 
     // AuthLocalDataSource is platform-specific and lives in platformModule.
     // Repositories bound to their interfaces so the mock module can swap them out.
-    single<AuthRepository> { FirebaseAuthRepository(remote = get(), local = get()) }
+    single<AuthRepository> {
+        FirebaseAuthRepository(
+            remote = get(),
+            local = get(),
+            localPredictions = get(),
+            challengeRemote = get(),
+        )
+    }
     single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), auth = get()) }
     single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get(), localFriends = get()) }
     single<ProfileRepository> { FirebaseProfileRepository(remote = get(), local = get(), auth = get()) }

@@ -16,6 +16,8 @@ class MockAuthRepository : AuthRepository {
 
     override val pendingSignInEmail: StateFlow<String?> = MutableStateFlow(null)
 
+    override val lastSignInCreatedNewUser: Boolean? = true
+
     override fun isSignInLink(link: String): Boolean = false
 
     override suspend fun sendSignInLink(email: String): Result<Unit> {

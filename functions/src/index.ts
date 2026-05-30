@@ -1,7 +1,7 @@
 import { onCall, CallableRequest } from 'firebase-functions/v2/https';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2';
-import { sendToUser, CHANNEL_SOCIAL } from './push';
+import { sendToUser, CHANNEL_SOCIAL, CHANNEL_CHALLENGES } from './push';
 
 // Co-locate all 2nd-gen functions with Firestore (europe-west1). Without this,
 // onCall + onSchedule default to us-central1 — every callable would do a
@@ -352,6 +352,20 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
     });
   }
   await batch.commit();
+
+  const inviterSnap = await db.doc(`players/${uid}`).get();
+  const inviterName: string = inviterSnap.data()?.displayName ?? 'Someone';
+  const challengeTitle: string = challenge.title ?? 'a challenge';
+  await Promise.all(
+    uids.map((targetUid) =>
+      sendToUser(targetUid, {
+        title: "You're invited!",
+        body: `${inviterName} invited you to ${challengeTitle}`,
+        channel: CHANNEL_CHALLENGES,
+        deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}`,
+      }).catch(() => {}),
+    ),
+  );
 });
 
 // ─── sendFriendRequest ────────────────────────────────────────────────────────

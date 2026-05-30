@@ -48,6 +48,15 @@ interface AuthRepository {
     val authState: StateFlow<AuthState>
     val pendingSignInEmail: StateFlow<String?>
 
+    /**
+     * Whether the most recently completed sign-in created a brand-new account
+     * (`true`) or returned to an existing one (`false`). Drives OB-05 mode
+     * selection: a new account SYNCs guest predictions up; an existing account
+     * RESTOREs from the cloud, dropping local guest data. `null` until the
+     * first sign-in completes this process.
+     */
+    val lastSignInCreatedNewUser: Boolean?
+
     /** True iff this link looks like a Firebase email sign-in link. */
     fun isSignInLink(link: String): Boolean
 
@@ -83,10 +92,15 @@ interface AuthRepository {
 class FirebaseAuthRepository(
     val remote: AuthRemoteDataSource,
     private val local: AuthLocalDataSource,
+    private val localPredictions: LocalPredictionStore,
+    private val challengeRemote: ChallengeRemoteDataSource,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) : AuthRepository {
     private val _pendingSignInEmail = MutableStateFlow(local.pendingSignInEmail)
     override val pendingSignInEmail: StateFlow<String?> = _pendingSignInEmail
+
+    override var lastSignInCreatedNewUser: Boolean? = null
+        private set
 
     /**
      * Emits `Loading` once then switches to `SignedOut` / `SignedIn` based
@@ -115,7 +129,8 @@ class FirebaseAuthRepository(
     override suspend fun completeSignInWithLink(link: String): Result<Unit> = runCatching {
         val email = local.pendingSignInEmail
             ?: error("no pending email — link may have been opened on a different device")
-        remote.signInWithEmailLink(email = email, link = link)
+        val result = remote.signInWithEmailLink(email = email, link = link)
+        lastSignInCreatedNewUser = result.additionalUserInfo?.isNewUser
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
     }
@@ -129,6 +144,30 @@ class FirebaseAuthRepository(
     override suspend fun deleteAccount(): Result<Unit> =
         Result.failure(NotImplementedError("deleteAccount callable not wired"))
 
-    override suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary> =
-        Result.failure(NotImplementedError("migrateGuestData callable not wired"))
+    /**
+     * OB-05 Restore / Sync / Skip. RESTORE drops local guest predictions and
+     * loads the cloud account as-is; SYNC replays them through the
+     * `migrateGuestData` callable; SKIP is a no-op (caller aborts auth before
+     * this runs). On a successful SYNC the local store is cleared so the same
+     * predictions are never migrated twice.
+     */
+    override suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary> = runCatching {
+        when (mode) {
+            MigrationMode.SKIP -> MigrationSummary(migrated = 0, deferredKeptLocal = 0, droppedLocked = 0)
+            MigrationMode.RESTORE -> {
+                localPredictions.clear()
+                MigrationSummary(migrated = 0, deferredKeptLocal = 0, droppedLocked = 0)
+            }
+            MigrationMode.SYNC -> {
+                val pending = localPredictions.snapshot()
+                if (pending.isEmpty()) {
+                    MigrationSummary(migrated = 0, deferredKeptLocal = 0, droppedLocked = 0)
+                } else {
+                    val summary = challengeRemote.migrateGuestData(pending)
+                    localPredictions.clear()
+                    summary
+                }
+            }
+        }
+    }
 }
