@@ -101,6 +101,7 @@ internal sealed interface DragState {
 
 internal sealed interface DropTarget {
     data class Slot(val index: Int) : DropTarget
+    data class Gap(val insertIndex: Int) : DropTarget
     data object Pool : DropTarget
 }
 
@@ -178,12 +179,39 @@ internal class RankingDragStateHolder(
         _drag.value = DragState.Idle
     }
 
-    /** Applies the four §4 drag rules and returns the new ordered option id list. */
+    /** Applies drag rules and returns the new ordered option id list. */
     fun applyDrop(sourceItemId: String, target: DropTarget): List<String> {
         val sourceSlotIndex = _slots.indexOfFirst { it?.id == sourceItemId }.takeIf { it >= 0 }
         val isFromPool = _pool.any { it.id == sourceItemId }
 
         when {
+            // Gap insert/shift: remove source from wherever, insert at insertIndex, overflow → pool
+            target is DropTarget.Gap -> {
+                val allOptions = (_slots.filterNotNull() + _pool).associateBy { it.id }
+                val ids = currentOrderedIds().toMutableList()
+                var insertAt = target.insertIndex
+
+                if (sourceSlotIndex != null) {
+                    // Source is a slot: remove it first, adjust insertIndex if needed
+                    ids.removeAt(sourceSlotIndex)
+                    if (sourceSlotIndex < insertAt) insertAt--
+                } else if (isFromPool) {
+                    val item = _pool.first { it.id == sourceItemId }
+                    _pool.remove(item)
+                }
+
+                insertAt = insertAt.coerceIn(0, ids.size)
+                ids.add(insertAt, sourceItemId)
+
+                // Overflow items past topN back to pool
+                val overflow = ids.drop(topN)
+                val kept = ids.take(topN)
+                overflow.forEach { id -> allOptions[id]?.let { insertSorted(it) } }
+
+                // Repack slots
+                for (i in 0 until topN) _slots[i] = null
+                kept.forEachIndexed { i, id -> _slots[i] = allOptions[id] }
+            }
             isFromPool && target is DropTarget.Slot && _slots[target.index] == null -> {
                 val item = _pool.first { it.id == sourceItemId }
                 _pool.remove(item)
@@ -238,8 +266,22 @@ internal class RankingDragStateHolder(
     }
 
     fun findTargetAt(pos: Offset): DropTarget? {
+        val filledCount = _slots.count { it != null }
         for ((index, bounds) in slotBounds) {
-            if (bounds.contains(pos)) return DropTarget.Slot(index)
+            if (!bounds.contains(pos)) continue
+            val occupant = _slots.getOrNull(index)
+            if (occupant == null) {
+                // Empty trailing slot: treat as gap at end of filled items
+                return DropTarget.Gap(filledCount)
+            }
+            // Filled slot: top third = gap above, bottom third = gap below, middle = center hit
+            val relY = pos.y - bounds.top
+            val third = bounds.height / 3f
+            return when {
+                relY < third -> DropTarget.Gap(index)
+                relY > third * 2f -> DropTarget.Gap(index + 1)
+                else -> DropTarget.Slot(index)
+            }
         }
         if (poolColumnBounds != Rect.Zero && poolColumnBounds.contains(pos)) return DropTarget.Pool
         return null
@@ -623,11 +665,20 @@ private fun SlotsColumn(
 ) {
     val returnToPoolLabel = stringResource(Res.string.ranking_a11y_return_to_pool)
 
+    val isDragActive = drag !is DragState.Idle
+    val filledCount = holder.slots.count { it != null }
+
     Column(
         modifier = modifier
             .background(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.small)
             .padding(standardPaddingSmall),
     ) {
+        // Gap before the first slot (ordinal 0)
+        if (isDragActive) {
+            GapIndicator(
+                active = drag is DragState.Hovering && drag.target == DropTarget.Gap(0),
+            )
+        }
         for (i in 0 until topN) {
             val occupant = holder.slots.getOrNull(i)
             val dragItemId = when (drag) {
@@ -653,9 +704,33 @@ private fun SlotsColumn(
                 onDragCancel = onDragCancel,
                 onTap = { if (occupant != null) onTapSlot(i) },
             )
-            if (i < topN - 1) Spacer(Modifier.height(4.dp))
+            // Gap after each slot; only show up to the last filled slot + 1 (append position)
+            if (isDragActive && i < filledCount) {
+                GapIndicator(
+                    active = drag is DragState.Hovering && drag.target == DropTarget.Gap(i + 1),
+                )
+            } else if (!isDragActive && i < topN - 1) {
+                Spacer(Modifier.height(4.dp))
+            }
         }
     }
+}
+
+@Composable
+private fun GapIndicator(active: Boolean) {
+    val color = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (active) 6.dp else 4.dp)
+            .then(
+                if (active) {
+                    Modifier.background(color = color, shape = androidx.compose.foundation.shape.CircleShape)
+                } else {
+                    Modifier
+                },
+            ),
+    )
 }
 
 @Composable
