@@ -26,11 +26,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,6 +52,7 @@ import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.components.flagEmoji
+import se.atte.bragwise.verify.VerifyAutomation
 
 @Composable
 fun PredictScreen(
@@ -108,6 +111,22 @@ private fun PredictContent(
     onRanking: (String, List<String>) -> Unit,
     onSubmit: () -> Unit,
 ) {
+    LaunchedEffect(bets) {
+        VerifyAutomation.consumePendingRankingFill()?.let { (betId, orderedOptionIds) ->
+            onRanking(betId, orderedOptionIds)
+        }
+    }
+
+    LaunchedEffect(bets, drafts, submitting) {
+        if (!VerifyAutomation.autoSubmitPredictions || submitting) return@LaunchedEffect
+        val allComplete = bets.isNotEmpty() && bets.all { drafts[it.id].isCompleteFor(it) }
+        if (allComplete) {
+            VerifyAutomation.clearAutoSubmitPredictions()
+            println("BRAGWISE_VERIFY eurovision_ranking: auto-submitting predictions")
+            onSubmit()
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
         val hasRanking = bets.any { it is Bet.Ranking }
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -143,7 +162,7 @@ private fun PredictContent(
         val completed = bets.count { drafts[it.id].isCompleteFor(it) }
         BottomActionBar {
             AppButton(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("predict_submit"),
                 onClick = onSubmit,
                 enabled = !submitting && completed == bets.size,
             ) {

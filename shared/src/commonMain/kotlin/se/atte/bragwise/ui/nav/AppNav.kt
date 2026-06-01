@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import se.atte.bragwise.ui.LocalSnackbarHost
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import se.atte.bragwise.ui.enableTestTagsAsResourceId
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
@@ -48,6 +51,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.atte.bragwise.data.AuthRepository
+import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
@@ -89,6 +94,7 @@ import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
 import se.atte.bragwise.ui.screens.onboarding.WelcomeScreen
 import se.atte.bragwise.ui.screens.predict.PredictScreen
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
+import se.atte.bragwise.verify.VerifyAutomation
 
 private enum class Tab { Challenges, Me }
 
@@ -138,6 +144,8 @@ fun AppNav() {
     val platformShare: PlatformShare = koinInject()
     val social: SocialRepository = koinInject()
     val pushNotifications: PushNotifications = koinInject()
+    val auth: AuthRepository = koinInject()
+    val authState by auth.authState.collectAsState(AuthState.Loading)
     val snackbarHostState = remember { SnackbarHostState() }
 
     fun push(next: Route) {
@@ -152,7 +160,13 @@ fun AppNav() {
 
     LaunchedEffect(Unit) {
         pushNotifications.incomingDeepLinks.collect { url ->
-            parseDeepLink(url)?.let { push(it) }
+            parseDeepLink(url)?.let { push(next = it) }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        VerifyAutomation.openPredictChallengeId.collect { challengeId ->
+            push(next = Route.Predict(challengeId = challengeId))
         }
     }
 
@@ -169,6 +183,7 @@ fun AppNav() {
     )
 
     Scaffold(
+        modifier = Modifier.enableTestTagsAsResourceId(),
         topBar = {
             if (!isAtTabs) {
                 IconButton(
@@ -213,7 +228,10 @@ fun AppNav() {
         floatingActionButton = {
             if (currentTab == Tab.Challenges) {
                 FloatingActionButton(
-                    onClick = { push(Route.Create) },
+                    onClick = {
+                        if (authState is AuthState.SignedIn) push(Route.Create)
+                        else push(Route.SignIn)
+                    },
                     shape = MaterialTheme.shapes.extraLarge,
                 ) {
                     Icon(imageVector = Lucide.Plus, contentDescription = "Create challenge")
@@ -255,6 +273,7 @@ fun AppNav() {
                             social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
+                            isSignedIn = authState is AuthState.SignedIn,
                         )
                     }
                     Box(
@@ -277,6 +296,7 @@ fun AppNav() {
                             social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
+                            isSignedIn = authState is AuthState.SignedIn,
                         )
                     }
                 } else {
@@ -295,6 +315,7 @@ fun AppNav() {
                             social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
+                            isSignedIn = authState is AuthState.SignedIn,
                         )
                     }
                 }
@@ -313,13 +334,16 @@ private fun RouteContent(
     social: SocialRepository,
     snackbarHostState: SnackbarHostState,
     onboardingPrefs: OnboardingPrefs,
+    isSignedIn: Boolean,
 ) {
     when (route) {
         is Route.Tabs -> when (route.tab) {
             Tab.Challenges -> ChallengesScreen(
                 viewModel = koinViewModel<ChallengesViewModel>(),
                 onNavigateToChallenge = { push(Route.ChallengeDetail(it)) },
-                onNavigateToCreate = { push(Route.Create) },
+                onNavigateToCreate = {
+                    if (isSignedIn) push(Route.Create) else push(Route.SignIn)
+                },
             )
             Tab.Me -> MeScreen(
                 viewModel = koinViewModel<MeViewModel>(),

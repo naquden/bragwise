@@ -54,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -713,6 +714,7 @@ private fun SlotRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(RankingDragDefaults.SlotHeight)
+            .testTag("ranking_slot_$index")
             .onGloballyPositioned { coords ->
                 rowBoundsInRoot = coords.boundsInRoot()
                 onBoundsChanged(rowBoundsInRoot)
@@ -883,6 +885,7 @@ private fun PoolRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(RankingDragDefaults.SlotHeight)
+            .testTag("ranking_pool_${item.id}")
             .onGloballyPositioned { coords ->
                 rowBoundsInRoot = coords.boundsInRoot()
                 onBoundsChanged(rowBoundsInRoot)

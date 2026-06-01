@@ -130,7 +130,12 @@ private fun EnterEmail(
     onEmail: (String) -> Unit,
     onSendLink: () -> Unit,
 ) {
-    SectionCard(title = "Sign in with email") {
+    SectionCard {
+        Text(
+            "Sign in with email",
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmail,

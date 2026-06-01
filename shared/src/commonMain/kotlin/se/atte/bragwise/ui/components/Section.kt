@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.theme.Elevation
 import se.atte.bragwise.ui.standardPadding
@@ -38,6 +40,7 @@ import se.atte.bragwise.theme.appShadow
 fun SectionCard(
     title: String? = null,
     modifier: Modifier = Modifier,
+    titleTextAlign: TextAlign = TextAlign.Unspecified,
     contentPadding: androidx.compose.foundation.layout.PaddingValues =
         androidx.compose.foundation.layout.PaddingValues(standardPadding),
     content: @Composable ColumnScope.() -> Unit,
@@ -57,6 +60,8 @@ fun SectionCard(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = titleTextAlign,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(12.dp))
             }
@@ -163,7 +168,7 @@ fun BottomActionBar(
         tonalElevation = 2.dp,
     ) {
         androidx.compose.foundation.layout.Row(
-            modifier = Modifier.fillMaxWidth().padding(standardPadding),
+            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(standardPadding),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             content = content,

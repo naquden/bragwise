@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,8 +39,10 @@ import com.composables.icons.lucide.X
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.ui.components.AppButton
+import se.atte.bragwise.ui.components.CountryAutocompleteField
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
@@ -68,6 +71,8 @@ fun CreateChallengeScreen(
 
     var newBetTitle by remember { mutableStateOf("") }
     var options by remember { mutableStateOf(listOf("", "")) }
+    var countryOptions by remember { mutableStateOf(defaultCountryOptions()) }
+    var optionType by remember { mutableStateOf(OptionType.NONE) }
     var topN by remember { mutableIntStateOf(3) }
     var betType by remember { mutableStateOf(BetType.YesNo) }
     var editingBetId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -77,6 +82,8 @@ fun CreateChallengeScreen(
     val resetEditor = {
         newBetTitle = ""
         options = listOf("", "")
+        countryOptions = defaultCountryOptions()
+        optionType = OptionType.NONE
         topN = 3
         betType = BetType.YesNo
     }
@@ -86,22 +93,32 @@ fun CreateChallengeScreen(
             is Bet.BooleanProp -> {
                 betType = BetType.YesNo
                 options = listOf("", "")
+                countryOptions = defaultCountryOptions()
+                optionType = OptionType.NONE
                 topN = 3
             }
             is Bet.SinglePick -> {
                 betType = BetType.SinglePick
+                optionType = bet.optionType
                 options = bet.options.map { it.label }
+                countryOptions = bet.options
                 topN = 3
             }
             is Bet.Ranking -> {
                 betType = BetType.Ranking
+                optionType = bet.optionType
                 options = bet.options.map { it.label }
+                countryOptions = bet.options
                 topN = bet.topN
             }
         }
     }
 
-    val validOptions = options.map { it.trim() }.filter { it.isNotEmpty() }
+    val resolvedOptions = when (optionType) {
+        OptionType.COUNTRY -> countryOptions.filter { it.label.isNotBlank() }
+        OptionType.NONE -> options.map { it.trim() }.filter { it.isNotEmpty() }
+            .mapIndexed { index, label -> BetOption(id = "o$index", label = label) }
+    }
 
     if (showFriendPicker) {
         FriendPickerDialog(
@@ -127,7 +144,7 @@ fun CreateChallengeScreen(
                         value = state.title,
                         onValueChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetTitle(it)) },
                         label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag("create_title"),
                         singleLine = true,
                     )
                 }
@@ -191,18 +208,25 @@ fun CreateChallengeScreen(
                         betType = betType,
                         onBetTypeChange = { newType ->
                             betType = newType
-                            if (newType == BetType.YesNo) options = listOf("", "")
+                            if (newType == BetType.YesNo) {
+                                options = listOf("", "")
+                                optionType = OptionType.NONE
+                            }
                         },
+                        optionType = optionType,
+                        onOptionTypeChange = { optionType = it },
                         question = newBetTitle,
                         onQuestionChange = { newBetTitle = it },
                         options = options,
                         onOptionsChange = { options = it },
+                        countryOptions = countryOptions,
+                        onCountryOptionsChange = { countryOptions = it },
                         topN = topN,
                         onTopNChange = { topN = it },
                         canSave = newBetTitle.isNotBlank() && when (betType) {
                             BetType.YesNo -> true
-                            BetType.SinglePick -> validOptions.size >= 2
-                            BetType.Ranking -> validOptions.size >= topN
+                            BetType.SinglePick -> resolvedOptions.size >= 2
+                            BetType.Ranking -> resolvedOptions.size >= topN
                         },
                         saveLabel = "Save bet",
                         onCancel = {
@@ -215,12 +239,14 @@ fun CreateChallengeScreen(
                                 BetType.SinglePick -> Bet.SinglePick(
                                     id = bet.id,
                                     title = newBetTitle,
-                                    options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                    optionType = optionType,
+                                    options = resolvedOptions,
                                 )
                                 BetType.Ranking -> Bet.Ranking(
                                     id = bet.id,
                                     title = newBetTitle,
-                                    options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                    optionType = optionType,
+                                    options = resolvedOptions,
                                     topN = topN,
                                 )
                             }
@@ -248,18 +274,25 @@ fun CreateChallengeScreen(
                         betType = betType,
                         onBetTypeChange = { newType ->
                             betType = newType
-                            if (newType == BetType.YesNo) options = listOf("", "")
+                            if (newType == BetType.YesNo) {
+                                options = listOf("", "")
+                                optionType = OptionType.NONE
+                            }
                         },
+                        optionType = optionType,
+                        onOptionTypeChange = { optionType = it },
                         question = newBetTitle,
                         onQuestionChange = { newBetTitle = it },
                         options = options,
                         onOptionsChange = { options = it },
+                        countryOptions = countryOptions,
+                        onCountryOptionsChange = { countryOptions = it },
                         topN = topN,
                         onTopNChange = { topN = it },
                         canSave = newBetTitle.isNotBlank() && when (betType) {
                             BetType.YesNo -> true
-                            BetType.SinglePick -> validOptions.size >= 2
-                            BetType.Ranking -> validOptions.size >= topN
+                            BetType.SinglePick -> resolvedOptions.size >= 2
+                            BetType.Ranking -> resolvedOptions.size >= topN
                         },
                         saveLabel = "Save bet",
                         onCancel = {
@@ -274,13 +307,15 @@ fun CreateChallengeScreen(
                                 BetType.SinglePick -> viewModel.onIntent(
                                     CreateChallengeViewModel.Intent.AddSinglePick(
                                         title = newBetTitle,
-                                        options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                        optionType = optionType,
+                                        options = resolvedOptions,
                                     ),
                                 )
                                 BetType.Ranking -> viewModel.onIntent(
                                     CreateChallengeViewModel.Intent.AddRanking(
                                         title = newBetTitle,
-                                        options = validOptions.mapIndexed { i, label -> BetOption(id = "o$i", label = label) },
+                                        optionType = optionType,
+                                        options = resolvedOptions,
                                         topN = topN,
                                     ),
                                 )
@@ -291,7 +326,7 @@ fun CreateChallengeScreen(
                     )
                 } else if (!isEditing) {
                     AppOutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag("create_add_bet"),
                         onClick = { editingBetId = "" },
                     ) { Text("+ Add bet") }
                 }
@@ -305,7 +340,7 @@ fun CreateChallengeScreen(
                 enabled = !state.submitting,
             ) { Text("Save draft") }
             AppButton(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).testTag("create_publish"),
                 onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.Publish) },
                 enabled = !state.submitting && state.bets.isNotEmpty() && state.title.isNotBlank(),
             ) { Text("Publish") }
@@ -320,10 +355,14 @@ private fun BetEditor(
     title: String,
     betType: BetType,
     onBetTypeChange: (BetType) -> Unit,
+    optionType: OptionType,
+    onOptionTypeChange: (OptionType) -> Unit,
     question: String,
     onQuestionChange: (String) -> Unit,
     options: List<String>,
     onOptionsChange: (List<String>) -> Unit,
+    countryOptions: List<BetOption>,
+    onCountryOptionsChange: (List<BetOption>) -> Unit,
     topN: Int,
     onTopNChange: (Int) -> Unit,
     canSave: Boolean,
@@ -364,21 +403,51 @@ private fun BetEditor(
                 selected = betType == BetType.Ranking,
                 onClick = { onBetTypeChange(BetType.Ranking) },
                 label = { Text("Ranking") },
+                modifier = Modifier.testTag("create_bet_ranking"),
             )
+        }
+        if (betType == BetType.SinglePick || betType == BetType.Ranking) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+                modifier = Modifier.padding(top = standardPaddingSmall),
+            ) {
+                AppFilterChip(
+                    selected = optionType == OptionType.NONE,
+                    onClick = { onOptionTypeChange(OptionType.NONE) },
+                    label = { Text("Custom options") },
+                )
+                AppFilterChip(
+                    selected = optionType == OptionType.COUNTRY,
+                    onClick = {
+                        onOptionTypeChange(OptionType.COUNTRY)
+                        if (countryOptions.size < 2) onCountryOptionsChange(defaultCountryOptions())
+                    },
+                    label = { Text("Countries") },
+                    modifier = Modifier.testTag("create_bet_countries"),
+                )
+            }
         }
         OutlinedTextField(
             value = question,
             onValueChange = onQuestionChange,
             label = { Text("Question") },
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_bet_question"),
             singleLine = true,
         )
         if (betType == BetType.SinglePick || betType == BetType.Ranking) {
-            OptionsEditor(
-                options = options,
-                onOptionsChange = onOptionsChange,
-                modifier = Modifier.padding(top = standardPaddingSmall),
-            )
+            if (optionType == OptionType.COUNTRY) {
+                CountryOptionsEditor(
+                    options = countryOptions,
+                    onOptionsChange = onCountryOptionsChange,
+                    modifier = Modifier.padding(top = standardPaddingSmall),
+                )
+            } else {
+                OptionsEditor(
+                    options = options,
+                    onOptionsChange = onOptionsChange,
+                    modifier = Modifier.padding(top = standardPaddingSmall),
+                )
+            }
         }
         if (betType == BetType.Ranking) {
             TopNStepper(
@@ -388,7 +457,7 @@ private fun BetEditor(
             )
         }
         AppOutlinedButton(
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_bet_save"),
             onClick = onSave,
             enabled = canSave,
         ) { Text(saveLabel) }
@@ -548,6 +617,53 @@ private fun OptionsEditor(
 }
 
 @Composable
+private fun CountryOptionsEditor(
+    options: List<BetOption>,
+    onOptionsChange: (List<BetOption>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+    ) {
+        options.forEachIndexed { index, option ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                CountryAutocompleteField(
+                    value = option,
+                    onChange = { updated ->
+                        onOptionsChange(options.toMutableList().also { it[index] = updated.copy(id = option.id) })
+                    },
+                    modifier = Modifier.weight(1f).testTag("create_country_field_$index"),
+                    placeholder = "Country ${index + 1}",
+                )
+                IconButton(
+                    onClick = { onOptionsChange(options.toMutableList().also { it.removeAt(index) }) },
+                    enabled = options.size > 2,
+                ) {
+                    Icon(
+                        imageVector = Lucide.X,
+                        contentDescription = "Remove option",
+                        tint = if (options.size > 2)
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    )
+                }
+            }
+        }
+        AppTextButton(onClick = {
+            onOptionsChange(options + BetOption(id = "o${options.size}", label = ""))
+        }) { Text("+ Add country") }
+    }
+}
+
+private fun defaultCountryOptions(count: Int = 2): List<BetOption> =
+    List(count) { index -> BetOption(id = "o$index", label = "") }
+
+@Composable
 private fun TopNStepper(
     value: Int,
     onValueChange: (Int) -> Unit,
@@ -575,8 +691,8 @@ private fun TopNStepper(
             fontWeight = FontWeight.Bold,
         )
         IconButton(
-            onClick = { if (value < 6) onValueChange(value + 1) },
-            enabled = value < 6,
+            onClick = { if (value < 10) onValueChange(value + 1) },
+            enabled = value < 10,
         ) {
             Icon(imageVector = Lucide.Plus, contentDescription = "Increase top N")
         }
@@ -584,7 +700,13 @@ private fun TopNStepper(
 }
 
 private fun Bet.kindLabel(): String = when (this) {
-    is Bet.SinglePick -> "Single pick · ${options.size} options"
+    is Bet.SinglePick -> when (optionType) {
+        OptionType.COUNTRY -> "Single pick · ${options.size} countries"
+        OptionType.NONE -> "Single pick · ${options.size} options"
+    }
     is Bet.BooleanProp -> "Yes / No"
-    is Bet.Ranking -> "Ranking · top $topN of ${options.size}"
+    is Bet.Ranking -> when (optionType) {
+        OptionType.COUNTRY -> "Ranking · top $topN of ${options.size} countries"
+        OptionType.NONE -> "Ranking · top $topN of ${options.size}"
+    }
 }
