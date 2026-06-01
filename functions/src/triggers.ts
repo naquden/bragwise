@@ -139,9 +139,13 @@ export const onMemberJoin = onDocumentCreated(
 
 /**
  * Fires on every write to `players/{uid}/private/social`. Only acts when
- * the `friends` map has grown (new entries added). For each new friend pair,
- * scans both users' open FRIENDS-visibility challenges and creates reciprocal
- * invitations for the other party.
+ * the `friends` map has grown (new entries added), to notify each new friend
+ * that their request was accepted.
+ *
+ * The system never auto-creates challenge invitations on a new friendship.
+ * A friend's FRIENDS-visibility challenges are surfaced to the viewer through
+ * the friend-graph discovery query (`observeFromFriends`), not via invitation
+ * docs. "Invitations" are reserved for explicit `inviteFriends` calls.
  */
 export const onFriendAccepted = onDocumentWritten(
   'players/{uid}/private/social',
@@ -152,15 +156,6 @@ export const onFriendAccepted = onDocumentWritten(
 
     const newFriendUids = Object.keys(after).filter((fid) => !(fid in before));
     if (newFriendUids.length === 0) return;
-
-    // For each new friend pair, find open FRIENDS challenges created by
-    // either side and create invitations for the other.
-    for (const friendUid of newFriendUids) {
-      await Promise.allSettled([
-        createInvitationsForNewFriend(uid, friendUid),
-        createInvitationsForNewFriend(friendUid, uid),
-      ]);
-    }
 
     // Notify each new friend that their request was accepted — best-effort.
     const acceptorSnap = await db.doc(`players/${uid}`).get();
@@ -176,28 +171,6 @@ export const onFriendAccepted = onDocumentWritten(
     );
   },
 );
-
-async function createInvitationsForNewFriend(creatorUid: string, inviteeUid: string): Promise<void> {
-  const challengesSnap = await db
-    .collection('challenges')
-    .where('createdBy', '==', creatorUid)
-    .where('status', '==', 'OPEN')
-    .where('visibility', '==', 'FRIENDS')
-    .get();
-
-  if (challengesSnap.empty) return;
-
-  const batch = db.batch();
-  for (const doc of challengesSnap.docs) {
-    const inviteRef = db.doc(`challenges/${doc.id}/invitations/${inviteeUid}`);
-    batch.set(inviteRef, {
-      invitedUid: inviteeUid,
-      invitedBy: creatorUid,
-      invitedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-  }
-  await batch.commit();
-}
 
 // ─── onUserDeleted ────────────────────────────────────────────────────────────
 

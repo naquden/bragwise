@@ -34,6 +34,7 @@ import { db, FieldValue, auth as adminAuth } from './lib/admin';
 import {
   ClaimHandleSchema,
   CreateChallengeSchema,
+  DeleteChallengeSchema,
   FriendRequestActionSchema,
   InviteFriendsSchema,
   MigrateGuestDataSchema,
@@ -132,6 +133,8 @@ export const updateProfile = onCall(async (req: CallableRequest<unknown>) => {
   }
 });
 
+const ACTIVE_CHALLENGE_CAP = 30;
+
 // ─── createChallenge ─────────────────────────────────────────────────────────
 
 export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
@@ -143,17 +146,43 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
   await audit(uid, 'createChallenge', { title: payload.title, visibility: payload.visibility });
 
   const ref = db.collection('challenges').doc();
-  await ref.set({
-    ...payload,
-    id: ref.id,
-    createdBy: uid,
-    createdAt: FieldValue.serverTimestamp(),
-    status: 'DRAFT',
-    joinedCount: 0,
-    promoted: false,
-    trusted: false,
-    leaderboard: null,
-    resultsPostedAt: null,
+  const counterRef = db.doc(`players/${uid}/private/counters`);
+
+  await db.runTransaction(async (tx) => {
+    const counterSnap = await tx.get(counterRef);
+    const active: number = counterSnap.exists
+      ? (counterSnap.data()!.activeChallenges ?? 0)
+      : 0;
+
+    if (active >= ACTIVE_CHALLENGE_CAP) {
+      // Drift repair: re-read the live aggregation count before hard-rejecting.
+      const liveSnap = await db
+        .collection('challenges')
+        .where('createdBy', '==', uid)
+        .where('resultsPostedAt', '==', null)
+        .count()
+        .get();
+      const liveCount = liveSnap.data().count;
+      if (liveCount >= ACTIVE_CHALLENGE_CAP) {
+        throw new HttpsError('resource-exhausted', 'challenge-cap-reached');
+      }
+      // Counter drifted low — repair it inline and proceed.
+      tx.set(counterRef, { activeChallenges: liveCount }, { merge: true });
+    }
+
+    tx.set(ref, {
+      ...payload,
+      id: ref.id,
+      createdBy: uid,
+      createdAt: FieldValue.serverTimestamp(),
+      status: 'DRAFT',
+      joinedCount: 0,
+      promoted: false,
+      trusted: false,
+      leaderboard: null,
+      resultsPostedAt: null,
+    });
+    tx.set(counterRef, { activeChallenges: FieldValue.increment(1) }, { merge: true });
   });
 
   return { challengeId: ref.id };
@@ -309,7 +338,49 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
       resultsPostedAt: FieldValue.serverTimestamp(),
       status: 'RESULTS_POSTED',
     });
+    const counterRef = db.doc(`players/${uid}/private/counters`);
+    tx.set(counterRef, { activeChallenges: FieldValue.increment(-1) }, { merge: true });
   });
+});
+
+// ─── deleteChallenge ─────────────────────────────────────────────────────────
+
+export const deleteChallenge = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  requireVerifiedEmail(req);
+  await rateLimit(uid, 'deleteChallenge', 3600, 10);
+  const { challengeId } = validate(DeleteChallengeSchema, req.data);
+  await audit(uid, 'deleteChallenge', { challengeId });
+
+  const challengeRef = db.doc(`challenges/${challengeId}`);
+  const counterRef = db.doc(`players/${uid}/private/counters`);
+  let creatorUid = uid;
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(challengeRef);
+    if (!snap.exists) throw new HttpsError('not-found', 'challenge-not-found');
+    const data = snap.data()!;
+    creatorUid = data.createdBy as string;
+    if (creatorUid !== uid) throw new HttpsError('permission-denied', 'not-creator');
+    if (data.resultsPostedAt !== null && data.resultsPostedAt !== undefined) {
+      throw new HttpsError('failed-precondition', 'results-posted');
+    }
+    tx.set(counterRef, { activeChallenges: FieldValue.increment(-1) }, { merge: true });
+  });
+
+  // Purge subcollections then the challenge doc itself.
+  const [playersSnap, invitationsSnap] = await Promise.all([
+    challengeRef.collection('players').listDocuments(),
+    challengeRef.collection('invitations').listDocuments(),
+  ]);
+  const allRefs = [...playersSnap, ...invitationsSnap, challengeRef];
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < allRefs.length; i += BATCH_SIZE) {
+    const batch = db.batch();
+    for (const ref of allRefs.slice(i, i + BATCH_SIZE)) batch.delete(ref);
+    await batch.commit();
+  }
 });
 
 // ─── inviteFriends ────────────────────────────────────────────────────────────

@@ -122,6 +122,10 @@ export const SetNotificationPrefSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const DeleteChallengeSchema = z.object({
+  challengeId: z.string().min(1),
+});
+
 export const MigrateGuestDataSchema = z.object({
   predictions: z
     .array(

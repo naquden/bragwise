@@ -46,7 +46,7 @@ val dataModule = module {
             challengeRemote = get(),
         )
     }
-    single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), auth = get()) }
+    single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), auth = get(), social = get()) }
     single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get(), localFriends = get()) }
     single<ProfileRepository> { FirebaseProfileRepository(remote = get(), local = get(), auth = get()) }
 }

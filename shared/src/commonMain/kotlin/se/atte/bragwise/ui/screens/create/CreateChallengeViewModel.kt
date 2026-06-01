@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.SocialRepository
+import se.atte.bragwise.mvi.Cause
+import se.atte.bragwise.mvi.toCause
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
@@ -164,7 +166,14 @@ class CreateChallengeViewModel(
                         emitEffect(Effect.DraftSaved(saved.id))
                     }
                 },
-                onFailure = { e -> emitEffect(Effect.Snackbar(e.message ?: "Create failed")) },
+                onFailure = { e ->
+                    val msg = if (e.toCause() == Cause.CapReached) {
+                        "You can have up to 30 active challenges. Finish or delete one first."
+                    } else {
+                        e.message ?: "Create failed"
+                    }
+                    emitEffect(Effect.Snackbar(msg))
+                },
             )
         }
     }

@@ -27,6 +27,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import se.atte.bragwise.ui.LocalSnackbarHost
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +55,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
@@ -147,6 +150,7 @@ fun AppNav() {
     val auth: AuthRepository = koinInject()
     val authState by auth.authState.collectAsState(AuthState.Loading)
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     fun push(next: Route) {
         if (backStack.last() != next) backStack.add(next)
@@ -181,6 +185,11 @@ fun AppNav() {
         onBackCancelled = {},
         onBackCompleted = { pop() },
     )
+
+    val onMigrationSkip: () -> Unit = {
+        scope.launch { auth.signOut() }
+        replaceTop(Route.Tabs(Tab.Challenges))
+    }
 
     Scaffold(
         modifier = Modifier.enableTestTagsAsResourceId(),
@@ -274,6 +283,7 @@ fun AppNav() {
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
                             isSignedIn = authState is AuthState.SignedIn,
+                            onMigrationSkip = onMigrationSkip,
                         )
                     }
                     Box(
@@ -297,6 +307,7 @@ fun AppNav() {
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
                             isSignedIn = authState is AuthState.SignedIn,
+                            onMigrationSkip = onMigrationSkip,
                         )
                     }
                 } else {
@@ -316,6 +327,7 @@ fun AppNav() {
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
                             isSignedIn = authState is AuthState.SignedIn,
+                            onMigrationSkip = onMigrationSkip,
                         )
                     }
                 }
@@ -335,7 +347,9 @@ private fun RouteContent(
     snackbarHostState: SnackbarHostState,
     onboardingPrefs: OnboardingPrefs,
     isSignedIn: Boolean,
+    onMigrationSkip: () -> Unit,
 ) {
+    val localPredictions: LocalPredictionStore = koinInject()
     when (route) {
         is Route.Tabs -> when (route.tab) {
             Tab.Challenges -> ChallengesScreen(
@@ -386,10 +400,13 @@ private fun RouteContent(
             viewModel = koinViewModel<SignInViewModel>(),
             snackbarHostState = snackbarHostState,
             onSignedIn = {
-                // Sign-in success → run guest-data migration first
-                // (OB-05); on completion the dialog routes onward
-                // to ReconcileFriends (OB-06) or Me as appropriate.
-                replaceTop(Route.Migration)
+                val hasLocalData = localPredictions.snapshot().isNotEmpty() ||
+                    social.localFriendSnapshot().isNotEmpty()
+                if (hasLocalData) {
+                    replaceTop(Route.Migration)
+                } else {
+                    replaceTop(Route.Tabs(Tab.Me))
+                }
             },
             onGuest = { replaceTop(Route.Tabs(Tab.Challenges)) },
         )
@@ -431,8 +448,10 @@ private fun RouteContent(
             viewModel = koinViewModel<ManageChallengeViewModel>(key = "manage:${route.challengeId}") {
                 parametersOf(route.challengeId)
             },
+            snackbarHostState = snackbarHostState,
             onInvite = { id -> push(Route.Invite(id)) },
             onPostResults = { id -> push(Route.PostResults(id)) },
+            onDeleted = { pop() },
         )
         is Route.Invite -> InviteFriendsScreen(
             viewModel = koinViewModel<InviteFriendsViewModel>(key = "invite:${route.challengeId}") {
@@ -483,7 +502,7 @@ private fun RouteContent(
                     },
                 )
             },
-            onSkip = { replaceTop(Route.Tabs(Tab.Me)) },
+            onSkip = onMigrationSkip,
         )
     }
 }

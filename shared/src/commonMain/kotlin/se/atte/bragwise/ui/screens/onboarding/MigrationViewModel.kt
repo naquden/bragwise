@@ -13,31 +13,46 @@ class MigrationViewModel(
     private val auth: AuthRepository,
 ) : ViewModel() {
 
-    /**
-     * A brand-new account SYNCs guest predictions up to the cloud; signing
-     * back into an existing account RESTOREs from the cloud, dropping local
-     * guest data (the cloud is authoritative). `null` is treated as existing
-     * (RESTORE) so we never push stale local data over a real account.
-     */
-    private val mode: MigrationMode
-        get() = if (auth.lastSignInCreatedNewUser == true) MigrationMode.SYNC else MigrationMode.RESTORE
-
     sealed interface Phase {
+        data object Choosing : Phase
         data object Loading : Phase
         data object Done : Phase
         data class Failed(val message: String) : Phase
     }
 
-    private val _phase = MutableStateFlow<Phase>(Phase.Loading)
+    private val _phase = MutableStateFlow<Phase>(Phase.Choosing)
     val phase: StateFlow<Phase> = _phase.asStateFlow()
 
-    init {
-        run()
+    val isNewAccount: Boolean get() = auth.lastSignInCreatedNewUser == true
+
+    /**
+     * Reset to [Phase.Choosing] when the dialog re-enters composition. The VM
+     * is Activity-scoped (hand-rolled nav has no per-route ViewModelStoreOwner),
+     * so a 2nd sign-in reuses the same instance — which would otherwise still be
+     * in a terminal [Phase.Done] from the previous run and silently skip the
+     * choice. Only resets from a terminal phase so an in-flight migration is
+     * never interrupted.
+     */
+    fun resetIfTerminal() {
+        if (_phase.value is Phase.Done || _phase.value is Phase.Failed) {
+            _phase.value = Phase.Choosing
+        }
     }
 
-    fun retry() = run()
+    fun onChoose(mode: MigrationMode) {
+        if (mode == MigrationMode.SKIP) {
+            _phase.value = Phase.Done
+            return
+        }
+        _phase.value = Phase.Loading
+        viewModelScope.launch {
+            auth.migrateLocalToCloud(mode)
+                .onSuccess { _phase.value = Phase.Done }
+                .onFailure { _phase.value = Phase.Failed(it.message ?: "Unknown error") }
+        }
+    }
 
-    private fun run() {
+    fun retry(mode: MigrationMode) {
         _phase.value = Phase.Loading
         viewModelScope.launch {
             auth.migrateLocalToCloud(mode)

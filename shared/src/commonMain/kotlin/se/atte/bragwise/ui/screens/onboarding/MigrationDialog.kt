@@ -13,22 +13,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
+import se.atte.bragwise.data.MigrationMode
 import se.atte.bragwise.ui.components.AppButton
+import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
 
 /**
- * OB-05 Migration dialog. Triggered after sign-in completes when local
- * data exists (predictions, local friends). Calls migrateGuestData
- * callable; success closes; failure offers retry.
- *
- * Phase state lives in MigrationViewModel (survives rotation) so the
- * migration is never accidentally re-triggered by a config change.
+ * OB-05 Migration dialog. Shows three explicit choices so the user is never
+ * silently dropped into Restore or Sync. Only shown when local guest data
+ * exists — see AppNav guard.
  */
 @Composable
 fun MigrationDialog(
@@ -36,13 +38,13 @@ fun MigrationDialog(
     onSkip: () -> Unit,
     viewModel: MigrationViewModel = koinViewModel(),
 ) {
+    // Activity-scoped VM is reused across sign-ins; clear any terminal phase
+    // from a previous run before the first phase read so the choice re-shows.
+    remember { viewModel.resetIfTerminal() }
     val phase by viewModel.phase.collectAsStateWithLifecycle()
+    var lastMode by remember { mutableStateOf(MigrationMode.SYNC) }
+    val currentOnSkip by rememberUpdatedState(onSkip)
 
-    // React to terminal phase rather than a one-shot effect: the VM is
-    // Activity-scoped (hand-rolled nav has no per-route ViewModelStoreOwner),
-    // so on a 2nd sign-in the same instance is reused with phase already
-    // Done. A consumed one-shot effect would never re-fire — leaving the
-    // dialog stuck on "All done." Keying on `phase` re-navigates on reuse.
     val currentOnComplete by rememberUpdatedState(onComplete)
     LaunchedEffect(phase) {
         if (phase is MigrationViewModel.Phase.Done) currentOnComplete()
@@ -50,9 +52,41 @@ fun MigrationDialog(
 
     AlertDialog(
         onDismissRequest = { /* gated; user must resolve */ },
-        title = { Text("Saving your data…") },
+        title = {
+            Text(
+                when (phase) {
+                    MigrationViewModel.Phase.Choosing -> "You have local data"
+                    else -> "Saving your data…"
+                },
+            )
+        },
         text = {
             when (val p = phase) {
+                MigrationViewModel.Phase.Choosing -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "You made predictions as a guest. What would you like to do?",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    AppButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            lastMode = MigrationMode.SYNC
+                            viewModel.onChoose(MigrationMode.SYNC)
+                        },
+                    ) { Text(if (viewModel.isNewAccount) "Sync local to cloud (recommended)" else "Sync local to cloud") }
+                    AppOutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            lastMode = MigrationMode.RESTORE
+                            viewModel.onChoose(MigrationMode.RESTORE)
+                        },
+                    ) { Text(if (!viewModel.isNewAccount) "Restore from cloud (recommended)" else "Restore from cloud") }
+                    AppTextButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { currentOnSkip() },
+                    ) { Text("Skip — stay guest") }
+                }
                 MigrationViewModel.Phase.Loading -> Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -78,15 +112,15 @@ fun MigrationDialog(
         },
         confirmButton = {
             when (phase) {
+                MigrationViewModel.Phase.Choosing,
                 MigrationViewModel.Phase.Loading -> Unit
-                // Manual escape so the user is never trapped, even if the
-                // auto-navigation LaunchedEffect above somehow doesn't fire.
                 MigrationViewModel.Phase.Done -> AppButton(onClick = onComplete) { Text("OK") }
-                is MigrationViewModel.Phase.Failed -> AppButton(onClick = viewModel::retry) { Text("Retry") }
+                is MigrationViewModel.Phase.Failed -> AppButton(onClick = { viewModel.retry(lastMode) }) { Text("Retry") }
             }
         },
         dismissButton = {
             when (phase) {
+                MigrationViewModel.Phase.Choosing,
                 MigrationViewModel.Phase.Loading,
                 MigrationViewModel.Phase.Done -> Unit
                 is MigrationViewModel.Phase.Failed -> AppTextButton(onClick = onSkip) { Text("Skip") }

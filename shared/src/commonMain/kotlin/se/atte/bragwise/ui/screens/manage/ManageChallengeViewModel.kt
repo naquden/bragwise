@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
@@ -17,15 +18,25 @@ class ManageChallengeViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,
     private val auth: AuthRepository,
-) : ScreenViewModel<ManageChallengeViewModel.State, ManageChallengeViewModel.Intent, Nothing>(
+) : ScreenViewModel<ManageChallengeViewModel.State, ManageChallengeViewModel.Intent, ManageChallengeViewModel.Effect>(
     initialState = State(ui = UiState.Loading, isOwner = false),
 ) {
     data class State(
         val ui: UiState<ChallengeDetail>,
         val isOwner: Boolean,
+        val confirmingDelete: Boolean = false,
     )
 
-    sealed interface Intent
+    sealed interface Intent {
+        data object RequestDelete : Intent
+        data object CancelDelete : Intent
+        data object ConfirmDelete : Intent
+    }
+
+    sealed interface Effect {
+        data object Deleted : Effect
+        data class Snackbar(val text: String) : Effect
+    }
 
     init {
         challenges.observeChallengeDetail(challengeId)
@@ -43,5 +54,16 @@ class ManageChallengeViewModel(
             .launchIn(viewModelScope)
     }
 
-    override fun onIntent(intent: Intent) = Unit
+    override fun onIntent(intent: Intent) {
+        when (intent) {
+            Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }
+            Intent.CancelDelete -> update { it.copy(confirmingDelete = false) }
+            Intent.ConfirmDelete -> viewModelScope.launch {
+                update { it.copy(confirmingDelete = false) }
+                challenges.deleteChallenge(challengeId)
+                    .onSuccess { emitEffect(Effect.Deleted) }
+                    .onFailure { emitEffect(Effect.Snackbar("Delete failed: ${it.message ?: "unknown"}")) }
+            }
+        }
+    }
 }

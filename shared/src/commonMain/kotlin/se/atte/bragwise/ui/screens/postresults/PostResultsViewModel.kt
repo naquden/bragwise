@@ -75,6 +75,11 @@ class PostResultsViewModel(
 }
 
 internal fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
-    is Bet.Ranking -> (this as? PredictionPayload.Ranking)?.orderedOptionIds?.size == bet.topN
+    is Bet.Ranking -> {
+        // A ranking is complete only when every slot is filled — no gaps.
+        // Slot order may carry "" sentinels for empty slots while editing.
+        val ids = (this as? PredictionPayload.Ranking)?.orderedOptionIds.orEmpty()
+        ids.count { it.isNotEmpty() } == bet.topN
+    }
     is Bet.SinglePick, is Bet.BooleanProp -> this != null
 }

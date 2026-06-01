@@ -119,4 +119,7 @@ class MockChallengeRepository(
 
     override suspend fun dismissInviteLocally(challengeId: String): Result<Unit> =
         Result.success(Unit)
+
+    override suspend fun deleteChallenge(challengeId: String): Result<Unit> =
+        Result.success(Unit)
 }

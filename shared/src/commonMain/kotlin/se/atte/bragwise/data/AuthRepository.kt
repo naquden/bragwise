@@ -141,8 +141,12 @@ class FirebaseAuthRepository(
         _pendingSignInEmail.value = null
     }
 
-    override suspend fun deleteAccount(): Result<Unit> =
-        Result.failure(NotImplementedError("deleteAccount callable not wired"))
+    override suspend fun deleteAccount(): Result<Unit> = runCatching {
+        remote.deleteAccount()
+        local.pendingSignInEmail = null
+        _pendingSignInEmail.value = null
+        localPredictions.clear()
+    }
 
     /**
      * OB-05 Restore / Sync / Skip. RESTORE drops local guest predictions and

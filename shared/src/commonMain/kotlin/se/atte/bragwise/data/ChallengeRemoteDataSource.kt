@@ -154,6 +154,33 @@ class ChallengeRemoteDataSource(
         )
     }
 
+    /**
+     * Open FRIENDS-visibility challenges created by any of the given uids.
+     * Chunked into groups of 30 (Firestore `inArray` limit); chunks are
+     * combined into a single deduplicated list.
+     */
+    fun observeFromFriends(friendUids: List<String>): Flow<List<Challenge>> {
+        if (friendUids.isEmpty()) return flowOf(emptyList())
+        val chunks = friendUids.chunked(30)
+        val chunkFlows = chunks.map { chunk ->
+            flow {
+                emitAll(
+                    db.collection("challenges")
+                        .where { "createdBy" inArray chunk }
+                        .where { "status" equalTo "OPEN" }
+                        .where { "visibility" equalTo "FRIENDS" }
+                        .snapshots
+                        .map { snap ->
+                            snap.documents.mapNotNull { doc ->
+                                runCatching { doc.toChallenge() }.getOrNull()
+                            }
+                        },
+                )
+            }
+        }
+        return combine(chunkFlows) { arrays -> arrays.flatMap { it }.distinctBy { it.id } }
+    }
+
     // ── Writes (callables) ───────────────────────────────────────────────────
 
     suspend fun createChallenge(challenge: Challenge): String {
@@ -194,15 +221,7 @@ class ChallengeRemoteDataSource(
                 hashMapOf("betId" to p.betId, "payload" to p.payload.toMap())
             },
         )
-        println("$REMOTE_DBG submitPredictions.call challengeId=$challengeId count=${predictions.size}")
-        try {
-            functions.httpsCallable("submitPredictions")(data)
-            println("$REMOTE_DBG submitPredictions.ok challengeId=$challengeId")
-        } catch (e: Throwable) {
-            println("$REMOTE_DBG submitPredictions.err class=${e::class.simpleName} message=${e.message}")
-            println("$REMOTE_DBG submitPredictions.err.stack ${e.stackTraceToString()}")
-            throw e
-        }
+        functions.httpsCallable("submitPredictions")(data)
     }
 
     suspend fun postResults(challengeId: String, results: Map<String, se.atte.bragwise.domain.PredictionPayload>) {
@@ -215,6 +234,10 @@ class ChallengeRemoteDataSource(
 
     suspend fun inviteFriends(challengeId: String, uids: List<String>) {
         functions.httpsCallable("inviteFriends")(hashMapOf("challengeId" to challengeId, "uids" to uids))
+    }
+
+    suspend fun deleteChallenge(challengeId: String) {
+        functions.httpsCallable("deleteChallenge")(hashMapOf("challengeId" to challengeId))
     }
 
     /**
@@ -254,4 +277,3 @@ private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this)
     )
 }
 
-private const val REMOTE_DBG = "BRAGWISE_REMOTE_9c95cf"

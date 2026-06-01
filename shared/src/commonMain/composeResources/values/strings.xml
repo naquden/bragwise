@@ -16,6 +16,7 @@
     <string name="error_rate_limited">Slow down — try again in a minute.</string>
     <string name="error_auth">Sign-in expired. Please sign in again.</string>
     <string name="error_email_unverified">Verify your email to keep playing.</string>
+    <string name="error_challenge_cap">You can have up to 30 active challenges. Finish or delete one first.</string>
     <string name="error_unknown">Something went wrong.</string>
 
     <!-- Discovery / Challenges screen. -->

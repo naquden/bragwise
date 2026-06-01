@@ -7,10 +7,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
@@ -31,6 +33,7 @@ interface ChallengeRepository {
     suspend fun postResults(challengeId: String, results: Map<String, PredictionPayload>): Result<Unit>
     suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit>
     suspend fun dismissInviteLocally(challengeId: String): Result<Unit>
+    suspend fun deleteChallenge(challengeId: String): Result<Unit>
 }
 
 // #region agent log
@@ -52,6 +55,7 @@ class FirebaseChallengeRepository(
     val remote: ChallengeRemoteDataSource,
     private val local: ChallengeLocalDataSource,
     private val auth: AuthRepository,
+    private val social: SocialRepository,
 ) : ChallengeRepository {
     private val currentUid: String?
         get() = (auth.authState.value as? AuthState.SignedIn)?.uid
@@ -80,13 +84,20 @@ class FirebaseChallengeRepository(
     override fun observePromoted(): Flow<List<Challenge>> = remote.observePromoted()
         .catch { emit(emptyList()) }
 
-    /**
-     * Challenges from friends — Phase 1 deferred: requires reading the friend
-     * list and then querying challenges by each friend uid, which is a fan-out
-     * that sits above the single-shot auth state. Returns empty for now; a full
-     * implementation will use SocialRepository.observeCloudFriends() → challenge query.
-     */
-    override fun observeFromFriends(): Flow<List<Challenge>> = flowOf(emptyList())
+    override fun observeFromFriends(): Flow<List<Challenge>> =
+        auth.authState.flatMapLatest { state ->
+            val myUid = (state as? AuthState.SignedIn)?.uid ?: return@flatMapLatest flowOf(emptyList())
+            combine(
+                social.observeFriends().map { friends -> friends.filterIsInstance<CloudFriend>().map { it.id } },
+                remote.observeJoined(myUid).map { joined -> joined.map { it.id }.toSet() },
+            ) { friendUids, joinedIds ->
+                Pair(friendUids, joinedIds)
+            }.flatMapLatest { (friendUids, joinedIds) ->
+                remote.observeFromFriends(friendUids)
+                    .map { challenges -> challenges.filter { it.id !in joinedIds } }
+                    .catch { emit(emptyList()) }
+            }
+        }
 
     override fun observePendingInvites(): Flow<List<Invitation>> =
         auth.authState.flatMapLatest { state ->
@@ -131,4 +142,8 @@ class FirebaseChallengeRepository(
         runCatching { remote.inviteFriends(challengeId, uids) }
 
     override suspend fun dismissInviteLocally(challengeId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun deleteChallenge(challengeId: String): Result<Unit> = runCatching {
+        remote.deleteChallenge(challengeId)
+    }
 }

@@ -3,6 +3,7 @@ package se.atte.bragwise.mvi
 import androidx.compose.runtime.Composable
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.error_auth
+import bragwise.shared.generated.resources.error_challenge_cap
 import bragwise.shared.generated.resources.error_email_unverified
 import bragwise.shared.generated.resources.error_network
 import bragwise.shared.generated.resources.error_rate_limited
@@ -27,6 +28,7 @@ sealed interface Cause {
     data object RateLimited : Cause
     data object Auth : Cause
     data object EmailUnverified : Cause
+    data object CapReached : Cause
     data class Unknown(val message: String? = null) : Cause
 
     @Composable
@@ -35,6 +37,7 @@ sealed interface Cause {
         Network -> stringResource(Res.string.error_network)
         RateLimited -> stringResource(Res.string.error_rate_limited)
         EmailUnverified -> stringResource(Res.string.error_email_unverified)
+        CapReached -> stringResource(Res.string.error_challenge_cap)
         is Unknown -> stringResource(Res.string.error_unknown)
     }
 }
@@ -42,6 +45,8 @@ sealed interface Cause {
 fun Throwable.toCause(): Cause = when {
     this is kotlin.coroutines.cancellation.CancellationException -> throw this
     message?.contains("PERMISSION_DENIED", ignoreCase = true) == true -> Cause.Auth
+    message?.contains("resource-exhausted", ignoreCase = true) == true ||
+        message?.contains("challenge-cap-reached", ignoreCase = true) == true -> Cause.CapReached
     message?.contains("UNAVAILABLE", ignoreCase = true) == true ||
         message?.contains("network", ignoreCase = true) == true -> Cause.Network
     else -> Cause.Unknown(message)

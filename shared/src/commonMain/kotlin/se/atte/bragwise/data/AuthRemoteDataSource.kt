@@ -7,6 +7,8 @@ import dev.gitlive.firebase.auth.AuthResult
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.auth
+import dev.gitlive.firebase.functions.FirebaseFunctions
+import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 class AuthRemoteDataSource(
     private val auth: FirebaseAuth = Firebase.auth,
     private val actionCodeSettings: ActionCodeSettings = defaultActionCodeSettings(),
+    private val functions: FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
 ) {
     val currentUser: FirebaseUser? get() = auth.currentUser
     val authStateChanged: Flow<FirebaseUser?> get() = auth.authStateChanged
@@ -41,6 +44,10 @@ class AuthRemoteDataSource(
 
     suspend fun signOut() {
         auth.signOut()
+    }
+
+    suspend fun deleteAccount() {
+        functions.httpsCallable("deleteAccount")(emptyMap<String, Any?>())
     }
 
     companion object {
