@@ -265,15 +265,21 @@ private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this)
     is se.atte.bragwise.domain.Bet.SinglePick -> mapOf(
         "kind" to "SINGLE_PICK", "id" to id, "title" to title,
         "optionType" to optionType.name,
-        "options" to options.map { mapOf("id" to it.id, "label" to it.label, "countryCode" to it.countryCode) },
+        "options" to options.map { it.toMap() },
     )
     is se.atte.bragwise.domain.Bet.Ranking -> mapOf(
         "kind" to "RANKING", "id" to id, "title" to title,
         "optionType" to optionType.name, "topN" to topN,
-        "options" to options.map { mapOf("id" to it.id, "label" to it.label, "countryCode" to it.countryCode) },
+        "options" to options.map { it.toMap() },
     )
     is se.atte.bragwise.domain.Bet.BooleanProp -> mapOf(
         "kind" to "BOOLEAN_PROP", "id" to id, "title" to title,
     )
+}
+
+private fun se.atte.bragwise.domain.BetOption.toMap(): Map<String, Any> = buildMap {
+    put("id", id)
+    put("label", label)
+    countryCode?.let { put("countryCode", it) }
 }
 

@@ -17,9 +17,29 @@ sealed interface AuthState {
      * Carries identity only (uid + email). Full `Player` profile data
      * is owned by `ProfileRepository.observeMe()`, which reads
      * `/publicProfiles/{uid}` + `/players/{uid}` separately.
+     *
+     * [isAnonymous] is true for guests: they have a real Firebase uid and
+     * an online player doc (so they appear on leaderboards under the name
+     * they chose) but are not bound to an email/person. Feature gates that
+     * require a "real" account (create challenge, add friends, online
+     * predictions) must check [isFullyAuthed], not `is SignedIn`.
      */
-    data class SignedIn(val uid: String, val email: String?) : AuthState
+    data class SignedIn(
+        val uid: String,
+        val email: String?,
+        val isAnonymous: Boolean = false,
+    ) : AuthState
 }
+
+/** uid for any signed-in session (anonymous guest included), else null. */
+val AuthState.signedInUid: String? get() = (this as? AuthState.SignedIn)?.uid
+
+/**
+ * True only for a non-anonymous (email-backed) account. Anonymous guests
+ * are signed in but NOT fully authed — they keep the guest feature set.
+ */
+val AuthState.isFullyAuthed: Boolean
+    get() = this is AuthState.SignedIn && !isAnonymous
 
 /**
  * Phase 1 ships email-link passwordless only. Google + Apple are Phase 2
@@ -59,6 +79,13 @@ interface AuthRepository {
 
     /** True iff this link looks like a Firebase email sign-in link. */
     fun isSignInLink(link: String): Boolean
+
+    /**
+     * Sign in anonymously so a guest gets a stable random uid and an online
+     * (but person-unbound) player record. The chosen display name is written
+     * separately via the `updateProfile` callable by the caller.
+     */
+    suspend fun continueAsGuest(): Result<Unit>
 
     /**
      * Send the sign-in link. Persists the email locally so the deep-link
@@ -109,7 +136,7 @@ class FirebaseAuthRepository(
     override val authState: StateFlow<AuthState> = remote.authStateChanged
         .map<_, AuthState> { user ->
             if (user == null) AuthState.SignedOut
-            else AuthState.SignedIn(uid = user.uid, email = user.email)
+            else AuthState.SignedIn(uid = user.uid, email = user.email, isAnonymous = user.isAnonymous)
         }
         .onStart { emit(AuthState.Loading) }
         .stateIn(
@@ -119,6 +146,10 @@ class FirebaseAuthRepository(
         )
 
     override fun isSignInLink(link: String): Boolean = remote.isSignInWithEmailLink(link)
+
+    override suspend fun continueAsGuest(): Result<Unit> = runCatching {
+        remote.signInAnonymously()
+    }
 
     override suspend fun sendSignInLink(email: String): Result<Unit> = runCatching {
         local.pendingSignInEmail = email

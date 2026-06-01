@@ -30,11 +30,11 @@ class MockSocialRepository(private val localFriends: LocalFriendStore) : SocialR
 
     override fun observeHeadToHead(): Flow<HeadToHead> = flowOf(HeadToHead(emptyMap()))
 
-    override fun addLocalFriend(displayName: String, avatarSeed: String): LocalFriend =
-        localFriends.add(displayName = displayName, avatarSeed = avatarSeed)
+    override fun addLocalFriend(displayName: String): LocalFriend =
+        localFriends.add(displayName = displayName)
 
-    override fun editLocalFriend(localId: String, displayName: String, avatarSeed: String): Boolean =
-        localFriends.edit(localId, displayName, avatarSeed)
+    override fun editLocalFriend(localId: String, displayName: String): Boolean =
+        localFriends.edit(localId = localId, displayName = displayName)
 
     override fun removeLocalFriend(localId: String): Boolean = localFriends.remove(localId)
 

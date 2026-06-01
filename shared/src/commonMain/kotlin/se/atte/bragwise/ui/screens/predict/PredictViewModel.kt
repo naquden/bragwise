@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
-import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.domain.Bet
@@ -27,8 +27,10 @@ class PredictViewModel(
     initialState = State(ui = UiState.Loading),
 ) {
 
+    // Anonymous guests keep local predictions too: the online submit path
+    // requires a verified email, so only fully-authed users write to Firestore.
     private val isGuest: Boolean
-        get() = auth.authState.value !is AuthState.SignedIn
+        get() = !auth.authState.value.isFullyAuthed
 
     data class State(
         val ui: UiState<Bets>,

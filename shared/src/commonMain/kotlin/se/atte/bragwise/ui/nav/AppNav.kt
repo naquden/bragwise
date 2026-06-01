@@ -55,8 +55,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.OnboardingPrefs
+import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.push.PushNotifications
@@ -91,6 +93,7 @@ import se.atte.bragwise.ui.screens.leaderboard.LeaderboardScreen
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeScreen
 import se.atte.bragwise.ui.screens.me.MeViewModel
+import se.atte.bragwise.ui.screens.onboarding.GuestNameScreen
 import se.atte.bragwise.ui.screens.onboarding.MigrationDialog
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsScreen
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
@@ -112,6 +115,7 @@ private sealed interface Route {
     data class FriendEditor(val localId: String?) : Route
     data object ReconcileFriends : Route
     data object Welcome : Route
+    data object GuestName : Route
     data object Migration : Route
     data class BetList(val challengeId: String) : Route
     data class ChallengeSummary(val challengeId: String) : Route
@@ -238,7 +242,7 @@ fun AppNav() {
             if (currentTab == Tab.Challenges) {
                 FloatingActionButton(
                     onClick = {
-                        if (authState is AuthState.SignedIn) push(Route.Create)
+                        if (authState.isFullyAuthed) push(Route.Create)
                         else push(Route.SignIn)
                     },
                     shape = MaterialTheme.shapes.extraLarge,
@@ -282,7 +286,7 @@ fun AppNav() {
                             social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
-                            isSignedIn = authState is AuthState.SignedIn,
+                            isSignedIn = authState.isFullyAuthed,
                             onMigrationSkip = onMigrationSkip,
                         )
                     }
@@ -306,7 +310,7 @@ fun AppNav() {
                             social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
-                            isSignedIn = authState is AuthState.SignedIn,
+                            isSignedIn = authState.isFullyAuthed,
                             onMigrationSkip = onMigrationSkip,
                         )
                     }
@@ -326,7 +330,7 @@ fun AppNav() {
                             social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
-                            isSignedIn = authState is AuthState.SignedIn,
+                            isSignedIn = authState.isFullyAuthed,
                             onMigrationSkip = onMigrationSkip,
                         )
                     }
@@ -350,6 +354,9 @@ private fun RouteContent(
     onMigrationSkip: () -> Unit,
 ) {
     val localPredictions: LocalPredictionStore = koinInject()
+    val auth: AuthRepository = koinInject()
+    val profile: ProfileRepository = koinInject()
+    val guestScope = rememberCoroutineScope()
     when (route) {
         is Route.Tabs -> when (route.tab) {
             Tab.Challenges -> ChallengesScreen(
@@ -415,7 +422,6 @@ private fun RouteContent(
             snackbarHostState = snackbarHostState,
             onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
             onOpenCloudProfile = { uid -> push(Route.PlayerProfile(uid)) },
-            onOpenReconcile = { push(Route.ReconcileFriends) },
             onOpenFriendRequests = { push(Route.FriendRequests) },
         )
         Route.FriendRequests -> FriendRequestsScreen(
@@ -451,7 +457,7 @@ private fun RouteContent(
             snackbarHostState = snackbarHostState,
             onInvite = { id -> push(Route.Invite(id)) },
             onPostResults = { id -> push(Route.PostResults(id)) },
-            onDeleted = { pop() },
+            onDeleted = { pop(); pop() },
         )
         is Route.Invite -> InviteFriendsScreen(
             viewModel = koinViewModel<InviteFriendsViewModel>(key = "invite:${route.challengeId}") {
@@ -488,7 +494,26 @@ private fun RouteContent(
                 replaceTop(Route.SignIn)
             },
             onContinueAsGuest = {
+                if (onboardingPrefs.guestName.isNullOrBlank()) {
+                    replaceTop(Route.GuestName)
+                } else {
+                    onboardingPrefs.hasSeenWelcome = true
+                    replaceTop(Route.Tabs(Tab.Challenges))
+                }
+            },
+        )
+        Route.GuestName -> GuestNameScreen(
+            initialName = onboardingPrefs.guestName.orEmpty(),
+            onContinue = { name ->
+                onboardingPrefs.guestName = name
                 onboardingPrefs.hasSeenWelcome = true
+                // Give the guest a real (anonymous) Firebase uid and an online
+                // player doc under the chosen name. Best-effort: if anonymous
+                // auth is unavailable we still let them in with the local name.
+                guestScope.launch {
+                    auth.continueAsGuest()
+                        .onSuccess { profile.updateProfile(displayName = name) }
+                }
                 replaceTop(Route.Tabs(Tab.Challenges))
             },
         )

@@ -1,6 +1,8 @@
 package se.atte.bragwise.ui.screens.manage
 
 import androidx.lifecycle.viewModelScope
+import dev.gitlive.firebase.functions.FirebaseFunctionsException
+import dev.gitlive.firebase.functions.FunctionsExceptionCode
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
@@ -62,7 +64,13 @@ class ManageChallengeViewModel(
                 update { it.copy(confirmingDelete = false) }
                 challenges.deleteChallenge(challengeId)
                     .onSuccess { emitEffect(Effect.Deleted) }
-                    .onFailure { emitEffect(Effect.Snackbar("Delete failed: ${it.message ?: "unknown"}")) }
+                    .onFailure { e ->
+                        if (e is FirebaseFunctionsException && e.code == FunctionsExceptionCode.NOT_FOUND) {
+                            emitEffect(Effect.Deleted)
+                        } else {
+                            emitEffect(Effect.Snackbar("Delete failed: ${e.message ?: "unknown"}"))
+                        }
+                    }
             }
         }
     }

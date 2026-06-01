@@ -3,6 +3,7 @@ package se.atte.bragwise.ui.screens.friends
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,7 +51,6 @@ fun FriendsScreen(
     snackbarHostState: SnackbarHostState,
     onLocalAddOrEdit: (localId: String?) -> Unit,
     onOpenCloudProfile: (handle: String) -> Unit,
-    onOpenReconcile: () -> Unit,
     onOpenFriendRequests: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -61,7 +61,6 @@ fun FriendsScreen(
             FriendsViewModel.Effect.OpenLocalAdd -> onLocalAddOrEdit(null)
             is FriendsViewModel.Effect.OpenLocalEdit -> onLocalAddOrEdit(effect.localId)
             is FriendsViewModel.Effect.OpenCloudProfile -> onOpenCloudProfile(effect.uid)
-            FriendsViewModel.Effect.OpenReconcile -> onOpenReconcile()
             is FriendsViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
     }
@@ -112,21 +111,14 @@ private fun FriendsBody(
             }
         }
 
-        BottomActionBar {
-            AppOutlinedButton(
-                modifier = Modifier.weight(1f),
-                onClick = { onIntent(FriendsViewModel.Intent.Reconcile) },
-            ) { Text("Reconcile") }
-            AppButton(
-                modifier = Modifier.weight(1f),
-                onClick = { onIntent(FriendsViewModel.Intent.AddFriend) },
-            ) {
-                Text(
-                    text = when (state.mode) {
-                        FriendsViewModel.Mode.Guest -> "Add friend"
-                        FriendsViewModel.Mode.SignedIn -> "Add by handle"
-                    },
-                )
+        if (state.mode == FriendsViewModel.Mode.SignedIn) {
+            BottomActionBar {
+                AppButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onIntent(FriendsViewModel.Intent.AddFriend) },
+                ) {
+                    Text(text = "Add by handle")
+                }
             }
         }
     }
@@ -146,7 +138,7 @@ private fun EmptyState(mode: FriendsViewModel.Mode) {
         Text(
             text = when (mode) {
                 FriendsViewModel.Mode.Guest ->
-                    "Add a friend to keep track of who you predict against."
+                    "Sign up to add friends and compete on shared challenges."
                 FriendsViewModel.Mode.SignedIn ->
                     "Add friends by their @handle to compete on shared challenges."
             },
@@ -211,7 +203,7 @@ private fun FriendsList(
                             ListRow(
                                 title = friend.displayName,
                                 subtitle = "Local",
-                                leading = friend.avatarSeed.firstOrNull()?.toString() ?: "·",
+                                leading = friend.displayName.firstOrNull()?.uppercase() ?: "·",
                                 onClick = { onRowMenu(friend.localId) },
                             )
                             if (index < locals.size - 1) ListGroupDivider()
@@ -227,19 +219,20 @@ private fun FriendsList(
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { onRowMenu(null) },
             confirmButton = {
-                AppTextButton(onClick = {
-                    onIntent(FriendsViewModel.Intent.EditLocal(target))
-                    onRowMenu(null)
-                }) { Text("Edit") }
-            },
-            dismissButton = {
-                AppTextButton(
-                    onClick = {
-                        onIntent(FriendsViewModel.Intent.RemoveLocal(target))
+                Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                    AppButton(onClick = { onRowMenu(null) }) { Text("Close") }
+                    AppOutlinedButton(onClick = {
+                        onIntent(FriendsViewModel.Intent.EditLocal(target))
                         onRowMenu(null)
-                    },
-                    color = MaterialTheme.colorScheme.error,
-                ) { Text("Remove") }
+                    }) { Text("Edit") }
+                    AppTextButton(
+                        onClick = {
+                            onIntent(FriendsViewModel.Intent.RemoveLocal(target))
+                            onRowMenu(null)
+                        },
+                        color = MaterialTheme.colorScheme.error,
+                    ) { Text("Delete") }
+                }
             },
             title = { Text("Local friend") },
             text = { Text("Edit or remove this local friend.") },
@@ -265,7 +258,6 @@ private fun previewCloudFriend(n: Int) = CloudFriend(
 private fun previewLocalFriend(n: Int) = LocalFriend(
     localId = "l$n",
     displayName = "Local Friend $n",
-    avatarSeed = "loc$n",
     addedAt = Instant.fromEpochSeconds(0),
 )
 

@@ -79,7 +79,14 @@ class MeViewModel(
                     player = null,
                     email = null,
                 )
-                is AuthState.SignedIn -> StateAuth(
+                is AuthState.SignedIn -> if (authState.isAnonymous) StateAuth(
+                    // Anonymous guest: render the Guest UI (sign-up CTA), not the
+                    // full account UI with edit-profile / delete-account.
+                    isSignedIn = false,
+                    isLoading = false,
+                    player = null,
+                    email = null,
+                ) else StateAuth(
                     isSignedIn = true,
                     isLoading = false,
                     player = player,

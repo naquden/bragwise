@@ -18,7 +18,6 @@ import kotlin.time.Instant
 sealed interface Friend {
     val id: String
     val displayName: String
-    val avatarSeed: String
 }
 
 data class CloudFriend(
@@ -27,13 +26,11 @@ data class CloudFriend(
 ) : Friend {
     override val id: String get() = player.uid
     override val displayName: String get() = player.displayName
-    override val avatarSeed: String get() = player.avatarSeed
 }
 
 data class LocalFriend(
     val localId: String,
     override val displayName: String,
-    override val avatarSeed: String,
     val addedAt: Instant,
 ) : Friend {
     override val id: String get() = localId

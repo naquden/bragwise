@@ -104,6 +104,31 @@ than 24 h. Operator action is only required if a `deletionRequests/{uid}`
 doc has been pending for more than ~26 h — at that point inspect the
 `steps` map, find the failing step, and re-trigger or hand-fix.
 
+## Audit log retention (TTL)
+
+Every privileged callable writes an `auditLog` doc via `audit()` in
+`functions/src/lib/middleware.ts`. Each doc carries an `expireAt` timestamp set
+to **90 days** after creation. Firestore TTL deletes expired docs automatically,
+but the TTL policy is **not** managed by `firebase deploy` — enable it once per
+project with `gcloud`:
+
+```sh
+gcloud firestore fields ttls update expireAt \
+  --collection-group=auditLog \
+  --enable-ttl \
+  --project=bragwise
+```
+
+Verify / inspect:
+
+```sh
+gcloud firestore fields ttls list --project=bragwise
+```
+
+Re-run the enable command (with a new `bragwise-prod` `--project`) when the
+staging/prod split lands. To change the retention window, edit `AUDIT_TTL_DAYS`
+in `functions/src/lib/middleware.ts` — the TTL policy itself stays the same.
+
 ## Staging / production split
 
 Phase 1 uses a single `bragwise` project. Before public launch:

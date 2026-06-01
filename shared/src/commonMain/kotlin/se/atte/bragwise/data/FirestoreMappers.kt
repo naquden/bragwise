@@ -90,7 +90,7 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
     }.getOrNull()
 
     return Challenge(
-        id = strOrNull("id") ?: id,
+        id = id,
         title = strOrNull("title") ?: "",
         description = strOrNull("description") ?: "",
         category = strOrNull("category") ?: "",

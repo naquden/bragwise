@@ -17,10 +17,11 @@ export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
 
 // Phase 1.5: option shape extended with optional countryCode (ISO-3166 alpha-2).
 // null / absent = free-text; present = country with flag rendering on the client.
+// nullish() accepts both undefined (absent) and null (explicitly cleared).
 const BetOptionSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
-  countryCode: z.string().length(2).optional(),
+  countryCode: z.string().length(2).nullish(),
 });
 
 export const BetSchema = z.discriminatedUnion('kind', [

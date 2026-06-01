@@ -25,8 +25,8 @@ interface SocialRepository {
     fun observeFriendRequests(): Flow<FriendRequests>
     fun observeHeadToHead(): Flow<HeadToHead>
 
-    fun addLocalFriend(displayName: String, avatarSeed: String): LocalFriend
-    fun editLocalFriend(localId: String, displayName: String, avatarSeed: String): Boolean
+    fun addLocalFriend(displayName: String): LocalFriend
+    fun editLocalFriend(localId: String, displayName: String): Boolean
     fun removeLocalFriend(localId: String): Boolean
 
     suspend fun sendFriendRequest(handle: String): Result<Unit>
@@ -79,11 +79,11 @@ class FirebaseSocialRepository(
 
     // ── Local-friend mutations ───────────────────────────────────────────────
 
-    override fun addLocalFriend(displayName: String, avatarSeed: String): LocalFriend =
-        localFriends.add(displayName = displayName, avatarSeed = avatarSeed)
+    override fun addLocalFriend(displayName: String): LocalFriend =
+        localFriends.add(displayName = displayName)
 
-    override fun editLocalFriend(localId: String, displayName: String, avatarSeed: String): Boolean =
-        localFriends.edit(localId, displayName, avatarSeed)
+    override fun editLocalFriend(localId: String, displayName: String): Boolean =
+        localFriends.edit(localId = localId, displayName = displayName)
 
     override fun removeLocalFriend(localId: String): Boolean = localFriends.remove(localId)
 

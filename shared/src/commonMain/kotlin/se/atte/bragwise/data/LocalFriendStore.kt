@@ -21,29 +21,26 @@ class LocalFriendStore(db: BragwiseDatabase) {
             .mapToList(Dispatchers.Default)
             .map { rows -> rows.map { it.toDomain() } }
 
-    fun add(displayName: String, avatarSeed: String): LocalFriend {
+    fun add(displayName: String): LocalFriend {
         val friend = LocalFriend(
             localId = randomUuid(),
             displayName = displayName,
-            avatarSeed = avatarSeed,
             addedAt = Clock.System.now(),
         )
         queries.friendUpsert(
             localId = friend.localId,
             displayName = friend.displayName,
-            avatarSeed = friend.avatarSeed,
             addedAtEpochMillis = friend.addedAt.toEpochMilliseconds(),
         )
         return friend
     }
 
-    fun edit(localId: String, displayName: String, avatarSeed: String): Boolean {
+    fun edit(localId: String, displayName: String): Boolean {
         val existing = queries.friendsAll().executeAsList().firstOrNull { it.localId == localId }
             ?: return false
         queries.friendUpsert(
             localId = localId,
             displayName = displayName,
-            avatarSeed = avatarSeed,
             addedAtEpochMillis = existing.addedAtEpochMillis,
         )
         return true
@@ -62,7 +59,6 @@ class LocalFriendStore(db: BragwiseDatabase) {
     private fun se.atte.bragwise.db.LocalFriend.toDomain() = LocalFriend(
         localId = localId,
         displayName = displayName,
-        avatarSeed = avatarSeed,
         addedAt = Instant.fromEpochMilliseconds(addedAtEpochMillis),
     )
 }

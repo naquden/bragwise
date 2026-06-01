@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
-import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.Friend
 import se.atte.bragwise.mvi.ScreenViewModel
@@ -39,14 +39,12 @@ class FriendsViewModel(
         data class EditLocal(val localId: String) : Intent
         data class RemoveLocal(val localId: String) : Intent
         data class OpenCloud(val uid: String) : Intent
-        data object Reconcile : Intent
     }
 
     sealed interface Effect {
         data object OpenLocalAdd : Effect
         data class OpenLocalEdit(val localId: String) : Effect
         data class OpenCloudProfile(val uid: String) : Effect
-        data object OpenReconcile : Effect
         data class Snackbar(val text: String) : Effect
     }
 
@@ -55,7 +53,7 @@ class FriendsViewModel(
             .onEach { authState ->
                 update {
                     it.copy(
-                        mode = if (authState is AuthState.SignedIn) Mode.SignedIn else Mode.Guest,
+                        mode = if (authState.isFullyAuthed) Mode.SignedIn else Mode.Guest,
                     )
                 }
             }
@@ -81,16 +79,15 @@ class FriendsViewModel(
                 }
             }
             is Intent.OpenCloud -> emitEffect(Effect.OpenCloudProfile(intent.uid))
-            Intent.Reconcile -> emitEffect(Effect.OpenReconcile)
         }
     }
 
-    fun saveLocalFriend(localId: String?, displayName: String, avatarSeed: String) {
+    fun saveLocalFriend(localId: String?, displayName: String) {
         if (displayName.isBlank()) return
         if (localId == null) {
-            social.addLocalFriend(displayName = displayName, avatarSeed = avatarSeed)
+            social.addLocalFriend(displayName = displayName)
         } else {
-            social.editLocalFriend(localId = localId, displayName = displayName, avatarSeed = avatarSeed)
+            social.editLocalFriend(localId = localId, displayName = displayName)
         }
     }
 }

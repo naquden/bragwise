@@ -1,12 +1,12 @@
 package se.atte.bragwise.ui.screens.auth
 
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
-import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.mvi.ScreenViewModel
 
 /**
@@ -59,7 +59,10 @@ class SignInViewModel(
         // deep-link return, or because the user was already signed in when we
         // opened the screen (StateFlow replays the current value).
         auth.authState
-            .filterIsInstance<AuthState.SignedIn>()
+            // Anonymous guests are "signed in" too; only a real (email) account
+            // should advance past the sign-in screen — otherwise a guest opening
+            // this screen to upgrade would be bounced straight back out.
+            .filter { it.isFullyAuthed }
             .onEach { update { it.copy(signedIn = true) } }
             .launchIn(viewModelScope)
     }

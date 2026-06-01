@@ -144,7 +144,6 @@ private fun ReconcileContent(
 private fun previewLocal(n: Int) = LocalFriend(
     localId = "l$n",
     displayName = "Local Friend $n",
-    avatarSeed = "loc$n",
     addedAt = Instant.fromEpochSeconds(0),
 )
 

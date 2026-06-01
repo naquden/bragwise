@@ -20,6 +20,11 @@ class MockAuthRepository : AuthRepository {
 
     override fun isSignInLink(link: String): Boolean = false
 
+    override suspend fun continueAsGuest(): Result<Unit> {
+        _authState.value = AuthState.SignedIn(uid = MOCK_UID, email = null, isAnonymous = true)
+        return Result.success(Unit)
+    }
+
     override suspend fun sendSignInLink(email: String): Result<Unit> {
         _authState.value = AuthState.SignedIn(uid = MOCK_UID, email = email)
         return Result.success(Unit)

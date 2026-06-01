@@ -39,6 +39,10 @@ class AuthRemoteDataSource(
 
     fun isSignInWithEmailLink(link: String): Boolean = auth.isSignInWithEmailLink(link)
 
+    suspend fun signInAnonymously() {
+        auth.signInAnonymously()
+    }
+
     suspend fun signInWithEmailLink(email: String, link: String): AuthResult =
         auth.signInWithEmailLink(email = email, link = link)
 

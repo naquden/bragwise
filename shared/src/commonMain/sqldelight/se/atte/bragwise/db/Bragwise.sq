@@ -1,7 +1,6 @@
 CREATE TABLE LocalFriend (
     localId TEXT NOT NULL PRIMARY KEY,
     displayName TEXT NOT NULL,
-    avatarSeed TEXT NOT NULL,
     addedAtEpochMillis INTEGER NOT NULL
 );
 
@@ -9,7 +8,7 @@ friendsAll:
 SELECT * FROM LocalFriend ORDER BY addedAtEpochMillis ASC;
 
 friendUpsert:
-INSERT OR REPLACE INTO LocalFriend VALUES (?, ?, ?, ?);
+INSERT OR REPLACE INTO LocalFriend VALUES (?, ?, ?);
 
 friendDelete:
 DELETE FROM LocalFriend WHERE localId = ?;

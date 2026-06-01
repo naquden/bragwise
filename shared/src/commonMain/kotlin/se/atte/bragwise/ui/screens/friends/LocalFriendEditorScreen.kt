@@ -21,7 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.ui.standardPadding
-import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.domain.LocalFriend
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
@@ -53,12 +52,11 @@ fun LocalFriendEditorScreen(
 
     LocalFriendEditorForm(
         initialName = existing?.displayName.orEmpty(),
-        initialSeed = existing?.avatarSeed.orEmpty(),
-        onSave = { name, seed ->
+        onSave = { name ->
             if (localId == null) {
-                social.addLocalFriend(displayName = name, avatarSeed = seed)
+                social.addLocalFriend(displayName = name)
             } else {
-                social.editLocalFriend(localId = localId, displayName = name, avatarSeed = seed)
+                social.editLocalFriend(localId = localId, displayName = name)
             }
             onSaved()
         },
@@ -75,13 +73,11 @@ fun LocalFriendEditorScreen(
 @Composable
 private fun LocalFriendEditorForm(
     initialName: String,
-    initialSeed: String,
-    onSave: (name: String, seed: String) -> Unit,
+    onSave: (name: String) -> Unit,
     onCancel: () -> Unit,
     onRemove: (() -> Unit)?,
 ) {
     var name by remember { mutableStateOf(initialName) }
-    var seed by remember { mutableStateOf(initialSeed) }
 
     Column(Modifier.fillMaxSize()) {
         Column(
@@ -104,14 +100,6 @@ private fun LocalFriendEditorForm(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
-                Spacer(Modifier.height(standardPaddingSmall))
-                OutlinedTextField(
-                    value = seed,
-                    onValueChange = { seed = it },
-                    label = { Text("Avatar seed") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
             }
 
             if (onRemove != null) {
@@ -130,7 +118,7 @@ private fun LocalFriendEditorForm(
             ) { Text("Cancel") }
             AppButton(
                 modifier = Modifier.weight(1f),
-                onClick = { onSave(name.trim(), seed.trim()) },
+                onClick = { onSave(name.trim()) },
                 enabled = name.isNotBlank(),
             ) { Text("Save") }
         }
@@ -145,8 +133,7 @@ private fun FriendEditor_Add_Preview() {
     ThemePreview {
         LocalFriendEditorForm(
             initialName = "",
-            initialSeed = "",
-            onSave = { _, _ -> },
+            onSave = {},
             onCancel = {},
             onRemove = null,
         )
@@ -159,8 +146,7 @@ private fun FriendEditor_Edit_Preview() {
     ThemePreview {
         LocalFriendEditorForm(
             initialName = "Alice",
-            initialSeed = "alice",
-            onSave = { _, _ -> },
+            onSave = {},
             onCancel = {},
             onRemove = {},
         )

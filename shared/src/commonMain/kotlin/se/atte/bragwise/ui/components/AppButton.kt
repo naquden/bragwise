@@ -84,8 +84,7 @@ fun AppButton(
     val shape = MaterialTheme.shapes.small
     val cornerRadius = 8.dp
 
-    Box(
-        contentAlignment = Alignment.Center,
+    Surface(
         modifier = modifier
             .heightIn(min = 44.dp)
             .offset(y = pressOffset)
@@ -100,29 +99,24 @@ fun AppButton(
                         cornerRadius = CornerRadius(cr, cr),
                     )
                 }
-            },
-    ) {
-        Surface(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    onClick = onClick,
-                ),
-            color = containerColor,
-            contentColor = contentColor,
-            shape = shape,
-        ) {
-            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.labelLarge) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    content = content,
-                )
             }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                onClick = onClick,
+            ),
+        color = containerColor,
+        contentColor = contentColor,
+        shape = shape,
+    ) {
+        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.labelLarge) {
+            Row(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                content = content,
+            )
         }
     }
 }
