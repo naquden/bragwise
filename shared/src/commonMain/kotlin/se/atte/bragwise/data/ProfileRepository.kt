@@ -26,6 +26,13 @@ interface ProfileRepository {
         avatarSeed: String? = null,
     ): Result<Unit>
     suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit>
+
+    /**
+     * Heartbeat: stamps `lastSeen` (and the anonymous flag) on the player doc
+     * so stale guest accounts can be reaped after 90 days. Called on launch
+     * for any signed-in session, anonymous guests included.
+     */
+    suspend fun recordActivity(): Result<Unit>
 }
 
 class FirebaseProfileRepository(
@@ -66,5 +73,9 @@ class FirebaseProfileRepository(
         avatarSeed: String?,
     ): Result<Unit> = runCatching {
         remote.updateProfile(displayName = displayName, handle = handle, avatarSeed = avatarSeed)
+    }
+
+    override suspend fun recordActivity(): Result<Unit> = runCatching {
+        remote.recordActivity()
     }
 }

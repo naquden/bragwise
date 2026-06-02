@@ -51,7 +51,7 @@ import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
-import se.atte.bragwise.ui.components.flagEmoji
+import se.atte.bragwise.ui.components.FlagImage
 import se.atte.bragwise.verify.VerifyAutomation
 
 @Composable
@@ -294,10 +294,7 @@ private fun CountryOptionRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (option.countryCode != null) {
-                Text(
-                    text = flagEmoji(option.countryCode),
-                    style = MaterialTheme.typography.titleLarge,
-                )
+                FlagImage(code = option.countryCode, size = 24.dp)
             }
             Text(
                 text = option.label,

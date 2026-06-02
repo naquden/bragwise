@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import se.atte.bragwise.data.ActivityRegistrar
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.push.PushTokenRegistrar
 import se.atte.bragwise.theme.BragwiseTheme
@@ -19,12 +20,15 @@ import se.atte.bragwise.ui.nav.AppNav
 fun App() {
     val themePrefs: ThemePrefs = koinInject()
     val pushTokenRegistrar: PushTokenRegistrar = koinInject()
+    val activityRegistrar: ActivityRegistrar = koinInject()
 
-    // App-lifetime scope: registrar gates on AuthState.SignedIn internally, so
-    // this is a no-op for guests and starts uploading tokens once authenticated.
+    // App-lifetime scope: registrars gate on AuthState.SignedIn internally, so
+    // this is a no-op for signed-out users. PushTokenRegistrar uploads FCM
+    // tokens; ActivityRegistrar stamps lastSeen (guests included) for reaping.
     val appScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         pushTokenRegistrar.start(appScope)
+        activityRegistrar.start(appScope)
     }
 
     val mode by themePrefs.mode.collectAsState()

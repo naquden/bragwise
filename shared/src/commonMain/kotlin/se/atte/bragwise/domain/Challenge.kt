@@ -24,7 +24,8 @@ data class Challenge(
 enum class Visibility { FRIENDS, INVITE_ONLY, PROMOTED }
 
 /**
- * Stored values: DRAFT, OPEN, RESULTS_POSTED, ARCHIVED.
+ * Stored values: DRAFT, OPEN, RESULTS_POSTED.
  * LOCKED is client-computed from (now > locksAt && resultsPostedAt == null).
+ * Challenges are hard-deleted 90 days after resultsPostedAt by the purgeOldChallenges Cloud Function.
  */
-enum class ChallengeStatus { DRAFT, OPEN, LOCKED, RESULTS_POSTED, ARCHIVED }
+enum class ChallengeStatus { DRAFT, OPEN, LOCKED, RESULTS_POSTED }

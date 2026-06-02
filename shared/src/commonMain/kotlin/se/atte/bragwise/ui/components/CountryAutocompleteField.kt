@@ -71,11 +71,7 @@ fun CountryAutocompleteField(
             leadingIcon = if (isLocked && value.countryCode != null) {
                 val code = value.countryCode
                 {
-                    Text(
-                        text = flagEmoji(code),
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
+                    FlagImage(code = code, size = 24.dp, modifier = Modifier.padding(start = 4.dp))
                 }
             } else {
                 {
@@ -130,10 +126,7 @@ fun CountryAutocompleteField(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text(
-                                text = flagEmoji(country.code),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
+                            FlagImage(code = country.code, size = 20.dp)
                             Text(
                                 text = country.name,
                                 style = MaterialTheme.typography.bodyLarge,

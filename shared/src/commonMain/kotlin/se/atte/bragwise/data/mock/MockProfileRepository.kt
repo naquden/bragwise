@@ -48,4 +48,6 @@ class MockProfileRepository : ProfileRepository {
         _notificationsEnabled.value = enabled
         return Result.success(Unit)
     }
+
+    override suspend fun recordActivity(): Result<Unit> = Result.success(Unit)
 }

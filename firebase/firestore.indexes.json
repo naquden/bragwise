@@ -24,6 +24,14 @@
         { "fieldPath": "createdBy", "order": "ASCENDING" },
         { "fieldPath": "resultsPostedAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "players",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isAnonymous", "order": "ASCENDING" },
+        { "fieldPath": "lastSeen", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

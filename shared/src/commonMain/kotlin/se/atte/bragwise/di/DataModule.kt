@@ -2,6 +2,7 @@ package se.atte.bragwise.di
 
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
+import se.atte.bragwise.data.ActivityRegistrar
 import se.atte.bragwise.data.AuthRemoteDataSource
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeLocalDataSource
@@ -33,6 +34,7 @@ val dataModule = module {
     single { LocalFriendStore(get<BragwiseDatabase>()) }
     single { LocalPredictionStore(get<BragwiseDatabase>()) }
     single { PushTokenRegistrar(push = get(), auth = get()) }
+    single { ActivityRegistrar(auth = get(), profile = get()) }
     single { ProfileRemoteDataSource() }
     singleOf(::ProfileLocalDataSource)
 

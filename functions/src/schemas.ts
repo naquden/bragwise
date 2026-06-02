@@ -15,13 +15,14 @@ export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('BOOLEAN_PROP'), value: z.boolean() }),
 ]);
 
-// Phase 1.5: option shape extended with optional countryCode (ISO-3166 alpha-2).
+// Phase 1.5: option shape extended with optional countryCode.
+// Supports ISO-3166 alpha-2 ("GB") and subdivision codes ("GB-ENG", "GB-SCT", etc.).
 // null / absent = free-text; present = country with flag rendering on the client.
 // nullish() accepts both undefined (absent) and null (explicitly cleared).
 const BetOptionSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
-  countryCode: z.string().length(2).nullish(),
+  countryCode: z.string().min(2).max(6).nullish(),
 });
 
 export const BetSchema = z.discriminatedUnion('kind', [

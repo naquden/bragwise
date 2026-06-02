@@ -675,5 +675,31 @@ export const setNotificationPref = onCall(async (req: CallableRequest<unknown>) 
   return { ok: true };
 });
 
+// ─── recordActivity ───────────────────────────────────────────────────────────
+
+/**
+ * Heartbeat called on app launch (and right after guest sign-in) for any
+ * authenticated user, anonymous guests included. Stamps `lastSeen` on the
+ * player doc and records whether the session is anonymous — the
+ * `purgeStaleGuests` job uses both fields to delete guest accounts that have
+ * been inactive for 90 days. No request payload.
+ */
+export const recordActivity = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  await rateLimit(uid, 'recordActivity', 3600, 30);
+
+  const provider = (req.auth!.token as Record<string, unknown>)?.firebase as
+    | { sign_in_provider?: string }
+    | undefined;
+  const isAnonymous = provider?.sign_in_provider === 'anonymous';
+
+  await db.doc(`players/${uid}`).set(
+    { lastSeen: FieldValue.serverTimestamp(), isAnonymous },
+    { merge: true },
+  );
+  return { ok: true };
+});
+
 export * from './triggers';
 export * from './landing';

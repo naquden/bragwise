@@ -44,6 +44,10 @@ class ProfileRemoteDataSource(
         functions.httpsCallable("setNotificationPref")(hashMapOf("enabled" to enabled))
     }
 
+    suspend fun recordActivity() {
+        functions.httpsCallable("recordActivity")(emptyMap<String, Any?>())
+    }
+
     suspend fun claimHandle(handle: String) {
         functions.httpsCallable("claimHandle")(hashMapOf("handle" to handle))
     }

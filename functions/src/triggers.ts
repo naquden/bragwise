@@ -1,7 +1,7 @@
 import { onDocumentUpdated, onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { auth } from 'firebase-functions/v1';
-import { db, FieldValue } from './lib/admin';
+import { db, FieldValue, auth as adminAuth } from './lib/admin';
 import { score, Bet, PredictionPayload } from './scoring';
 import { sendToUser, CHANNEL_RESULTS, CHANNEL_CHALLENGES, CHANNEL_SOCIAL } from './push';
 
@@ -295,6 +295,78 @@ export const reconcileDeletions = onSchedule('every 60 minutes', async (_event) 
       })
       .map((doc) => processDeleteChecklist(doc.id)),
   );
+});
+
+// ─── purgeOldChallenges ───────────────────────────────────────────────────────
+
+const DELETE_AFTER_DAYS = 90;
+
+/**
+ * Daily. Hard-deletes every challenge whose resultsPostedAt is older than
+ * DELETE_AFTER_DAYS, along with its players and invitations subcollections.
+ * Processed in pages of 200 so a large backlog doesn't hit memory limits.
+ */
+export const purgeOldChallenges = onSchedule('every 24 hours', async () => {
+  const cutoff = new Date(Date.now() - DELETE_AFTER_DAYS * 86400_000);
+
+  for (;;) {
+    const snap = await db
+      .collection('challenges')
+      .where('resultsPostedAt', '<', cutoff)
+      .limit(200)
+      .get();
+    if (snap.empty) break;
+
+    for (const doc of snap.docs) {
+      const ref = doc.ref;
+      const [playerRefs, invitationRefs] = await Promise.all([
+        ref.collection('players').listDocuments(),
+        ref.collection('invitations').listDocuments(),
+      ]);
+      const allRefs = [...playerRefs, ...invitationRefs, ref];
+      for (const c of chunk(allRefs, 500)) {
+        const batch = db.batch();
+        for (const r of c) batch.delete(r);
+        await batch.commit();
+      }
+    }
+
+    if (snap.size < 200) break;
+  }
+});
+
+// ─── purgeStaleGuests ─────────────────────────────────────────────────────────
+
+const GUEST_INACTIVE_DAYS = 90;
+
+/**
+ * Daily. Deletes anonymous (guest) accounts that haven't been seen for
+ * GUEST_INACTIVE_DAYS. `lastSeen` + `isAnonymous` are stamped on the player
+ * doc by the `recordActivity` callable. Deleting the Auth user fires
+ * `onUserDeleted`, which purges the player/profile/membership docs via the
+ * shared deletion checklist — so we only need to delete the Auth user here.
+ *
+ * Only `isAnonymous == true` docs are touched; real (email) accounts are
+ * never auto-deleted for inactivity. Processed in pages of 200.
+ */
+export const purgeStaleGuests = onSchedule('every 24 hours', async () => {
+  const cutoff = new Date(Date.now() - GUEST_INACTIVE_DAYS * 86400_000);
+
+  for (;;) {
+    const snap = await db
+      .collection('players')
+      .where('isAnonymous', '==', true)
+      .where('lastSeen', '<', cutoff)
+      .limit(200)
+      .get();
+    if (snap.empty) break;
+
+    // deleteUser throws on an already-removed uid (orphan doc) — allSettled
+    // swallows it; the next run's query simply won't re-find deleted docs.
+    await Promise.allSettled(snap.docs.map((doc) => adminAuth.deleteUser(doc.id)));
+
+    if (snap.size < 200) break;
+  }
 });
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

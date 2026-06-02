@@ -1,6 +1,7 @@
 package se.atte.bragwise.di
 
 import org.koin.dsl.module
+import se.atte.bragwise.data.ActivityRegistrar
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ProfileRepository
@@ -24,4 +25,5 @@ val mockDataModule = module {
     // App() injects this unconditionally; .start() gates on SignedIn and all
     // callable invocations are runCatching-wrapped, so it's inert under mock.
     single { PushTokenRegistrar(push = get(), auth = get()) }
+    single { ActivityRegistrar(auth = get(), profile = get()) }
 }

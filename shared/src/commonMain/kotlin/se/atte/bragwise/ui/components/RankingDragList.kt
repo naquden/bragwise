@@ -839,7 +839,7 @@ private fun SlotRow(
                 ) {
                     SlotNumber(number = index + 1)
                     if (showFlag && occupant.countryCode != null) {
-                        Text(text = flagEmoji(occupant.countryCode), style = MaterialTheme.typography.titleMedium)
+                        FlagImage(code = occupant.countryCode, size = 20.dp)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     Text(text = "≡", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1018,7 +1018,7 @@ private fun OptionRowContent(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (showFlag && option.countryCode != null) {
-            Text(text = flagEmoji(option.countryCode), style = MaterialTheme.typography.titleMedium)
+            FlagImage(code = option.countryCode, size = 20.dp)
         }
         Text(
             text = option.label,
