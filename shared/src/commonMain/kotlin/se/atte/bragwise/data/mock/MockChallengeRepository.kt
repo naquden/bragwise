@@ -20,6 +20,7 @@ import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.util.randomUuid
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 class MockChallengeRepository(
     private val auth: AuthRepository,
@@ -62,19 +63,16 @@ class MockChallengeRepository(
     override fun observeLeaderboard(challengeId: String, friendsOnly: Boolean): Flow<List<LeaderboardEntry>> =
         _challenges.map { challenges ->
             val challenge = challenges.firstOrNull { it.id == challengeId }
-            challenge?.leaderboard
-                ?.entries
-                ?.sortedByDescending { it.value }
-                ?.mapIndexed { idx, (uid, pts) ->
-                    val name = when (uid) {
-                        MOCK_UID -> "Demo Player"
-                        "uid-alice" -> "Alice"
-                        "uid-bob" -> "Bob"
-                        else -> uid
-                    }
-                    LeaderboardEntry(uid = uid, displayName = name, points = pts, rank = idx + 1)
-                }
-                ?: emptyList()
+            val board = challenge?.leaderboard ?: return@map emptyList()
+            val sortedEntries = board.entries
+                .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            buildMockLeaderboard(sortedEntries = sortedEntries)
+        }
+
+    override fun observeFinished(): Flow<List<Challenge>> =
+        _challenges.map { list ->
+            list.filter { it.status == ChallengeStatus.RESULTS_POSTED }
+                .sortedByDescending { it.resultsPostedAt }
         }
 
     override suspend fun createDraft(challenge: Challenge): Result<Challenge> = runCatching {
@@ -122,4 +120,47 @@ class MockChallengeRepository(
 
     override suspend fun deleteChallenge(challengeId: String): Result<Unit> =
         Result.success(Unit)
+}
+
+private fun buildMockLeaderboard(sortedEntries: List<Map.Entry<String, Int>>): List<LeaderboardEntry> {
+    val result = mutableListOf<LeaderboardEntry>()
+    var rank = 1
+    var i = 0
+    while (i < sortedEntries.size) {
+        val points = sortedEntries[i].value
+        var j = i
+        while (j < sortedEntries.size && sortedEntries[j].value == points) j++
+        val isTied = j - i > 1
+        for (k in i until j) {
+            val uid = sortedEntries[k].key
+            val name = mockName(uid = uid)
+            result += LeaderboardEntry(
+                uid = uid,
+                displayName = name,
+                avatarSeed = mockAvatarSeed(uid = uid),
+                points = points,
+                rank = rank,
+                isTied = isTied,
+            )
+        }
+        rank += j - i
+        i = j
+    }
+    return result
+}
+
+private fun mockName(uid: String): String = when (uid) {
+    MOCK_UID -> "Demo Player"
+    "uid-alice" -> "Alice"
+    "uid-bob" -> "Bob"
+    "uid-carol" -> "Carol"
+    else -> uid
+}
+
+private fun mockAvatarSeed(uid: String): String = when (uid) {
+    MOCK_UID -> "a1"
+    "uid-alice" -> "a3"
+    "uid-bob" -> "a5"
+    "uid-carol" -> "a7"
+    else -> "a2"
 }

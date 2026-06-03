@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.isFullyAuthed
+import se.atte.bragwise.data.signedInUid
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.domain.Bet
@@ -27,10 +28,10 @@ class PredictViewModel(
     initialState = State(ui = UiState.Loading),
 ) {
 
-    // Anonymous guests keep local predictions too: the online submit path
-    // requires a verified email, so only fully-authed users write to Firestore.
-    private val isGuest: Boolean
-        get() = !auth.authState.value.isFullyAuthed
+    // Only fall back to local storage when we have no uid at all (pre-anonymous).
+    // Anonymous guests have a real uid and submit to the cloud like fully-authed users.
+    private val isLocalOnly: Boolean
+        get() = auth.authState.value.signedInUid == null
 
     data class State(
         val ui: UiState<Bets>,
@@ -59,10 +60,8 @@ class PredictViewModel(
         challenges.observeChallengeDetail(challengeId)
             .distinctUntilChanged()
             .onEach { detail ->
-                // Guests have no cloud player doc, so myPredictions is empty —
-                // seed from the on-device store instead so re-opening the
-                // screen keeps their picks.
-                val existing = if (isGuest) {
+                // Without a uid we have no cloud player doc — seed from the on-device store.
+                val existing = if (isLocalOnly) {
                     localPredictions.forChallenge(challengeId)
                 } else {
                     detail.myPredictions
@@ -98,9 +97,8 @@ class PredictViewModel(
         update { it.copy(submitting = true) }
         viewModelScope.launch {
             val drafts = state.value.drafts
-            // Guests can't reach the cloud callable — persist locally and let
-            // OB-05 migration replay these on sign-in.
-            if (isGuest) {
+            // No uid yet — persist locally until the user becomes at least an anonymous guest.
+            if (isLocalOnly) {
                 val saved = runCatching { localPredictions.put(challengeId, drafts) }
                 update { it.copy(submitting = false) }
                 saved.fold(

@@ -20,6 +20,8 @@ import se.atte.bragwise.ui.screens.me.MeViewModel
 import se.atte.bragwise.ui.screens.onboarding.MigrationViewModel
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
+import se.atte.bragwise.ui.screens.results.ResultsRevealViewModel
+import se.atte.bragwise.ui.screens.results.ResultsViewModel
 
 val viewModelModule = module {
     // No route params — constructor references resolve all deps from the graph.
@@ -87,6 +89,15 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             isPromoted = params.get<Boolean>(),
             challenges = get(),
+        )
+    }
+    viewModelOf(::ResultsViewModel)
+    viewModel<ResultsRevealViewModel> { params ->
+        ResultsRevealViewModel(
+            challengeId = params.get<String>(),
+            challenges = get(),
+            auth = get(),
+            seenStore = get(),
         )
     }
 }

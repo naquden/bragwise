@@ -25,6 +25,8 @@ data class ChallengeDetail(
 data class LeaderboardEntry(
     val uid: String,
     val displayName: String,
+    val avatarSeed: String = "",
     val points: Int,
     val rank: Int,
+    val isTied: Boolean = false,
 )

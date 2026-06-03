@@ -1,5 +1,6 @@
 import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -52,6 +53,17 @@ android {
 
         val useMock = (project.findProperty("useMockData") as String?) == "true"
         buildConfigField("boolean", "USE_MOCK_DATA", useMock.toString())
+
+        // Fixed App Check debug secret, read from local.properties (never committed).
+        // Pre-seeding this lets the debug provider reuse one registered token across
+        // app-data wipes (pm clear, reinstalls, emulator snapshot resets) so the
+        // console debug token only needs to be added once.
+        val localProperties = Properties().apply {
+            val file = rootProject.file("local.properties")
+            if (file.exists()) file.inputStream().use { load(it) }
+        }
+        val appCheckDebugToken = localProperties.getProperty("appCheckDebugToken").orEmpty()
+        buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"$appCheckDebugToken\"")
     }
     packaging {
         resources {

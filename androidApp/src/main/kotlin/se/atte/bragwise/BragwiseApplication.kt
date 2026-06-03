@@ -1,8 +1,10 @@
 package se.atte.bragwise
 
 import android.app.Application
+import android.content.Context
 import android.content.pm.ApplicationInfo
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.analytics
 import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
@@ -37,10 +39,29 @@ class BragwiseApplication : Application() {
     private fun installAppCheck() {
         val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         val factory = if (isDebuggable) {
+            seedFixedDebugSecret()
             DebugAppCheckProviderFactory.getInstance()
         } else {
             PlayIntegrityAppCheckProviderFactory.getInstance()
         }
         Firebase.appCheck.installAppCheckProviderFactory(factory)
+    }
+
+    /**
+     * Pre-seeds the App Check debug provider's stored secret with the fixed token from
+     * `local.properties`. The debug provider reuses any secret already present in its
+     * SharedPreferences instead of generating a fresh UUID, so one console-registered
+     * token survives `pm clear`, reinstalls and emulator snapshot resets. No-op when no
+     * fixed token is configured (falls back to the SDK's generated-and-stored UUID).
+     */
+    private fun seedFixedDebugSecret() {
+        val fixedToken = BuildConfig.APP_CHECK_DEBUG_TOKEN
+        if (fixedToken.isEmpty()) return
+
+        val persistenceKey = FirebaseApp.getInstance().persistenceKey
+        getSharedPreferences("com.google.firebase.appcheck.debug.store.$persistenceKey", Context.MODE_PRIVATE)
+            .edit()
+            .putString("com.google.firebase.appcheck.debug.API_KEY", fixedToken)
+            .apply()
     }
 }

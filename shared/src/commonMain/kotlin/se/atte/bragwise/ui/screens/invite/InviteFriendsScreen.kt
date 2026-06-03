@@ -20,12 +20,15 @@ import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.SectionCard
+import se.atte.bragwise.ui.preview.sampleCloudFriends
 
 /**
  * CR-05 Invite friends — multi-select picker on top of cloud friends.
@@ -47,8 +50,25 @@ fun InviteFriendsScreen(
         }
     }
 
+    InviteFriendsContent(
+        friends = state.friends,
+        selected = state.selected,
+        sending = state.sending,
+        onToggle = { viewModel.onIntent(InviteFriendsViewModel.Intent.Toggle(it)) },
+        onSend = { viewModel.onIntent(InviteFriendsViewModel.Intent.Send) },
+    )
+}
+
+@Composable
+private fun InviteFriendsContent(
+    friends: List<CloudFriend>,
+    selected: Set<String>,
+    sending: Boolean,
+    onToggle: (String) -> Unit,
+    onSend: () -> Unit,
+) {
     Column(Modifier.fillMaxSize()) {
-        if (state.friends.isEmpty()) {
+        if (friends.isEmpty()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text("No friends yet — add some first.")
             }
@@ -61,19 +81,17 @@ fun InviteFriendsScreen(
                 item {
                     SectionCard(title = "Pick friends to invite") {
                         Text(
-                            "${state.selected.size} selected",
+                            "${selected.size} selected",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-                items(items = state.friends, key = { it.id }) { friend ->
+                items(items = friends, key = { it.id }) { friend ->
                     FriendRow(
                         friend = friend,
-                        selected = friend.id in state.selected,
-                        onToggle = {
-                            viewModel.onIntent(InviteFriendsViewModel.Intent.Toggle(friend.id))
-                        },
+                        selected = friend.id in selected,
+                        onToggle = { onToggle(friend.id) },
                     )
                 }
             }
@@ -81,10 +99,10 @@ fun InviteFriendsScreen(
         BottomActionBar {
             AppButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { viewModel.onIntent(InviteFriendsViewModel.Intent.Send) },
-                enabled = !state.sending && state.selected.isNotEmpty(),
+                onClick = onSend,
+                enabled = !sending && selected.isNotEmpty(),
             ) {
-                Text(if (state.sending) "Sending…" else "Invite ${state.selected.size}")
+                Text(if (sending) "Sending…" else "Invite ${selected.size}")
             }
         }
     }
@@ -104,3 +122,35 @@ private fun FriendRow(friend: CloudFriend, selected: Boolean, onToggle: () -> Un
         Checkbox(checked = selected, onCheckedChange = { onToggle() })
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun InviteFriends_Preview() {
+    ThemePreview {
+        InviteFriendsContent(
+            friends = sampleCloudFriends,
+            selected = setOf("u2"),
+            sending = false,
+            onToggle = {},
+            onSend = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun InviteFriends_Empty_Preview() {
+    ThemePreview {
+        InviteFriendsContent(
+            friends = emptyList(),
+            selected = emptySet(),
+            sending = false,
+            onToggle = {},
+            onSend = {},
+        )
+    }
+}
+
+// endregion

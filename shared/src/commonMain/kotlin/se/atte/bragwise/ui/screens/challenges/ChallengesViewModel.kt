@@ -45,7 +45,6 @@ class ChallengesViewModel(
 
     data class Sections(
         val mine: List<Challenge>,
-        val history: List<Challenge>,
         val promoted: List<Challenge>,
         val fromFriends: List<Challenge>,
         val invites: List<Invitation>,
@@ -76,10 +75,8 @@ class ChallengesViewModel(
         ) { allMine, promoted, fromFriends, invites ->
             fun List<Challenge>.byLockAsc() = sortedWith(compareBy(nullsLast()) { it.locksAt })
             val mine = allMine.filter { it.status != ChallengeStatus.RESULTS_POSTED }
-            val history = allMine.filter { it.status == ChallengeStatus.RESULTS_POSTED }
             Sections(
                 mine = mine.byLockAsc(),
-                history = history.byLockAsc(),
                 promoted = promoted.byLockAsc(),
                 fromFriends = fromFriends.byLockAsc(),
                 invites = invites,
@@ -87,7 +84,6 @@ class ChallengesViewModel(
         }
             .onEach { sections ->
                 val isEmpty = sections.mine.isEmpty() &&
-                    sections.history.isEmpty() &&
                     sections.promoted.isEmpty() &&
                     sections.fromFriends.isEmpty() &&
                     sections.invites.isEmpty()

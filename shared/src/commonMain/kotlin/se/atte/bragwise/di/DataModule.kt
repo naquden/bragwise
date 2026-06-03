@@ -14,6 +14,7 @@ import se.atte.bragwise.data.FirebaseProfileRepository
 import se.atte.bragwise.data.FirebaseSocialRepository
 import se.atte.bragwise.data.LocalFriendStore
 import se.atte.bragwise.data.LocalPredictionStore
+import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.db.BragwiseDatabase
 import se.atte.bragwise.push.PushTokenRegistrar
 import se.atte.bragwise.data.ProfileLocalDataSource
@@ -33,6 +34,7 @@ val dataModule = module {
     singleOf(::SocialLocalDataSource)
     single { LocalFriendStore(get<BragwiseDatabase>()) }
     single { LocalPredictionStore(get<BragwiseDatabase>()) }
+    single { ResultsSeenStore(get<BragwiseDatabase>()) }
     single { PushTokenRegistrar(push = get(), auth = get()) }
     single { ActivityRegistrar(auth = get(), profile = get()) }
     single { ProfileRemoteDataSource() }

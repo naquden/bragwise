@@ -38,6 +38,7 @@
     <!-- Navigation. -->
     <string name="nav_back">Back</string>
     <string name="nav_tab_challenges">Challenges</string>
+    <string name="nav_tab_results">Results</string>
     <string name="nav_tab_me">Me</string>
 
     <!-- Ranking bet (MC-03). -->
@@ -50,6 +51,7 @@
     <!-- Auth. -->
     <string name="auth_sign_in">Sign in</string>
     <string name="auth_continue_guest">Continue as guest</string>
+    <string name="auth_guest_signin_failed">Couldn\'t start a guest session. You can keep using the app, but sign in for the full experience.</string>
     <string name="auth_email_label">Email</string>
     <string name="auth_password_label">Password</string>
     <string name="auth_google">Sign in with Google</string>

@@ -7,8 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,6 +22,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -41,24 +47,30 @@ import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.auth_guest_signin_failed
 import bragwise.shared.generated.resources.nav_back
 import bragwise.shared.generated.resources.nav_tab_challenges
 import bragwise.shared.generated.resources.nav_tab_me
+import bragwise.shared.generated.resources.nav_tab_results
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Target
+import com.composables.icons.lucide.Trophy
 import com.composables.icons.lucide.User
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlinx.coroutines.flow.map
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ProfileRepository
+import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.push.PushNotifications
@@ -93,6 +105,10 @@ import se.atte.bragwise.ui.screens.leaderboard.LeaderboardScreen
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeScreen
 import se.atte.bragwise.ui.screens.me.MeViewModel
+import se.atte.bragwise.ui.screens.results.ResultsRevealScreen
+import se.atte.bragwise.ui.screens.results.ResultsRevealViewModel
+import se.atte.bragwise.ui.screens.results.ResultsScreen
+import se.atte.bragwise.ui.screens.results.ResultsViewModel
 import se.atte.bragwise.ui.screens.onboarding.GuestNameScreen
 import se.atte.bragwise.ui.screens.onboarding.MigrationDialog
 import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsScreen
@@ -102,7 +118,7 @@ import se.atte.bragwise.ui.screens.predict.PredictScreen
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
 import se.atte.bragwise.verify.VerifyAutomation
 
-private enum class Tab { Challenges, Me }
+private enum class Tab { Challenges, Results, Me }
 
 private sealed interface Route {
     data class Tabs(val tab: Tab) : Route
@@ -124,6 +140,7 @@ private sealed interface Route {
     data class PostResults(val challengeId: String) : Route
     data object FriendRequests : Route
     data class PlayerProfile(val uid: String) : Route
+    data class ResultsReveal(val challengeId: String) : Route
     data object EditProfile : Route
     data object About : Route
 }
@@ -152,7 +169,12 @@ fun AppNav() {
     val social: SocialRepository = koinInject()
     val pushNotifications: PushNotifications = koinInject()
     val auth: AuthRepository = koinInject()
+    val challengeRepository: ChallengeRepository = koinInject()
+    val seenStore: ResultsSeenStore = koinInject()
     val authState by auth.authState.collectAsState(AuthState.Loading)
+    val unseenResultsCount by challengeRepository.observeFinished()
+        .map { list -> list.count { !seenStore.isSeen(challengeId = it.id) } }
+        .collectAsState(initial = 0)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -226,6 +248,29 @@ fun AppNav() {
                         onClick = { replaceTop(Route.Tabs(Tab.Challenges)) },
                         icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
                         label = { Text(stringResource(Res.string.nav_tab_challenges)) },
+                        colors = navItemColors,
+                    )
+                    NavigationBarItem(
+                        selected = currentTab == Tab.Results,
+                        onClick = { replaceTop(Route.Tabs(Tab.Results)) },
+                        icon = {
+                            Box {
+                                Icon(imageVector = Lucide.Trophy, contentDescription = null)
+                                if (unseenResultsCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .offset(x = 10.dp, y = (-2).dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.error,
+                                                shape = CircleShape,
+                                            )
+                                            .align(Alignment.TopEnd),
+                                    )
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(Res.string.nav_tab_results)) },
                         colors = navItemColors,
                     )
                     NavigationBarItem(
@@ -366,6 +411,10 @@ private fun RouteContent(
                     if (isSignedIn) push(Route.Create) else push(Route.SignIn)
                 },
             )
+            Tab.Results -> ResultsScreen(
+                viewModel = koinViewModel<ResultsViewModel>(),
+                onNavigateToReveal = { push(Route.ResultsReveal(challengeId = it)) },
+            )
             Tab.Me -> MeScreen(
                 viewModel = koinViewModel<MeViewModel>(),
                 snackbarHostState = snackbarHostState,
@@ -471,7 +520,7 @@ private fun RouteContent(
                 parametersOf(route.challengeId)
             },
             snackbarHostState = snackbarHostState,
-            onPosted = { replaceTop(Route.ChallengeDetail(route.challengeId)) },
+            onPosted = { replaceTop(Route.ResultsReveal(challengeId = route.challengeId)) },
         )
         is Route.BetList -> BetListScreen(
             viewModel = koinViewModel<BetListViewModel>(key = "betlist:${route.challengeId}") {
@@ -488,6 +537,11 @@ private fun RouteContent(
                 push(Route.Leaderboard(challengeId = id, isPromoted = false))
             },
         )
+        is Route.ResultsReveal -> ResultsRevealScreen(
+            viewModel = koinViewModel<ResultsRevealViewModel>(key = "reveal:${route.challengeId}") {
+                parametersOf(route.challengeId)
+            },
+        )
         Route.Welcome -> WelcomeScreen(
             onSignIn = {
                 onboardingPrefs.hasSeenWelcome = true
@@ -502,21 +556,29 @@ private fun RouteContent(
                 }
             },
         )
-        Route.GuestName -> GuestNameScreen(
-            initialName = onboardingPrefs.guestName.orEmpty(),
-            onContinue = { name ->
-                onboardingPrefs.guestName = name
-                onboardingPrefs.hasSeenWelcome = true
-                // Give the guest a real (anonymous) Firebase uid and an online
-                // player doc under the chosen name. Best-effort: if anonymous
-                // auth is unavailable we still let them in with the local name.
-                guestScope.launch {
-                    auth.continueAsGuest()
-                        .onSuccess { profile.updateProfile(displayName = name) }
-                }
-                replaceTop(Route.Tabs(Tab.Challenges))
-            },
-        )
+        Route.GuestName -> {
+            val guestSignInFailedMessage = stringResource(Res.string.auth_guest_signin_failed)
+            GuestNameScreen(
+                initialName = onboardingPrefs.guestName.orEmpty(),
+                onContinue = { name ->
+                    onboardingPrefs.guestName = name
+                    onboardingPrefs.hasSeenWelcome = true
+                    // Give the guest a real (anonymous) Firebase uid and an online
+                    // player doc under the chosen name. We still let them in with the
+                    // local name on failure, but surface it — a silent local-only
+                    // fallback would mask a disabled Anonymous provider or an outage.
+                    guestScope.launch {
+                        auth.continueAsGuest()
+                            .onSuccess {
+                                profile.updateProfile(displayName = name)
+                                    .onFailure { snackbarHostState.showSnackbar(message = guestSignInFailedMessage, withDismissAction = true, duration = SnackbarDuration.Indefinite) }
+                            }
+                            .onFailure { snackbarHostState.showSnackbar(message = guestSignInFailedMessage, withDismissAction = true, duration = SnackbarDuration.Indefinite) }
+                    }
+                    replaceTop(Route.Tabs(Tab.Challenges))
+                },
+            )
+        }
         Route.Migration -> MigrationDialog(
             onComplete = {
                 replaceTop(

@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.ui.standardPadding
 
@@ -29,6 +30,7 @@ fun ListRow(
     leading: String? = null,
     trailing: String? = "›",
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    titleFontWeight: FontWeight? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +55,7 @@ fun ListRow(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = titleColor,
+                    fontWeight = titleFontWeight,
                 )
                 if (subtitle != null) {
                     Spacer(Modifier.height(2.dp))

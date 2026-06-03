@@ -1,0 +1,92 @@
+package se.atte.bragwise.ui.preview
+
+import se.atte.bragwise.domain.Bet
+import se.atte.bragwise.domain.BetOption
+import se.atte.bragwise.domain.Challenge
+import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.domain.Player
+import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.domain.Visibility
+import kotlin.time.Instant
+
+/**
+ * Shared sample data for `@Preview` composables only. Keeps screen previews
+ * consistent and avoids re-declaring fixtures in every screen file.
+ */
+
+internal val sampleBets: List<Bet> = listOf(
+    Bet.BooleanProp(id = "b1", title = "Will Argentina win the final?"),
+    Bet.SinglePick(
+        id = "b2",
+        title = "Top scorer",
+        options = listOf(BetOption("o1", "Mbappe"), BetOption("o2", "Messi"), BetOption("o3", "Haaland")),
+    ),
+    Bet.Ranking(
+        id = "b3",
+        title = "Group A - top 2",
+        topN = 2,
+        options = listOf(
+            BetOption("g1", "France"),
+            BetOption("g2", "Belgium"),
+            BetOption("g3", "Croatia"),
+            BetOption("g4", "Senegal"),
+        ),
+    ),
+)
+
+internal fun sampleChallenge(
+    status: ChallengeStatus = ChallengeStatus.OPEN,
+    bets: List<Bet> = sampleBets,
+    results: Map<String, PredictionPayload>? = null,
+): Challenge = Challenge(
+    id = "c1",
+    title = "World Cup 2026 Predictions",
+    description = "Predict the outcomes",
+    category = "sport",
+    visibility = Visibility.FRIENDS,
+    createdBy = "u1",
+    createdAt = Instant.fromEpochSeconds(0),
+    locksAt = null,
+    resultsPostedAt = if (status == ChallengeStatus.RESULTS_POSTED) Instant.fromEpochSeconds(0) else null,
+    status = status,
+    joinedCount = 12,
+    promoted = false,
+    trusted = false,
+    bets = bets,
+    results = results,
+    leaderboard = null,
+)
+
+internal fun sampleDetail(
+    status: ChallengeStatus = ChallengeStatus.OPEN,
+    myPredictions: Map<String, PredictionPayload> = mapOf(
+        "b1" to PredictionPayload.BooleanProp(true),
+        "b3" to PredictionPayload.Ranking(listOf("g1", "g2")),
+    ),
+    myRank: Int? = 3,
+    results: Map<String, PredictionPayload>? = null,
+): ChallengeDetail = ChallengeDetail(
+    challenge = sampleChallenge(status = status, results = results),
+    myPredictions = myPredictions,
+    myRank = myRank,
+)
+
+internal fun samplePlayer(
+    uid: String = "u1",
+    handle: String = "atte",
+    displayName: String = "Atte Lindqvist",
+): Player = Player(
+    uid = uid,
+    handle = handle,
+    displayName = displayName,
+    avatarSeed = handle,
+    createdAt = Instant.fromEpochSeconds(0),
+)
+
+internal val sampleCloudFriends: List<CloudFriend> = listOf(
+    CloudFriend(player = samplePlayer(uid = "u2", handle = "alice", displayName = "Alice"), since = Instant.fromEpochSeconds(0)),
+    CloudFriend(player = samplePlayer(uid = "u3", handle = "bob", displayName = "Bob"), since = Instant.fromEpochSeconds(0)),
+    CloudFriend(player = samplePlayer(uid = "u4", handle = "carol", displayName = "Carol"), since = Instant.fromEpochSeconds(0)),
+)

@@ -11,12 +11,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.platform.AppInfo
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.SectionCard
 
 @Composable
 fun AboutScreen() {
+    AboutContent(version = AppInfo.version)
+}
+
+@Composable
+private fun AboutContent(version: String) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -26,7 +33,7 @@ fun AboutScreen() {
             SectionCard(title = "Bragwise") {
                 Text("Predict. Compete. Brag.", style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
-                Text("Version: ${AppInfo.version}", style = MaterialTheme.typography.bodyMedium)
+                Text("Version: $version", style = MaterialTheme.typography.bodyMedium)
             }
         }
         item {
@@ -40,3 +47,15 @@ fun AboutScreen() {
         }
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun About_Preview() {
+    ThemePreview {
+        AboutContent(version = "1.2.3")
+    }
+}
+
+// endregion

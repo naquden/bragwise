@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.composables.icons.lucide.Lucide
@@ -41,6 +42,8 @@ import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
+import se.atte.bragwise.theme.ThemePreview
+import se.atte.bragwise.ui.preview.sampleBets
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.CountryAutocompleteField
 import se.atte.bragwise.ui.components.AppFilterChip
@@ -710,3 +713,41 @@ private fun Bet.kindLabel(): String = when (this) {
         OptionType.NONE -> "Ranking · top $topN of ${options.size}"
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun CreateChallenge_BetEditor_Preview() {
+    ThemePreview {
+        BetEditor(
+            title = "Add bet",
+            betType = BetType.SinglePick,
+            onBetTypeChange = {},
+            optionType = OptionType.NONE,
+            onOptionTypeChange = {},
+            question = "Top scorer",
+            onQuestionChange = {},
+            options = listOf("Mbappe", "Messi", "Haaland"),
+            onOptionsChange = {},
+            countryOptions = emptyList(),
+            onCountryOptionsChange = {},
+            topN = 3,
+            onTopNChange = {},
+            canSave = true,
+            saveLabel = "Save bet",
+            onSave = {},
+            onCancel = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun CreateChallenge_BetCard_Preview() {
+    ThemePreview {
+        BetCard(bet = sampleBets[1], onRemove = {}, onClick = {})
+    }
+}
+
+// endregion

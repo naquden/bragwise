@@ -19,17 +19,20 @@ import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
+import se.atte.bragwise.ui.preview.sampleBets
 
 /**
  * CR-06 Post results — owner enters the canonical answer per bet.
@@ -151,3 +154,28 @@ private fun BetRow(
         }
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun PostResults_Preview() {
+    ThemePreview {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            sampleBets.forEach { bet ->
+                BetRow(
+                    bet = bet,
+                    current = null,
+                    onSinglePick = {},
+                    onBoolean = {},
+                    onRanking = {},
+                )
+            }
+        }
+    }
+}
+
+// endregion

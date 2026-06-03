@@ -23,6 +23,7 @@ import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
+import se.atte.bragwise.domain.PublicProfile
 
 class ChallengeRemoteDataSource(
     private val db: FirebaseFirestore = Firebase.firestore,
@@ -131,26 +132,27 @@ class ChallengeRemoteDataSource(
     }
 
     /**
-     * Leaderboard sorted by points desc. Resolves display names from
-     * `publicProfiles` once per call (snapshot-driven reload). For large
-     * challenges Phase 2+ should paginate.
+     * Leaderboard sorted by points desc, names and avatars resolved from publicProfiles.
+     * Co-winners (equal points) share a rank number and have isTied = true.
+     * Secondary sort is by uid for deterministic stable ordering.
      */
     fun observeLeaderboard(challengeId: String): Flow<List<LeaderboardEntry>> = flow {
         emitAll(
             db.document("challenges/$challengeId").snapshots
-                .map { snap ->
-                    val board = snap.toLeaderboardMap() ?: return@map emptyList()
-                    board.entries
-                        .sortedByDescending { it.value }
-                        .mapIndexed { idx, (uid, pts) ->
-                            LeaderboardEntry(
-                                uid = uid,
-                                displayName = uid,
-                                points = pts,
-                                rank = idx + 1,
-                            )
+                .flatMapLatest { snap ->
+                    val board = snap.toLeaderboardMap()
+                    if (board.isNullOrEmpty()) return@flatMapLatest flowOf(emptyList())
+                    val sortedEntries = board.entries
+                        .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+                    val profileFlows = sortedEntries.map { (uid, _) ->
+                        db.document("publicProfiles/$uid").snapshots.map { profileSnap ->
+                            if (profileSnap.exists) profileSnap.toPublicProfile() else null
                         }
-                },
+                    }
+                    combine(profileFlows) { profileArray ->
+                        buildLeaderboardEntries(sortedEntries = sortedEntries, profiles = profileArray.toList())
+                    }
+                }
         )
     }
 
@@ -259,6 +261,36 @@ class ChallengeRemoteDataSource(
         val failed = counts["failed"] ?: 0
         return MigrationSummary(migrated = migrated, deferredKeptLocal = 0, droppedLocked = failed)
     }
+}
+
+private fun buildLeaderboardEntries(
+    sortedEntries: List<Map.Entry<String, Int>>,
+    profiles: List<PublicProfile?>,
+): List<LeaderboardEntry> {
+    val result = mutableListOf<LeaderboardEntry>()
+    var rank = 1
+    var i = 0
+    while (i < sortedEntries.size) {
+        val points = sortedEntries[i].value
+        var j = i
+        while (j < sortedEntries.size && sortedEntries[j].value == points) j++
+        val isTied = j - i > 1
+        for (k in i until j) {
+            val uid = sortedEntries[k].key
+            val profile = profiles.getOrNull(k)
+            result += LeaderboardEntry(
+                uid = uid,
+                displayName = profile?.displayName?.takeIf { it.isNotBlank() } ?: uid,
+                avatarSeed = profile?.avatarSeed?.takeIf { it.isNotBlank() } ?: uid,
+                points = points,
+                rank = rank,
+                isTied = isTied,
+            )
+        }
+        rank += j - i
+        i = j
+    }
+    return result
 }
 
 private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this) {

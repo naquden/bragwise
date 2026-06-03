@@ -22,8 +22,10 @@ import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.SectionCard
@@ -45,6 +47,23 @@ fun EditProfileScreen(
         }
     }
 
+    EditProfileContent(
+        state = state,
+        onSetHandle = { viewModel.onIntent(EditProfileViewModel.Intent.SetHandle(it)) },
+        onSetDisplayName = { viewModel.onIntent(EditProfileViewModel.Intent.SetDisplayName(it)) },
+        onSetAvatarSeed = { viewModel.onIntent(EditProfileViewModel.Intent.SetAvatarSeed(it)) },
+        onSave = { viewModel.onIntent(EditProfileViewModel.Intent.Save) },
+    )
+}
+
+@Composable
+private fun EditProfileContent(
+    state: EditProfileViewModel.State,
+    onSetHandle: (String) -> Unit,
+    onSetDisplayName: (String) -> Unit,
+    onSetAvatarSeed: (String) -> Unit,
+    onSave: () -> Unit,
+) {
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -55,7 +74,7 @@ fun EditProfileScreen(
                 SectionCard(title = "Identity") {
                     OutlinedTextField(
                         value = state.handle,
-                        onValueChange = { viewModel.onIntent(EditProfileViewModel.Intent.SetHandle(it)) },
+                        onValueChange = onSetHandle,
                         label = { Text("Handle") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -63,7 +82,7 @@ fun EditProfileScreen(
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.displayName,
-                        onValueChange = { viewModel.onIntent(EditProfileViewModel.Intent.SetDisplayName(it)) },
+                        onValueChange = onSetDisplayName,
                         label = { Text("Display name") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -80,7 +99,7 @@ fun EditProfileScreen(
                             AvatarTile(
                                 seed = seed,
                                 selected = seed == state.avatarSeed,
-                                onClick = { viewModel.onIntent(EditProfileViewModel.Intent.SetAvatarSeed(seed)) },
+                                onClick = { onSetAvatarSeed(seed) },
                             )
                         }
                     }
@@ -93,7 +112,7 @@ fun EditProfileScreen(
                             AvatarTile(
                                 seed = seed,
                                 selected = seed == state.avatarSeed,
-                                onClick = { viewModel.onIntent(EditProfileViewModel.Intent.SetAvatarSeed(seed)) },
+                                onClick = { onSetAvatarSeed(seed) },
                             )
                         }
                     }
@@ -103,7 +122,7 @@ fun EditProfileScreen(
         BottomActionBar {
             AppButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { viewModel.onIntent(EditProfileViewModel.Intent.Save) },
+                onClick = onSave,
                 enabled = !state.saving && state.initialised,
             ) {
                 Text(if (state.saving) "Saving…" else "Save")
@@ -131,3 +150,26 @@ private fun AvatarTile(seed: String, selected: Boolean, onClick: () -> Unit) {
         }
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun EditProfile_Preview() {
+    ThemePreview {
+        EditProfileContent(
+            state = EditProfileViewModel.State(
+                initialised = true,
+                handle = "atte",
+                displayName = "Atte Lindqvist",
+                avatarSeed = "a3",
+            ),
+            onSetHandle = {},
+            onSetDisplayName = {},
+            onSetAvatarSeed = {},
+            onSave = {},
+        )
+    }
+}
+
+// endregion

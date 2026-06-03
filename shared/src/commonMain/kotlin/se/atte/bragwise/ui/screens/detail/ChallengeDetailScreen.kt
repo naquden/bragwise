@@ -35,6 +35,9 @@ import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.theme.ThemePreview
+import se.atte.bragwise.ui.betPoints
+import se.atte.bragwise.ui.compactPick
+import se.atte.bragwise.ui.predictedCount
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.BottomActionBar
@@ -159,12 +162,12 @@ private fun DetailContent(
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = "Bets",
+                                text = "Predicted",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = data.challenge.bets.size.toString(),
+                                text = "${data.predictedCount()} / ${data.challenge.bets.size}",
                                 style = MaterialTheme.typography.titleLarge,
                             )
                         }
@@ -183,7 +186,12 @@ private fun DetailContent(
                 item {
                     ListGroup {
                         data.challenge.bets.forEachIndexed { index, bet ->
-                            BetListRow(number = index + 1, bet = bet, onClick = { onBet(bet.id) })
+                            BetListRow(
+                                number = index + 1,
+                                bet = bet,
+                                detail = data,
+                                onClick = { onBet(bet.id) },
+                            )
                             if (index < data.challenge.bets.size - 1) ListGroupDivider()
                         }
                     }
@@ -244,19 +252,26 @@ private fun DetailContent(
 }
 
 @Composable
-private fun BetListRow(number: Int, bet: Bet, onClick: () -> Unit) {
+private fun BetListRow(number: Int, bet: Bet, detail: ChallengeDetail, onClick: () -> Unit) {
+    val pick = compactPick(bet = bet, payload = detail.myPredictions[bet.id])
+    val points = betPoints(bet = bet, detail = detail)
+    val status = detail.challenge.status
+
+    val subtitle = when {
+        pick != null -> pick
+        status == ChallengeStatus.LOCKED -> "Locked · no prediction"
+        else -> "Not predicted yet"
+    }
+    val trailing = points?.let { "$it pt" } ?: "›"
+
     ListRow(
         title = bet.title,
-        subtitle = bet.kindLabel(),
+        subtitle = subtitle,
         leading = number.toString(),
+        trailing = trailing,
+        titleFontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
         onClick = onClick,
     )
-}
-
-private fun Bet.kindLabel(): String = when (this) {
-    is Bet.SinglePick -> "Single pick · ${options.size} options"
-    is Bet.BooleanProp -> "Yes / No"
-    is Bet.Ranking -> "Ranking · top $topN"
 }
 
 // region Previews
@@ -281,6 +296,17 @@ private val previewChallenge = Challenge(
             id = "b2",
             title = "Top scorer",
             options = listOf(BetOption("o1", "Mbappe"), BetOption("o2", "Messi"), BetOption("o3", "Haaland")),
+        ),
+        Bet.Ranking(
+            id = "b3",
+            title = "Group A - top 2",
+            topN = 2,
+            options = listOf(
+                BetOption("g1", "France"),
+                BetOption("g2", "Belgium"),
+                BetOption("g3", "Croatia"),
+                BetOption("g4", "Senegal"),
+            ),
         ),
     ),
     results = null,
@@ -320,7 +346,10 @@ private fun Detail_Ready_Joined_Preview() {
         DetailContent(
             data = ChallengeDetail(
                 challenge = previewChallenge,
-                myPredictions = mapOf("b1" to PredictionPayload.BooleanProp(true)),
+                myPredictions = mapOf(
+                    "b1" to PredictionPayload.BooleanProp(true),
+                    "b3" to PredictionPayload.Ranking(listOf("g1", "g2")),
+                ),
                 myRank = 3,
             ),
             isOwner = true,

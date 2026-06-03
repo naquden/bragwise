@@ -160,7 +160,7 @@ class FirebaseAuthRepository(
     override suspend fun completeSignInWithLink(link: String): Result<Unit> = runCatching {
         val email = local.pendingSignInEmail
             ?: error("no pending email — link may have been opened on a different device")
-        val result = remote.signInWithEmailLink(email = email, link = link)
+        val result = remote.completeSignIn(email = email, link = link)
         lastSignInCreatedNewUser = result.additionalUserInfo?.isNewUser
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null

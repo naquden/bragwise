@@ -23,9 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -185,13 +182,6 @@ private fun ChallengesContent(
                 }
             }
         })
-        if (sections.history.isNotEmpty()) add(SectionEntry(sc.historyBg) { topInset ->
-            HistorySection(
-                challenges = sections.history,
-                onChallenge = onChallenge,
-                topInset = topInset,
-            )
-        })
     }
 
     val lastBg = entries.lastOrNull()?.bg ?: MaterialTheme.colorScheme.background
@@ -249,40 +239,6 @@ private fun InvitationRow(invitation: Invitation, onClick: (String) -> Unit, sur
     }
 }
 
-@Composable
-private fun HistorySection(
-    challenges: List<Challenge>,
-    onChallenge: (String) -> Unit,
-    topInset: Boolean,
-) {
-    val sc = LocalSectionColors.current
-    var expanded by remember { mutableStateOf(false) }
-    ColoredSection(
-        bg = sc.historyBg,
-        title = "History",
-        icon = "🕐",
-        onTitleColor = sc.onHistory,
-        trailing = if (expanded) "tap to collapse" else "${challenges.size} finished · tap to expand",
-        topInset = topInset,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = if (expanded) "▲ Hide" else "▼ Show ${challenges.size} finished challenge${if (challenges.size == 1) "" else "s"}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = sc.onHistory.copy(alpha = 0.7f),
-                modifier = Modifier.padding(vertical = standardPaddingSmall),
-            )
-        }
-        if (expanded) {
-            challenges.forEach { c ->
-                ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, surfaceColor = sc.historyCard)
-            }
-        }
-    }
-}
 
 // region Previews
 
@@ -321,7 +277,6 @@ private fun Challenges_Empty_Preview() {
 private fun Challenges_Ready_Preview() {
     val sections = ChallengesViewModel.Sections(
         mine = listOf(previewChallenge("c1", "My Challenge")),
-        history = emptyList(),
         promoted = listOf(previewChallenge("c2", "Promoted Challenge", promoted = true)),
         fromFriends = listOf(previewChallenge("c3", "Friend's Challenge")),
         invites = listOf(

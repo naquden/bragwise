@@ -248,8 +248,9 @@ export const publishChallenge = onCall(async (req: CallableRequest<unknown>) => 
 
 export const submitPredictions = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
+  // Anonymous guests have a real uid and can submit — email verification is NOT required.
+  // App Check + rate limiting guard against abuse.
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'submitPredictions', 3600, 600);
   const { challengeId, predictions } = validate(SubmitPredictionsSchema, req.data);
 
@@ -274,10 +275,13 @@ export const submitPredictions = onCall(async (req: CallableRequest<unknown>) =>
       throw new HttpsError('failed-precondition', 'challenge-locked');
     }
 
-    // Eligibility: creator, existing member, existing invitee, or PROMOTED.
+    // Eligibility: creator, existing member, existing invitee, PROMOTED, or
+    // FRIENDS (join-by-link: anyone with the challengeId share link can participate).
+    // INVITE_ONLY still requires an explicit invitation.
     const isEligible =
       challenge.createdBy === uid ||
       challenge.visibility === 'PROMOTED' ||
+      challenge.visibility === 'FRIENDS' ||
       playerSnap.exists ||
       (await tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`))).exists;
 

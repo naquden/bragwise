@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
@@ -25,6 +26,8 @@ interface ChallengeRepository {
     fun observePendingInvites(): Flow<List<Invitation>>
     fun observeChallengeDetail(id: String): Flow<ChallengeDetail>
     fun observeLeaderboard(challengeId: String, friendsOnly: Boolean = false): Flow<List<LeaderboardEntry>>
+    /** All finished (RESULTS_POSTED) challenges the current user participated in, newest first. */
+    fun observeFinished(): Flow<List<Challenge>>
 
     suspend fun createDraft(challenge: Challenge): Result<Challenge>
     suspend fun updateDraft(challenge: Challenge): Result<Unit>
@@ -116,6 +119,13 @@ class FirebaseChallengeRepository(
 
     override fun observeLeaderboard(challengeId: String, friendsOnly: Boolean): Flow<List<LeaderboardEntry>> =
         remote.observeLeaderboard(challengeId)
+
+    override fun observeFinished(): Flow<List<Challenge>> =
+        observeMine().map { challenges ->
+            challenges
+                .filter { it.status == ChallengeStatus.RESULTS_POSTED }
+                .sortedByDescending { it.resultsPostedAt }
+        }
 
     // ── Writes ────────────────────────────────────────────────────────────────
 

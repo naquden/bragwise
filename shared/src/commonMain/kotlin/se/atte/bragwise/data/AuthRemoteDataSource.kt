@@ -4,6 +4,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.ActionCodeSettings
 import dev.gitlive.firebase.auth.AndroidPackageName
 import dev.gitlive.firebase.auth.AuthResult
+import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.auth
@@ -41,6 +42,22 @@ class AuthRemoteDataSource(
 
     suspend fun signInAnonymously() {
         auth.signInAnonymously()
+    }
+
+    /**
+     * If the current user is anonymous, link the email credential to preserve
+     * the uid (and all cloud predictions/scores). Falls back to a fresh sign-in
+     * if linking fails (e.g. email already in use by another account).
+     */
+    suspend fun completeSignIn(email: String, link: String): AuthResult {
+        val currentUser = auth.currentUser
+        if (currentUser != null && currentUser.isAnonymous) {
+            runCatching {
+                val credential = EmailAuthProvider.credentialWithLink(email = email, emailLink = link)
+                currentUser.linkWithCredential(credential = credential)
+            }.onSuccess { return it }
+        }
+        return auth.signInWithEmailLink(email = email, link = link)
     }
 
     suspend fun signInWithEmailLink(email: String, link: String): AuthResult =

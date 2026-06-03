@@ -19,17 +19,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.SectionCard
+import se.atte.bragwise.ui.preview.sampleDetail
 
 /**
  * CR-04 Manage challenge — owner-only post-publish view. Surfaces invite,
@@ -169,3 +172,35 @@ private fun Content(
         }
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun ManageChallenge_Owner_Preview() {
+    ThemePreview {
+        Content(
+            detail = sampleDetail(),
+            isOwner = true,
+            onInvite = {},
+            onPostResults = {},
+            onRequestDelete = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ManageChallenge_NotOwner_Preview() {
+    ThemePreview {
+        Content(
+            detail = sampleDetail(),
+            isOwner = false,
+            onInvite = {},
+            onPostResults = {},
+            onRequestDelete = {},
+        )
+    }
+}
+
+// endregion

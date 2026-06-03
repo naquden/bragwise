@@ -18,8 +18,10 @@ import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.SectionCard
@@ -42,9 +44,23 @@ fun FriendRequestsScreen(
         }
     }
 
-    val incoming = state.requests.incoming.keys.toList()
-    val outgoing = state.requests.outgoing.size
+    FriendRequestsContent(
+        incoming = state.requests.incoming.keys.toList(),
+        outgoing = state.requests.outgoing.size,
+        acting = state.acting,
+        onAccept = { viewModel.onIntent(FriendRequestsViewModel.Intent.Accept(it)) },
+        onDecline = { viewModel.onIntent(FriendRequestsViewModel.Intent.Decline(it)) },
+    )
+}
 
+@Composable
+private fun FriendRequestsContent(
+    incoming: List<String>,
+    outgoing: Int,
+    acting: Set<String>,
+    onAccept: (String) -> Unit,
+    onDecline: (String) -> Unit,
+) {
     if (incoming.isEmpty() && outgoing == 0) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No pending requests")
@@ -79,18 +95,14 @@ fun FriendRequestsScreen(
                         Text(uid, style = MaterialTheme.typography.bodyLarge)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val acting = uid in state.acting
+                        val isActing = uid in acting
                         AppOutlinedButton(
-                            onClick = {
-                                viewModelOnIntent(viewModel, FriendRequestsViewModel.Intent.Decline(uid))
-                            },
-                            enabled = !acting,
+                            onClick = { onDecline(uid) },
+                            enabled = !isActing,
                         ) { Text("Decline") }
                         AppButton(
-                            onClick = {
-                                viewModelOnIntent(viewModel, FriendRequestsViewModel.Intent.Accept(uid))
-                            },
-                            enabled = !acting,
+                            onClick = { onAccept(uid) },
+                            enabled = !isActing,
                         ) { Text("Accept") }
                     }
                 }
@@ -110,5 +122,34 @@ fun FriendRequestsScreen(
     }
 }
 
-private fun viewModelOnIntent(vm: FriendRequestsViewModel, intent: FriendRequestsViewModel.Intent) =
-    vm.onIntent(intent)
+// region Previews
+
+@Preview
+@Composable
+private fun FriendRequests_Preview() {
+    ThemePreview {
+        FriendRequestsContent(
+            incoming = listOf("alice", "bob"),
+            outgoing = 1,
+            acting = emptySet(),
+            onAccept = {},
+            onDecline = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun FriendRequests_Empty_Preview() {
+    ThemePreview {
+        FriendRequestsContent(
+            incoming = emptyList(),
+            outgoing = 0,
+            acting = emptySet(),
+            onAccept = {},
+            onDecline = {},
+        )
+    }
+}
+
+// endregion

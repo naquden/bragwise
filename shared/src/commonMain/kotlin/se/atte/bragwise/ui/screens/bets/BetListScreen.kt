@@ -14,14 +14,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.ListGroup
 import se.atte.bragwise.ui.components.ListRow
+import se.atte.bragwise.ui.preview.sampleDetail
 
 /**
  * MC-02 Bet list — flat view of every bet in a challenge with prediction
@@ -62,6 +65,7 @@ private fun BetListContent(detail: ChallengeDetail, onOpenPredict: () -> Unit) {
                 ListRow(
                     title = bet.title,
                     subtitle = statusLabel(bet, detail),
+                    titleFontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     onClick = onOpenPredict,
                 )
             }
@@ -79,3 +83,15 @@ private fun statusLabel(bet: Bet, detail: ChallengeDetail): String {
         else -> "Open"
     }
 }
+
+// region Previews
+
+@Preview
+@Composable
+private fun BetList_Preview() {
+    ThemePreview {
+        BetListContent(detail = sampleDetail(), onOpenPredict = {})
+    }
+}
+
+// endregion

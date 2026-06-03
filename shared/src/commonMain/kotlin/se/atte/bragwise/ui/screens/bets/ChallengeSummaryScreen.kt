@@ -18,13 +18,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
-import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.theme.ThemePreview
+import se.atte.bragwise.ui.betPoints
+import se.atte.bragwise.ui.fullPick
+import se.atte.bragwise.ui.preview.sampleDetail
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.ListGroup
@@ -94,8 +97,9 @@ private fun Content(
                 ListGroup {
                     ListRow(
                         title = bet.title,
-                        subtitle = renderPick(bet, detail.myPredictions[bet.id]),
-                        trailing = renderPoints(bet, detail),
+                        subtitle = fullPick(bet = bet, payload = detail.myPredictions[bet.id]),
+                        trailing = betPoints(bet = bet, detail = detail)?.toString() ?: "›",
+                        titleFontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     )
                 }
             }
@@ -113,29 +117,32 @@ private fun Content(
     }
 }
 
-private fun renderPick(bet: Bet, payload: PredictionPayload?): String {
-    payload ?: return "Not predicted"
-    return when (bet) {
-        is Bet.SinglePick -> {
-            val id = (payload as? PredictionPayload.SinglePick)?.optionId
-            bet.options.firstOrNull { it.id == id }?.label ?: "—"
-        }
-        is Bet.BooleanProp -> if ((payload as? PredictionPayload.BooleanProp)?.value == true) "Yes" else "No"
-        is Bet.Ranking -> {
-            val ids = (payload as? PredictionPayload.Ranking)?.orderedOptionIds.orEmpty()
-            ids.mapIndexedNotNull { i, oid ->
-                val label = bet.options.firstOrNull { it.id == oid }?.label ?: return@mapIndexedNotNull null
-                "${i + 1}. $label"
-            }.joinToString(", ")
-        }
+// region Previews
+
+@Preview
+@Composable
+private fun ChallengeSummary_Open_Preview() {
+    ThemePreview {
+        Content(detail = sampleDetail(), onEdit = {}, onLeaderboard = {})
     }
 }
 
-private fun renderPoints(bet: Bet, detail: ChallengeDetail): String? {
-    if (detail.challenge.status != ChallengeStatus.RESULTS_POSTED) return "›"
-    val results = detail.challenge.results ?: return "›"
-    val pred = detail.myPredictions[bet.id] ?: return "0"
-    val result = results[bet.id] ?: return "—"
-    val pts = se.atte.bragwise.domain.scoring.ScoringEngine.score(bet, pred, result)
-    return pts.toString()
+@Preview
+@Composable
+private fun ChallengeSummary_ResultsPosted_Preview() {
+    ThemePreview {
+        Content(
+            detail = sampleDetail(
+                status = ChallengeStatus.RESULTS_POSTED,
+                results = mapOf(
+                    "b1" to se.atte.bragwise.domain.PredictionPayload.BooleanProp(true),
+                    "b3" to se.atte.bragwise.domain.PredictionPayload.Ranking(listOf("g1", "g2")),
+                ),
+            ),
+            onEdit = {},
+            onLeaderboard = {},
+        )
+    }
 }
+
+// endregion
