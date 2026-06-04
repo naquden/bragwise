@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import se.atte.bragwise.theme.AppType
 
 /**
- * `#34 / 4 213` chip with overshoot spring on rank changes. The spring lives
+ * `#34` placement chip with overshoot spring on rank changes. The spring lives
  * on the displayed rank value (via `animateIntAsState`) so mid-animation
  * state updates do not snap to the new value. Callers pass raw rank ints.
  *
@@ -23,7 +23,7 @@ import se.atte.bragwise.theme.AppType
  * historical-rank source.
  */
 @Composable
-fun RankChip(rank: Int, total: Int, modifier: Modifier = Modifier) {
+fun RankChip(rank: Int, modifier: Modifier = Modifier) {
     val animated by animateIntAsState(
         targetValue = rank,
         animationSpec = spring(
@@ -33,7 +33,7 @@ fun RankChip(rank: Int, total: Int, modifier: Modifier = Modifier) {
         label = "rank",
     )
     Text(
-        text = "#$animated / $total",
+        text = "#$animated",
         style = AppType.rankBadge,
         modifier = modifier
             .background(

@@ -679,6 +679,62 @@ export const setNotificationPref = onCall(async (req: CallableRequest<unknown>) 
   return { ok: true };
 });
 
+// ─── Handle auto-assignment helpers ──────────────────────────────────────────
+
+const HANDLE_ADJECTIVES = [
+  'brave', 'swift', 'lucky', 'sunny', 'clever', 'sharp', 'quick', 'bold',
+  'cool', 'calm', 'kind', 'wild', 'bright', 'happy', 'proud', 'witty',
+  'keen', 'free', 'great', 'fair',
+];
+
+const HANDLE_NOUNS = [
+  'fox', 'otter', 'panda', 'tiger', 'eagle', 'wolf', 'bear', 'shark',
+  'hawk', 'lynx', 'raven', 'bison', 'moose', 'koala', 'finch', 'drake',
+  'crane', 'viper', 'newt', 'toad',
+];
+
+function randomHandleCandidate(): string {
+  const adj = HANDLE_ADJECTIVES[Math.floor(Math.random() * HANDLE_ADJECTIVES.length)];
+  const noun = HANDLE_NOUNS[Math.floor(Math.random() * HANDLE_NOUNS.length)];
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  return `${adj}${noun}${digits}`;
+}
+
+/**
+ * Transactionally claims a unique random handle for `uid`. Retries up to
+ * `maxAttempts` times on collision. No-ops if the account already has a handle
+ * (guard against concurrent assignment). Best-effort: callers should catch.
+ */
+async function assignRandomHandle(uid: string, maxAttempts = 10): Promise<void> {
+  const playerRef = db.doc(`players/${uid}`);
+  const profileRef = db.doc(`publicProfiles/${uid}`);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const candidate = randomHandleCandidate();
+    const handleRef = db.doc(`handles/${candidate}`);
+
+    try {
+      await db.runTransaction(async (tx) => {
+        const [playerSnap, handleSnap] = await Promise.all([tx.get(playerRef), tx.get(handleRef)]);
+
+        // Another process already assigned a handle — nothing to do.
+        if (playerSnap.exists && playerSnap.data()!.handle) return;
+
+        // Collision: this candidate is already taken — signal a retry.
+        if (handleSnap.exists) throw new Error('handle-collision');
+
+        tx.set(handleRef, { uid, claimedAt: FieldValue.serverTimestamp() });
+        tx.set(profileRef, { handle: candidate }, { merge: true });
+        tx.set(playerRef, { handle: candidate }, { merge: true });
+      });
+      return;
+    } catch (err) {
+      if (err instanceof Error && err.message === 'handle-collision') continue;
+      throw err;
+    }
+  }
+}
+
 // ─── recordActivity ───────────────────────────────────────────────────────────
 
 /**
@@ -698,10 +754,23 @@ export const recordActivity = onCall(async (req: CallableRequest<unknown>) => {
     | undefined;
   const isAnonymous = provider?.sign_in_provider === 'anonymous';
 
-  await db.doc(`players/${uid}`).set(
+  const playerRef = db.doc(`players/${uid}`);
+  const playerSnap = await playerRef.get();
+  const hasHandle = !!(playerSnap.exists && playerSnap.data()!.handle);
+
+  await playerRef.set(
     { lastSeen: FieldValue.serverTimestamp(), isAnonymous },
     { merge: true },
   );
+
+  // Auto-assign a unique random handle for real (non-guest) accounts that
+  // don't have one yet. Best-effort — never fails the heartbeat response.
+  if (!isAnonymous && !hasHandle) {
+    assignRandomHandle(uid).catch((err) =>
+      console.error(`assignRandomHandle failed for uid=${uid}:`, err),
+    );
+  }
+
   return { ok: true };
 });
 

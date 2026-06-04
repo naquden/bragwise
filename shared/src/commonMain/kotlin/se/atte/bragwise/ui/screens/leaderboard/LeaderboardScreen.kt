@@ -89,7 +89,7 @@ private fun EntryRow(entry: LeaderboardEntry, onClick: () -> Unit = {}) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RankChip(rank = entry.rank, total = 0)
+        RankChip(rank = entry.rank)
         Text(text = entry.displayName, style = MaterialTheme.typography.titleLarge)
         PointsPill(points = entry.points)
     }

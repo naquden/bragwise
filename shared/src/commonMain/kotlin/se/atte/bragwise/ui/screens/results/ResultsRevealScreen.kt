@@ -147,7 +147,7 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall))
                         val label = if (data.participantCount > 20) "Top 10" else "All results"
                         Text(
-                            text = label,
+                            text = "$label (${data.participantCount})",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall),
@@ -248,7 +248,7 @@ private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, animationDela
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(standardPadding),
         ) {
-            RankChip(rank = entry.rank, total = 0)
+            RankChip(rank = entry.rank)
             AvatarBubble(
                 displayName = entry.displayName,
                 avatarSeed = entry.avatarSeed,

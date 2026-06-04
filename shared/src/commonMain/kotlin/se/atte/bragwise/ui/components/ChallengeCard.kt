@@ -37,7 +37,6 @@ import se.atte.bragwise.theme.appShadow
 fun ChallengeCard(
     challenge: Challenge,
     rank: Int? = null,
-    totalParticipants: Int? = null,
     onClick: () -> Unit = {},
     accent: Boolean = false,
     surfaceColor: Color = Unspecified,
@@ -106,8 +105,8 @@ fun ChallengeCard(
                         )
                         Spacer(Modifier.width(standardPaddingSmall))
                     }
-                    if (rank != null && totalParticipants != null) {
-                        RankChip(rank = rank, total = totalParticipants)
+                    if (rank != null) {
+                        RankChip(rank = rank)
                     }
                 }
             }

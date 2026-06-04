@@ -112,7 +112,6 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
                     ChallengeCard(
                         challenge = challenge,
                         rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                        totalParticipants = challenge.joinedCount,
                         onClick = { onChallenge(challenge.id) },
                         surfaceColor = sc.mineCard,
                     )
@@ -133,7 +132,6 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
                     ChallengeCard(
                         challenge = challenge,
                         rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                        totalParticipants = challenge.joinedCount,
                         onClick = { onChallenge(challenge.id) },
                         surfaceColor = sc.historyCard,
                     )

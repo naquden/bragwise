@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.absoluteValue
 
 private val avatarPalette = listOf(
@@ -40,7 +41,6 @@ fun AvatarBubble(
     val backgroundColor = remember(avatarSeed) {
         avatarPalette[avatarSeed.hashCode().absoluteValue % avatarPalette.size]
     }
-    val initial = displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
     val borderModifier = if (isHighlighted) {
         Modifier.border(width = 3.dp, color = Color.White, shape = CircleShape)
     } else Modifier
@@ -49,14 +49,25 @@ fun AvatarBubble(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(backgroundColor)
+            .background(if (isFlagSeed(avatarSeed)) Color.Transparent else backgroundColor)
             .then(borderModifier),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = initial,
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
-        )
+        when {
+            isFlagSeed(avatarSeed) -> FlagImage(
+                code = flagCodeOf(avatarSeed),
+                size = size,
+                modifier = Modifier.clip(CircleShape),
+            )
+            !isLegacySeed(avatarSeed) -> Text(
+                text = avatarSeed,
+                fontSize = (size.value * 0.5f).sp,
+            )
+            else -> Text(
+                text = displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+            )
+        }
     }
 }

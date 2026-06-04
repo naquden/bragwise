@@ -438,6 +438,9 @@ private val FLAG_DRAWABLES: Map<String, DrawableResource> = mapOf(
     "ZW" to Res.drawable.flag_zw,
 )
 
+/** All ISO codes that have a flag drawable, sorted alphabetically. */
+val allFlagCodes: List<String> = FLAG_DRAWABLES.keys.sorted()
+
 fun flagDrawable(code: String): DrawableResource? = FLAG_DRAWABLES[code.uppercase()]
 
 @Composable

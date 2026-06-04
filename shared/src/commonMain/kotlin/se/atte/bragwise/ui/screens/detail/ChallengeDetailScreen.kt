@@ -148,10 +148,7 @@ private fun DetailContent(
                             )
                             Spacer(Modifier.height(4.dp))
                             if (data.myRank != null) {
-                                RankChip(
-                                    rank = data.myRank,
-                                    total = data.challenge.joinedCount,
-                                )
+                                RankChip(rank = data.myRank)
                             } else {
                                 Text(
                                     text = "—— / ${data.challenge.joinedCount}",
