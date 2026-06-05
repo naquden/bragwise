@@ -12,11 +12,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,7 +27,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import org.koin.compose.koinInject
+import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.mvi.ObserveEffects
+import se.atte.bragwise.ui.components.LoadingDialog
+import se.atte.bragwise.ui.components.NameGateDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -63,6 +69,7 @@ fun CreateChallengeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val friends by viewModel.friends.collectAsStateWithLifecycle()
+    val onboardingPrefs: OnboardingPrefs = koinInject()
 
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -70,6 +77,18 @@ fun CreateChallengeScreen(
             is CreateChallengeViewModel.Effect.DraftSaved -> onDraftSaved(effect.challengeId)
             is CreateChallengeViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
+    }
+
+    if (state.submitting) {
+        LoadingDialog(message = "Saving challenge…")
+    }
+
+    if (state.needsName) {
+        NameGateDialog(
+            initialName = onboardingPrefs.chosenName.orEmpty(),
+            onConfirm = { name -> viewModel.onIntent(CreateChallengeViewModel.Intent.ConfirmName(name)) },
+            onDismiss = { viewModel.onIntent(CreateChallengeViewModel.Intent.DismissName) },
+        )
     }
 
     var newBetTitle by remember { mutableStateOf("") }
@@ -199,6 +218,30 @@ fun CreateChallengeScreen(
                             modifier = Modifier
                                 .padding(top = 8.dp)
                                 .clickable { showFriendPicker = true },
+                        )
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Bets visible to others",
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = "Participants can see each other's predictions",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = state.betsVisible,
+                            onCheckedChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetBetsVisible(it)) },
                         )
                     }
                 }

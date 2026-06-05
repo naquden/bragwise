@@ -21,11 +21,11 @@ internal const val FUNCTIONS_REGION = "europe-west1"
 /** Authorised App Link / Universal Link host. Currently the Firebase Hosting default subdomain. */
 internal const val APP_LINK_HOST = "bragwise.firebaseapp.com"
 
-/** Full base URL for shareable / deep-link routes (`/c/{id}`, `/u/{handle}`). */
+/** Full base URL for shareable / deep-link routes (`/c/{id}`, `/u/{username}`). */
 internal const val APP_LINK_BASE_URL = "https://$APP_LINK_HOST"
 
 /** Canonical shareable URL for a challenge. Resolves via the landing function. */
 fun shareUrlForChallenge(challengeId: String): String = "$APP_LINK_BASE_URL/c/$challengeId"
 
-/** Canonical shareable URL for a player handle. */
-fun shareUrlForHandle(handle: String): String = "$APP_LINK_BASE_URL/u/$handle"
+/** Canonical shareable URL for a player. */
+fun shareUrlForUsername(username: String): String = "$APP_LINK_BASE_URL/u/$username"

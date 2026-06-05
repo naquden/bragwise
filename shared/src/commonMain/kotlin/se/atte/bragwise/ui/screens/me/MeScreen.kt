@@ -149,7 +149,10 @@ private fun MeContent(
     ) {
         SectionCard {
             if (!isSignedIn) {
-                Text(text = "Guest", style = MaterialTheme.typography.headlineLarge)
+                Text(
+                    text = player?.displayName?.takeIf { it.isNotBlank() } ?: "Guest",
+                    style = MaterialTheme.typography.headlineLarge,
+                )
                 Text(
                     text = "Sign up to save your run, join friends, and appear on leaderboards.",
                     style = MaterialTheme.typography.bodyLarge,
@@ -165,7 +168,7 @@ private fun MeContent(
             } else if (player != null) {
                 Text(text = player.displayName, style = MaterialTheme.typography.headlineLarge)
                 Text(
-                    text = "@${player.handle}",
+                    text = "@${player.username}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
@@ -323,7 +326,7 @@ private fun MeContent_SignedIn_Preview() {
         MeContent(
             player = Player(
                 uid = "u1",
-                handle = "atte",
+                username = "atte",
                 displayName = "Atte Lindqvist",
                 avatarSeed = "atte",
                 createdAt = Instant.fromEpochSeconds(0),

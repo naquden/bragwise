@@ -6,6 +6,7 @@ import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.Visibility
@@ -36,10 +37,18 @@ internal val sampleBets: List<Bet> = listOf(
     ),
 )
 
+internal val sampleParticipants: List<ParticipantInfo> = listOf(
+    ParticipantInfo(uid = "u1", displayName = "Atte Lindqvist", avatarSeed = "atte"),
+    ParticipantInfo(uid = "u2", displayName = "Alice", avatarSeed = "alice"),
+    ParticipantInfo(uid = "u3", displayName = "Bob", avatarSeed = "bob"),
+)
+
 internal fun sampleChallenge(
     status: ChallengeStatus = ChallengeStatus.OPEN,
     bets: List<Bet> = sampleBets,
     results: Map<String, PredictionPayload>? = null,
+    betsVisible: Boolean = false,
+    participants: List<ParticipantInfo> = sampleParticipants,
 ): Challenge = Challenge(
     id = "c1",
     title = "World Cup 2026 Predictions",
@@ -57,6 +66,8 @@ internal fun sampleChallenge(
     bets = bets,
     results = results,
     leaderboard = null,
+    betsVisible = betsVisible,
+    participants = participants,
 )
 
 internal fun sampleDetail(
@@ -67,26 +78,27 @@ internal fun sampleDetail(
     ),
     myRank: Int? = 3,
     results: Map<String, PredictionPayload>? = null,
+    betsVisible: Boolean = false,
 ): ChallengeDetail = ChallengeDetail(
-    challenge = sampleChallenge(status = status, results = results),
+    challenge = sampleChallenge(status = status, results = results, betsVisible = betsVisible),
     myPredictions = myPredictions,
     myRank = myRank,
 )
 
 internal fun samplePlayer(
     uid: String = "u1",
-    handle: String = "atte",
+    username: String = "atte",
     displayName: String = "Atte Lindqvist",
 ): Player = Player(
     uid = uid,
-    handle = handle,
+    username = username,
     displayName = displayName,
-    avatarSeed = handle,
+    avatarSeed = username,
     createdAt = Instant.fromEpochSeconds(0),
 )
 
 internal val sampleCloudFriends: List<CloudFriend> = listOf(
-    CloudFriend(player = samplePlayer(uid = "u2", handle = "alice", displayName = "Alice"), since = Instant.fromEpochSeconds(0)),
-    CloudFriend(player = samplePlayer(uid = "u3", handle = "bob", displayName = "Bob"), since = Instant.fromEpochSeconds(0)),
-    CloudFriend(player = samplePlayer(uid = "u4", handle = "carol", displayName = "Carol"), since = Instant.fromEpochSeconds(0)),
+    CloudFriend(player = samplePlayer(uid = "u2", username = "alice", displayName = "Alice"), since = Instant.fromEpochSeconds(0)),
+    CloudFriend(player = samplePlayer(uid = "u3", username = "bob", displayName = "Bob"), since = Instant.fromEpochSeconds(0)),
+    CloudFriend(player = samplePlayer(uid = "u4", username = "carol", displayName = "Carol"), since = Instant.fromEpochSeconds(0)),
 )

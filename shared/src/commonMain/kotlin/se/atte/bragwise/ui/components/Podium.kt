@@ -77,8 +77,14 @@ fun Podium(
     var showScore2 by remember { mutableStateOf(alreadySeen) }
     var showScore3 by remember { mutableStateOf(alreadySeen) }
 
-    LaunchedEffect(entries) {
+    val animationKey = remember(entries) { entries.map { it.uid to it.points } }
+    LaunchedEffect(animationKey) {
         if (entries.isEmpty()) return@LaunchedEffect
+        if (alreadySeen) {
+            showScore1 = true
+            showScore2 = true
+            showScore3 = true
+        }
         if (!alreadySeen) {
             if (third != null) {
                 launch {

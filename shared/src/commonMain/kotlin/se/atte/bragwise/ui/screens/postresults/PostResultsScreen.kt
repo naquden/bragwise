@@ -30,6 +30,7 @@ import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
+import se.atte.bragwise.ui.components.LoadingDialog
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.preview.sampleBets
@@ -98,6 +99,10 @@ fun PostResultsScreen(
                 }
             }
         }
+    }
+
+    if (state.submitting) {
+        LoadingDialog(message = "Posting results…")
     }
 
     if (state.confirming) {

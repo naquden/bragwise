@@ -22,7 +22,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -47,7 +46,6 @@ import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import bragwise.shared.generated.resources.Res
-import bragwise.shared.generated.resources.auth_guest_signin_failed
 import bragwise.shared.generated.resources.nav_back
 import bragwise.shared.generated.resources.nav_tab_challenges
 import bragwise.shared.generated.resources.nav_tab_me
@@ -69,20 +67,17 @@ import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.OnboardingPrefs
-import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.ResultsSeenStore
-import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.push.PushNotifications
 import se.atte.bragwise.ui.screens.auth.SignInScreen
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
-import se.atte.bragwise.ui.screens.bets.BetListScreen
 import se.atte.bragwise.ui.screens.bets.BetListViewModel
 import se.atte.bragwise.ui.screens.bets.ChallengeSummaryScreen
 import se.atte.bragwise.ui.screens.invite.InviteFriendsScreen
 import se.atte.bragwise.ui.screens.invite.InviteFriendsViewModel
-import se.atte.bragwise.ui.screens.manage.ManageChallengeScreen
-import se.atte.bragwise.ui.screens.manage.ManageChallengeViewModel
+import se.atte.bragwise.ui.screens.detail.ParticipantBetsScreen
+import se.atte.bragwise.ui.screens.detail.ParticipantBetsViewModel
 import se.atte.bragwise.ui.screens.postresults.PostResultsScreen
 import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesScreen
@@ -95,7 +90,6 @@ import se.atte.bragwise.ui.screens.friends.FriendRequestsScreen
 import se.atte.bragwise.ui.screens.friends.FriendRequestsViewModel
 import se.atte.bragwise.ui.screens.friends.FriendsScreen
 import se.atte.bragwise.ui.screens.friends.FriendsViewModel
-import se.atte.bragwise.ui.screens.friends.LocalFriendEditorScreen
 import se.atte.bragwise.ui.screens.about.AboutScreen
 import se.atte.bragwise.ui.screens.profile.EditProfileScreen
 import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
@@ -109,10 +103,7 @@ import se.atte.bragwise.ui.screens.results.ResultsRevealScreen
 import se.atte.bragwise.ui.screens.results.ResultsRevealViewModel
 import se.atte.bragwise.ui.screens.results.ResultsScreen
 import se.atte.bragwise.ui.screens.results.ResultsViewModel
-import se.atte.bragwise.ui.screens.onboarding.GuestNameScreen
 import se.atte.bragwise.ui.screens.onboarding.MigrationDialog
-import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsScreen
-import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
 import se.atte.bragwise.ui.screens.onboarding.WelcomeScreen
 import se.atte.bragwise.ui.screens.predict.PredictScreen
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
@@ -128,15 +119,11 @@ private sealed interface Route {
     data object Create : Route
     data object SignIn : Route
     data object Friends : Route
-    data class FriendEditor(val localId: String?) : Route
-    data object ReconcileFriends : Route
     data object Welcome : Route
-    data object GuestName : Route
     data object Migration : Route
-    data class BetList(val challengeId: String) : Route
     data class ChallengeSummary(val challengeId: String) : Route
-    data class Manage(val challengeId: String) : Route
     data class Invite(val challengeId: String) : Route
+    data class ParticipantBets(val challengeId: String, val uid: String) : Route
     data class PostResults(val challengeId: String) : Route
     data object FriendRequests : Route
     data class PlayerProfile(val uid: String) : Route
@@ -166,7 +153,6 @@ fun AppNav() {
     val startRoute = if (onboardingPrefs.hasSeenWelcome) Route.Tabs(Tab.Challenges) else Route.Welcome
     val backStack = remember { mutableStateListOf<Route>(startRoute) }
     val platformShare: PlatformShare = koinInject()
-    val social: SocialRepository = koinInject()
     val pushNotifications: PushNotifications = koinInject()
     val auth: AuthRepository = koinInject()
     val challengeRepository: ChallengeRepository = koinInject()
@@ -186,6 +172,10 @@ fun AppNav() {
     }
     fun pop() {
         if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
+    }
+    fun goToResultsTab() {
+        backStack.clear()
+        backStack.add(Route.Tabs(tab = Tab.Results))
     }
 
     LaunchedEffect(Unit) {
@@ -209,7 +199,7 @@ fun AppNav() {
         state = navEventState,
         isBackEnabled = backStack.size > 1,
         onBackCancelled = {},
-        onBackCompleted = { pop() },
+        onBackCompleted = { if (current is Route.ResultsReveal) goToResultsTab() else pop() },
     )
 
     val onMigrationSkip: () -> Unit = {
@@ -222,7 +212,7 @@ fun AppNav() {
         topBar = {
             if (!isAtTabs) {
                 IconButton(
-                    onClick = { pop() },
+                    onClick = { if (current is Route.ResultsReveal) goToResultsTab() else pop() },
                     modifier = Modifier.statusBarsPadding(),
                 ) {
                     Icon(
@@ -328,7 +318,6 @@ fun AppNav() {
                             replaceTop = ::replaceTop,
                             pop = ::pop,
                             platformShare = platformShare,
-                            social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
                             isSignedIn = authState.isFullyAuthed,
@@ -352,7 +341,6 @@ fun AppNav() {
                             replaceTop = ::replaceTop,
                             pop = ::pop,
                             platformShare = platformShare,
-                            social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
                             isSignedIn = authState.isFullyAuthed,
@@ -372,7 +360,6 @@ fun AppNav() {
                             replaceTop = ::replaceTop,
                             pop = ::pop,
                             platformShare = platformShare,
-                            social = social,
                             snackbarHostState = snackbarHostState,
                             onboardingPrefs = onboardingPrefs,
                             isSignedIn = authState.isFullyAuthed,
@@ -392,16 +379,12 @@ private fun RouteContent(
     replaceTop: (Route) -> Unit,
     pop: () -> Unit,
     platformShare: PlatformShare,
-    social: SocialRepository,
     snackbarHostState: SnackbarHostState,
     onboardingPrefs: OnboardingPrefs,
     isSignedIn: Boolean,
     onMigrationSkip: () -> Unit,
 ) {
     val localPredictions: LocalPredictionStore = koinInject()
-    val auth: AuthRepository = koinInject()
-    val profile: ProfileRepository = koinInject()
-    val guestScope = rememberCoroutineScope()
     when (route) {
         is Route.Tabs -> when (route.tab) {
             Tab.Challenges -> ChallengesScreen(
@@ -418,7 +401,7 @@ private fun RouteContent(
             Tab.Me -> MeScreen(
                 viewModel = koinViewModel<MeViewModel>(),
                 snackbarHostState = snackbarHostState,
-                onNavigateToFriends = { push(Route.Friends) },
+                onNavigateToFriends = { if (isSignedIn) push(Route.Friends) else push(Route.SignIn) },
                 onNavigateToSignIn = { push(Route.SignIn) },
                 onNavigateToEditProfile = { push(Route.EditProfile) },
                 onNavigateToAbout = { push(Route.About) },
@@ -430,15 +413,16 @@ private fun RouteContent(
             platformShare = platformShare,
             snackbarHostState = snackbarHostState,
             onNavigateToBet = { push(Route.Predict(route.id)) },
-            onNavigateToLeaderboard = { push(Route.Leaderboard(challengeId = route.id, isPromoted = false)) },
-            onNavigateToBetList = { push(Route.BetList(route.id)) },
             onNavigateToSummary = { push(Route.ChallengeSummary(route.id)) },
-            onNavigateToManage = { push(Route.Manage(route.id)) },
+            onNavigateToPostResults = { id -> push(Route.PostResults(id)) },
+            onNavigateToParticipant = { challengeId, uid -> push(Route.ParticipantBets(challengeId = challengeId, uid = uid)) },
+            onNavigateToInvite = { id -> push(Route.Invite(id)) },
+            onDeleted = { pop() },
         )
         is Route.Predict -> PredictScreen(
             viewModel = koinViewModel<PredictViewModel>(key = route.challengeId) { parametersOf(route.challengeId) },
             snackbarHostState = snackbarHostState,
-            onSubmitted = { replaceTop(Route.ChallengeSummary(route.challengeId)) },
+            onSubmitted = { pop() },
         )
         is Route.Leaderboard -> LeaderboardScreen(
             viewModel = koinViewModel<LeaderboardViewModel>(key = "${route.challengeId}:${route.isPromoted}") {
@@ -456,8 +440,7 @@ private fun RouteContent(
             viewModel = koinViewModel<SignInViewModel>(),
             snackbarHostState = snackbarHostState,
             onSignedIn = {
-                val hasLocalData = localPredictions.snapshot().isNotEmpty() ||
-                    social.localFriendSnapshot().isNotEmpty()
+                val hasLocalData = localPredictions.snapshot().isNotEmpty()
                 if (hasLocalData) {
                     replaceTop(Route.Migration)
                 } else {
@@ -469,7 +452,6 @@ private fun RouteContent(
         Route.Friends -> FriendsScreen(
             viewModel = koinViewModel<FriendsViewModel>(),
             snackbarHostState = snackbarHostState,
-            onLocalAddOrEdit = { id -> push(Route.FriendEditor(id)) },
             onOpenCloudProfile = { uid -> push(Route.PlayerProfile(uid)) },
             onOpenFriendRequests = { push(Route.FriendRequests) },
         )
@@ -488,25 +470,10 @@ private fun RouteContent(
             onSaved = { pop() },
         )
         Route.About -> AboutScreen()
-        is Route.FriendEditor -> LocalFriendEditorScreen(
-            social = social,
-            localId = route.localId,
-            onSaved = { pop() },
-            onCancel = { pop() },
-        )
-        Route.ReconcileFriends -> ReconcileFriendsScreen(
-            viewModel = koinViewModel<ReconcileFriendsViewModel>(),
-            snackbarHostState = snackbarHostState,
-            onDone = { replaceTop(Route.Tabs(Tab.Me)) },
-        )
-        is Route.Manage -> ManageChallengeScreen(
-            viewModel = koinViewModel<ManageChallengeViewModel>(key = "manage:${route.challengeId}") {
-                parametersOf(route.challengeId)
+        is Route.ParticipantBets -> ParticipantBetsScreen(
+            viewModel = koinViewModel<ParticipantBetsViewModel>(key = "participant:${route.challengeId}:${route.uid}") {
+                parametersOf(route.challengeId, route.uid)
             },
-            snackbarHostState = snackbarHostState,
-            onInvite = { id -> push(Route.Invite(id)) },
-            onPostResults = { id -> push(Route.PostResults(id)) },
-            onDeleted = { pop(); pop() },
         )
         is Route.Invite -> InviteFriendsScreen(
             viewModel = koinViewModel<InviteFriendsViewModel>(key = "invite:${route.challengeId}") {
@@ -522,12 +489,6 @@ private fun RouteContent(
             snackbarHostState = snackbarHostState,
             onPosted = { replaceTop(Route.ResultsReveal(challengeId = route.challengeId)) },
         )
-        is Route.BetList -> BetListScreen(
-            viewModel = koinViewModel<BetListViewModel>(key = "betlist:${route.challengeId}") {
-                parametersOf(route.challengeId)
-            },
-            onOpenPredict = { id -> push(Route.Predict(id)) },
-        )
         is Route.ChallengeSummary -> ChallengeSummaryScreen(
             viewModel = koinViewModel<BetListViewModel>(key = "summary:${route.challengeId}") {
                 parametersOf(route.challengeId)
@@ -535,6 +496,9 @@ private fun RouteContent(
             onEdit = { id -> push(Route.Predict(id)) },
             onLeaderboard = { id ->
                 push(Route.Leaderboard(challengeId = id, isPromoted = false))
+            },
+            onOpenParticipant = { uid ->
+                push(Route.ParticipantBets(challengeId = route.challengeId, uid = uid))
             },
         )
         is Route.ResultsReveal -> ResultsRevealScreen(
@@ -548,47 +512,12 @@ private fun RouteContent(
                 replaceTop(Route.SignIn)
             },
             onContinueAsGuest = {
-                if (onboardingPrefs.guestName.isNullOrBlank()) {
-                    replaceTop(Route.GuestName)
-                } else {
-                    onboardingPrefs.hasSeenWelcome = true
-                    replaceTop(Route.Tabs(Tab.Challenges))
-                }
+                onboardingPrefs.hasSeenWelcome = true
+                replaceTop(Route.Tabs(Tab.Challenges))
             },
         )
-        Route.GuestName -> {
-            val guestSignInFailedMessage = stringResource(Res.string.auth_guest_signin_failed)
-            GuestNameScreen(
-                initialName = onboardingPrefs.guestName.orEmpty(),
-                onContinue = { name ->
-                    onboardingPrefs.guestName = name
-                    onboardingPrefs.hasSeenWelcome = true
-                    // Give the guest a real (anonymous) Firebase uid and an online
-                    // player doc under the chosen name. We still let them in with the
-                    // local name on failure, but surface it — a silent local-only
-                    // fallback would mask a disabled Anonymous provider or an outage.
-                    guestScope.launch {
-                        auth.continueAsGuest()
-                            .onSuccess {
-                                profile.updateProfile(displayName = name)
-                                    .onFailure { snackbarHostState.showSnackbar(message = guestSignInFailedMessage, withDismissAction = true, duration = SnackbarDuration.Indefinite) }
-                            }
-                            .onFailure { snackbarHostState.showSnackbar(message = guestSignInFailedMessage, withDismissAction = true, duration = SnackbarDuration.Indefinite) }
-                    }
-                    replaceTop(Route.Tabs(Tab.Challenges))
-                },
-            )
-        }
         Route.Migration -> MigrationDialog(
-            onComplete = {
-                replaceTop(
-                    if (social.localFriendSnapshot().isNotEmpty()) {
-                        Route.ReconcileFriends
-                    } else {
-                        Route.Tabs(Tab.Me)
-                    },
-                )
-            },
+            onComplete = { replaceTop(Route.Tabs(Tab.Me)) },
             onSkip = onMigrationSkip,
         )
     }

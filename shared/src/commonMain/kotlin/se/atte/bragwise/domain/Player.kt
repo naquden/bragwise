@@ -4,7 +4,7 @@ import kotlin.time.Instant
 
 data class Player(
     val uid: String,
-    val handle: String,
+    val username: String,
     val displayName: String,
     val avatarSeed: String,
     val createdAt: Instant,
@@ -12,7 +12,7 @@ data class Player(
 
 data class PublicProfile(
     val uid: String,
-    val handle: String,
+    val username: String,
     val displayName: String,
     val avatarSeed: String,
 )

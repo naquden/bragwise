@@ -58,6 +58,7 @@ export const CreateChallengeSchema = z.object({
   visibility: VisibilitySchema,
   locksAt: z.string().datetime(), // ISO-8601 UTC
   bets: z.array(BetSchema).min(1),
+  betsVisible: z.boolean().default(false),
   // Hard-rejected if present:
   promoted: z.never().optional(),
   trusted: z.never().optional(),

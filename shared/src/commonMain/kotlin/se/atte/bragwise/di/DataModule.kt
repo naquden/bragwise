@@ -4,6 +4,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import se.atte.bragwise.data.ActivityRegistrar
 import se.atte.bragwise.data.AuthRemoteDataSource
+import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeLocalDataSource
 import se.atte.bragwise.data.ChallengeRemoteDataSource
@@ -12,7 +13,6 @@ import se.atte.bragwise.data.FirebaseAuthRepository
 import se.atte.bragwise.data.FirebaseChallengeRepository
 import se.atte.bragwise.data.FirebaseProfileRepository
 import se.atte.bragwise.data.FirebaseSocialRepository
-import se.atte.bragwise.data.LocalFriendStore
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.db.BragwiseDatabase
@@ -32,11 +32,11 @@ val dataModule = module {
     singleOf(::ChallengeLocalDataSource)
     single { SocialRemoteDataSource() }
     singleOf(::SocialLocalDataSource)
-    single { LocalFriendStore(get<BragwiseDatabase>()) }
     single { LocalPredictionStore(get<BragwiseDatabase>()) }
     single { ResultsSeenStore(get<BragwiseDatabase>()) }
     single { PushTokenRegistrar(push = get(), auth = get()) }
     single { ActivityRegistrar(auth = get(), profile = get()) }
+    single { EnsureNamedAccount(auth = get(), profile = get(), onboardingPrefs = get()) }
     single { ProfileRemoteDataSource() }
     singleOf(::ProfileLocalDataSource)
 
@@ -51,6 +51,6 @@ val dataModule = module {
         )
     }
     single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), auth = get(), social = get()) }
-    single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get(), localFriends = get()) }
+    single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get()) }
     single<ProfileRepository> { FirebaseProfileRepository(remote = get(), local = get(), auth = get()) }
 }

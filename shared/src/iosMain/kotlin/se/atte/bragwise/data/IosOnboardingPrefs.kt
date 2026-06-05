@@ -12,7 +12,7 @@ class IosOnboardingPrefs : OnboardingPrefs {
         get() = defaults.boolForKey(KEY_SEEN_WELCOME)
         set(value) { defaults.setBool(value, KEY_SEEN_WELCOME) }
 
-    override var guestName: String?
+    override var chosenName: String?
         get() = defaults.stringForKey(KEY_GUEST_NAME)
         set(value) { defaults.setObject(value, KEY_GUEST_NAME) }
 }

@@ -1,9 +1,11 @@
 package se.atte.bragwise.ui.screens.bets
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,31 +20,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.betPoints
 import se.atte.bragwise.ui.fullPick
 import se.atte.bragwise.ui.preview.sampleDetail
 import se.atte.bragwise.ui.components.AppButton
+import se.atte.bragwise.ui.components.AvatarBubble
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.ListGroup
+import se.atte.bragwise.ui.components.ListGroupDivider
 import se.atte.bragwise.ui.components.ListRow
 import se.atte.bragwise.ui.components.SectionCard
 
 /**
- * MC-04 Challenge summary — read-only recap of the user's predictions
- * and (when results are posted) per-bet points.
+ * MC-04 "See all bets". When bets are visible to others and there is more than
+ * one participant, this lists the participants so each one's bets can be opened.
+ * Otherwise (bets hidden, or a solo challenge) it shows the current user's own
+ * predictions directly, plus per-bet points once results are posted.
  */
 @Composable
 fun ChallengeSummaryScreen(
     viewModel: BetListViewModel,
     onEdit: (challengeId: String) -> Unit,
     onLeaderboard: (challengeId: String) -> Unit,
+    onOpenParticipant: (uid: String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     when (val ui = state.ui) {
@@ -56,6 +65,7 @@ fun ChallengeSummaryScreen(
             detail = ui.data,
             onEdit = { onEdit(ui.data.challenge.id) },
             onLeaderboard = { onLeaderboard(ui.data.challenge.id) },
+            onOpenParticipant = onOpenParticipant,
         )
     }
 }
@@ -65,7 +75,9 @@ private fun Content(
     detail: ChallengeDetail,
     onEdit: () -> Unit,
     onLeaderboard: () -> Unit,
+    onOpenParticipant: (uid: String) -> Unit,
 ) {
+    val showParticipants = detail.challenge.betsVisible && detail.challenge.participants.size > 1
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -93,17 +105,31 @@ private fun Content(
                     }
                 }
             }
-            items(items = detail.challenge.bets, key = { it.id }) { bet ->
-                ListGroup {
-                    ListRow(
-                        title = bet.title,
-                        subtitle = fullPick(bet = bet, payload = detail.myPredictions[bet.id]),
-                        trailing = betPoints(bet = bet, detail = detail)?.toString() ?: "›",
-                        titleFontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    )
+
+            if (showParticipants) {
+                item {
+                    ListGroup {
+                        detail.challenge.participants.forEachIndexed { index, participant ->
+                            ParticipantPickerRow(
+                                participant = participant,
+                                onClick = { onOpenParticipant(participant.uid) },
+                            )
+                            if (index < detail.challenge.participants.size - 1) ListGroupDivider()
+                        }
+                    }
+                }
+            } else {
+                items(items = detail.challenge.bets, key = { it.id }) { bet ->
+                    ListGroup {
+                        ListRow(
+                            title = bet.title,
+                            subtitle = fullPick(bet = bet, payload = detail.myPredictions[bet.id]),
+                            trailing = betPoints(bet = bet, detail = detail)?.toString() ?: "›",
+                            titleFontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
-            // BetCard ranking summary deferred — keep table-row form for now.
         }
         BottomActionBar {
             val isOpen = detail.challenge.status == ChallengeStatus.OPEN
@@ -117,13 +143,57 @@ private fun Content(
     }
 }
 
+@Composable
+private fun ParticipantPickerRow(
+    participant: ParticipantInfo,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AvatarBubble(
+            displayName = participant.displayName,
+            avatarSeed = participant.avatarSeed,
+            size = 32.dp,
+        )
+        Text(
+            text = participant.displayName,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "›",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 // region Previews
 
 @Preview
 @Composable
 private fun ChallengeSummary_Open_Preview() {
     ThemePreview {
-        Content(detail = sampleDetail(), onEdit = {}, onLeaderboard = {})
+        Content(detail = sampleDetail(), onEdit = {}, onLeaderboard = {}, onOpenParticipant = {})
+    }
+}
+
+@Preview
+@Composable
+private fun ChallengeSummary_Participants_Preview() {
+    ThemePreview {
+        Content(
+            detail = sampleDetail(betsVisible = true),
+            onEdit = {},
+            onLeaderboard = {},
+            onOpenParticipant = {},
+        )
     }
 }
 
@@ -141,6 +211,7 @@ private fun ChallengeSummary_ResultsPosted_Preview() {
             ),
             onEdit = {},
             onLeaderboard = {},
+            onOpenParticipant = {},
         )
     }
 }

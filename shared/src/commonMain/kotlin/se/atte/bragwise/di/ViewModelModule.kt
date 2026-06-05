@@ -7,18 +7,17 @@ import se.atte.bragwise.ui.screens.auth.SignInViewModel
 import se.atte.bragwise.ui.screens.bets.BetListViewModel
 import se.atte.bragwise.ui.screens.friends.FriendRequestsViewModel
 import se.atte.bragwise.ui.screens.invite.InviteFriendsViewModel
-import se.atte.bragwise.ui.screens.manage.ManageChallengeViewModel
-import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
-import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
-import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesViewModel
 import se.atte.bragwise.ui.screens.create.CreateChallengeViewModel
 import se.atte.bragwise.ui.screens.detail.ChallengeDetailViewModel
+import se.atte.bragwise.ui.screens.detail.ParticipantBetsViewModel
 import se.atte.bragwise.ui.screens.friends.FriendsViewModel
+import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
+import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
+import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
 import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeViewModel
 import se.atte.bragwise.ui.screens.onboarding.MigrationViewModel
-import se.atte.bragwise.ui.screens.onboarding.ReconcileFriendsViewModel
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
 import se.atte.bragwise.ui.screens.results.ResultsRevealViewModel
 import se.atte.bragwise.ui.screens.results.ResultsViewModel
@@ -31,7 +30,6 @@ val viewModelModule = module {
     viewModelOf(::CreateChallengeViewModel)
     viewModelOf(::SignInViewModel)
     viewModelOf(::FriendsViewModel)
-    viewModelOf(::ReconcileFriendsViewModel)
     viewModelOf(::FriendRequestsViewModel)
     viewModelOf(::EditProfileViewModel)
     viewModel<PlayerProfileViewModel> { params ->
@@ -56,19 +54,13 @@ val viewModelModule = module {
             challenges = get(),
             auth = get(),
             localPredictions = get(),
+            ensureNamedAccount = get(),
         )
     }
     viewModel<BetListViewModel> { params ->
         BetListViewModel(
             challengeId = params.get<String>(),
             challenges = get(),
-        )
-    }
-    viewModel<ManageChallengeViewModel> { params ->
-        ManageChallengeViewModel(
-            challengeId = params.get<String>(),
-            challenges = get(),
-            auth = get(),
         )
     }
     viewModel<InviteFriendsViewModel> { params ->
@@ -88,6 +80,13 @@ val viewModelModule = module {
         LeaderboardViewModel(
             challengeId = params.get<String>(),
             isPromoted = params.get<Boolean>(),
+            challenges = get(),
+        )
+    }
+    viewModel<ParticipantBetsViewModel> { params ->
+        ParticipantBetsViewModel(
+            challengeId = params.get<String>(),
+            uid = params.get<String>(),
             challenges = get(),
         )
     }

@@ -20,25 +20,25 @@ class MockProfileRepository : ProfileRepository {
     override fun observePublicProfile(uid: String): Flow<PublicProfile?> = flowOf(
         when (uid) {
             MOCK_UID -> mockPublicProfile
-            "uid-alice" -> mockCloudFriends[0].player.let { PublicProfile(uid = it.uid, handle = it.handle, displayName = it.displayName, avatarSeed = it.avatarSeed) }
-            "uid-bob" -> mockCloudFriends[1].player.let { PublicProfile(uid = it.uid, handle = it.handle, displayName = it.displayName, avatarSeed = it.avatarSeed) }
+            "uid-alice" -> mockCloudFriends[0].player.let { PublicProfile(uid = it.uid, username = it.username, displayName = it.displayName, avatarSeed = it.avatarSeed) }
+            "uid-bob" -> mockCloudFriends[1].player.let { PublicProfile(uid = it.uid, username = it.username, displayName = it.displayName, avatarSeed = it.avatarSeed) }
             else -> null
         },
     )
 
-    override suspend fun claimHandle(handle: String): Result<Unit> {
-        _player.value = _player.value.copy(handle = handle)
+    override suspend fun claimUsername(username: String): Result<Unit> {
+        _player.value = _player.value.copy(username = username)
         return Result.success(Unit)
     }
 
     override suspend fun updateProfile(
         displayName: String?,
-        handle: String?,
+        username: String?,
         avatarSeed: String?,
     ): Result<Unit> {
         _player.value = _player.value.copy(
             displayName = displayName ?: _player.value.displayName,
-            handle = handle ?: _player.value.handle,
+            username = username ?: _player.value.username,
             avatarSeed = avatarSeed ?: _player.value.avatarSeed,
         )
         return Result.success(Unit)

@@ -13,7 +13,7 @@ class AndroidOnboardingPrefs(context: Context) : OnboardingPrefs {
         get() = prefs.getBoolean(KEY_SEEN_WELCOME, false)
         set(value) { prefs.edit().putBoolean(KEY_SEEN_WELCOME, value).apply() }
 
-    override var guestName: String?
+    override var chosenName: String?
         get() = prefs.getString(KEY_GUEST_NAME, null)
         set(value) { prefs.edit().putString(KEY_GUEST_NAME, value).apply() }
 }

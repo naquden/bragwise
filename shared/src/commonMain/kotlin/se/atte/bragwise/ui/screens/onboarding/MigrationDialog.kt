@@ -107,7 +107,7 @@ fun MigrationDialog(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     CircularProgressIndicator(modifier = Modifier.height(20.dp))
-                    Text("Migrating predictions and friends…")
+                    Text("Migrating predictions…")
                 }
                 MigrationViewModel.Phase.Done -> Text("All done.")
                 is MigrationViewModel.Phase.Failed -> Column {

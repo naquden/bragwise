@@ -49,7 +49,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
         val useMock = (project.findProperty("useMockData") as String?) == "true"
         buildConfigField("boolean", "USE_MOCK_DATA", useMock.toString())

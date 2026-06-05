@@ -9,12 +9,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import com.composables.icons.lucide.Circle
+import com.composables.icons.lucide.CircleCheck
+import com.composables.icons.lucide.Lucide
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
@@ -23,30 +29,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import se.atte.bragwise.domain.Bet
-import se.atte.bragwise.ui.standardPadding
-import se.atte.bragwise.ui.standardPaddingSmall
-import se.atte.bragwise.domain.BetOption
-import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.PredictionPayload
-import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.theme.ThemePreview
-import se.atte.bragwise.ui.betPoints
-import se.atte.bragwise.ui.compactPick
 import se.atte.bragwise.ui.predictedCount
+import se.atte.bragwise.ui.standardPadding
+import se.atte.bragwise.ui.standardPaddingSmall
+import androidx.compose.foundation.clickable
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppOutlinedButton
+import se.atte.bragwise.ui.components.AppTextButton
+import se.atte.bragwise.ui.components.AvatarBubble
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.ListGroup
 import se.atte.bragwise.ui.components.ListGroupDivider
-import se.atte.bragwise.ui.components.ListRow
+import se.atte.bragwise.ui.components.PointsPill
 import se.atte.bragwise.ui.components.RankChip
 import se.atte.bragwise.ui.components.SectionCard
-import kotlin.time.Instant
+import se.atte.bragwise.ui.preview.sampleDetail
 
 @Composable
 fun ChallengeDetailScreen(
@@ -54,20 +58,21 @@ fun ChallengeDetailScreen(
     platformShare: PlatformShare,
     snackbarHostState: SnackbarHostState,
     onNavigateToBet: (String) -> Unit,
-    onNavigateToLeaderboard: (String) -> Unit,
-    onNavigateToBetList: (String) -> Unit,
     onNavigateToSummary: (String) -> Unit,
-    onNavigateToManage: (String) -> Unit,
+    onNavigateToPostResults: (String) -> Unit,
+    onNavigateToParticipant: (challengeId: String, uid: String) -> Unit,
+    onNavigateToInvite: (String) -> Unit,
+    onDeleted: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             is ChallengeDetailViewModel.Effect.GoToBet -> onNavigateToBet(effect.betId)
-            is ChallengeDetailViewModel.Effect.GoToLeaderboard -> onNavigateToLeaderboard(effect.challengeId)
-            is ChallengeDetailViewModel.Effect.GoToBetList -> onNavigateToBetList(effect.challengeId)
             is ChallengeDetailViewModel.Effect.GoToSummary -> onNavigateToSummary(effect.challengeId)
-            is ChallengeDetailViewModel.Effect.GoToManage -> onNavigateToManage(effect.challengeId)
+            is ChallengeDetailViewModel.Effect.GoToPostResults -> onNavigateToPostResults(effect.challengeId)
+            is ChallengeDetailViewModel.Effect.GoToParticipant -> onNavigateToParticipant(effect.challengeId, effect.uid)
+            is ChallengeDetailViewModel.Effect.Deleted -> onDeleted()
             is ChallengeDetailViewModel.Effect.ShareLink -> {
                 val (title, subject) = when (val msg = effect.message) {
                     is ChallengeDetailViewModel.ShareMessage.ChallengeShare ->
@@ -76,8 +81,9 @@ fun ChallengeDetailScreen(
                 platformShare.send(effect.url, title, subject)
             }
             is ChallengeDetailViewModel.Effect.Snackbar -> {
-                val text = when (effect.message) {
+                val text = when (val msg = effect.message) {
                     ChallengeDetailViewModel.SnackbarMessage.ShareFailed -> "Couldn't share challenge"
+                    is ChallengeDetailViewModel.SnackbarMessage.DeleteFailed -> "Delete failed: ${msg.message}"
                 }
                 snackbarHostState.showSnackbar(text)
             }
@@ -93,22 +99,28 @@ fun ChallengeDetailScreen(
         }
         is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                    text = ui.cause.toUserMessage(),
+                text = ui.cause.toUserMessage(),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        is UiState.Ready -> DetailContent(
-            data = ui.data,
-            isOwner = state.isOwner,
-            onPredict = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPredict) },
-            onBet = { id -> viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenBet(id)) },
-            onLeaderboard = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenLeaderboard) },
-            onBetList = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenBetList) },
-            onSummary = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenSummary) },
-            onManage = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenManage) },
-            onShare = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Share) },
-        )
+        is UiState.Ready -> {
+            DetailContent(
+                data = ui.data,
+                isOwner = state.isOwner,
+                myUid = state.myUid,
+                confirmingDelete = state.confirmingDelete,
+                onPredict = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPredict) },
+                onSummary = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenSummary) },
+                onPostResults = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPostResults) },
+                onParticipant = { uid -> viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenParticipant(uid)) },
+                onShare = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Share) },
+                onInvite = { (state.ui as? UiState.Ready)?.data?.challenge?.id?.let { onNavigateToInvite(it) } },
+                onRequestDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.RequestDelete) },
+                onCancelDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.CancelDelete) },
+                onConfirmDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.ConfirmDelete) },
+            )
+        }
     }
 }
 
@@ -116,15 +128,40 @@ fun ChallengeDetailScreen(
 private fun DetailContent(
     data: ChallengeDetail,
     isOwner: Boolean,
+    myUid: String,
+    confirmingDelete: Boolean,
     onPredict: () -> Unit,
-    onBet: (String) -> Unit,
-    onLeaderboard: () -> Unit,
-    onBetList: () -> Unit,
     onSummary: () -> Unit,
-    onManage: () -> Unit,
+    onPostResults: () -> Unit,
+    onParticipant: (String) -> Unit,
     onShare: () -> Unit,
+    onInvite: () -> Unit,
+    onRequestDelete: () -> Unit,
+    onCancelDelete: () -> Unit,
+    onConfirmDelete: () -> Unit,
 ) {
     val joined = data.myPredictions.isNotEmpty()
+    val challenge = data.challenge
+
+    if (confirmingDelete) {
+        AlertDialog(
+            onDismissRequest = onCancelDelete,
+            title = { Text("Delete challenge?") },
+            text = {
+                Text(
+                    "This permanently removes the challenge, all predictions, and invitations. This cannot be undone.",
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            confirmButton = {
+                AppButton(onClick = onConfirmDelete) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = onCancelDelete) { Text("Cancel") }
+            },
+        )
+    }
+
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -133,7 +170,7 @@ private fun DetailContent(
         ) {
             item {
                 SectionCard {
-                    Text(text = data.challenge.title, style = MaterialTheme.typography.headlineLarge)
+                    Text(text = challenge.title, style = MaterialTheme.typography.headlineLarge)
                     Spacer(Modifier.height(standardPaddingSmall))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -151,45 +188,53 @@ private fun DetailContent(
                                 RankChip(rank = data.myRank)
                             } else {
                                 Text(
-                                    text = "—— / ${data.challenge.joinedCount}",
+                                    text = "—— / ${challenge.joinedCount}",
                                     style = MaterialTheme.typography.titleLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "Predicted",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        val hasPredicted = data.predictedCount() == challenge.bets.size && challenge.bets.isNotEmpty()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                imageVector = if (hasPredicted) Lucide.CircleCheck else Lucide.Circle,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = if (hasPredicted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = "${data.predictedCount()} / ${data.challenge.bets.size}",
-                                style = MaterialTheme.typography.titleLarge,
+                                text = if (hasPredicted) "Predicted" else "Not predicted",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (hasPredicted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
             }
 
-            if (data.challenge.bets.isNotEmpty()) {
+            if (challenge.participants.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Bets",
+                        text = "Participants",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 item {
                     ListGroup {
-                        data.challenge.bets.forEachIndexed { index, bet ->
-                            BetListRow(
-                                number = index + 1,
-                                bet = bet,
-                                detail = data,
-                                onClick = { onBet(bet.id) },
+                        challenge.participants.forEachIndexed { index, participant ->
+                            val points = challenge.leaderboard?.get(participant.uid)
+                            val canViewBets = challenge.betsVisible || participant.uid == myUid
+                            ParticipantRow(
+                                participant = participant,
+                                points = points,
+                                canViewBets = canViewBets,
+                                onClick = if (canViewBets) ({ onParticipant(participant.uid) }) else null,
                             )
-                            if (index < data.challenge.bets.size - 1) ListGroupDivider()
+                            if (index < challenge.participants.size - 1) ListGroupDivider()
                         }
                     }
                 }
@@ -202,8 +247,8 @@ private fun DetailContent(
                 ) {
                     AppOutlinedButton(
                         modifier = Modifier.weight(1f),
-                        onClick = onLeaderboard,
-                    ) { Text("Leaderboard") }
+                        onClick = onInvite,
+                    ) { Text("Invite friends") }
                     AppOutlinedButton(
                         modifier = Modifier.weight(1f),
                         onClick = onShare,
@@ -211,30 +256,43 @@ private fun DetailContent(
                 }
             }
 
-            if (data.challenge.bets.size > 1) {
-                item {
-                    AppOutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onBetList,
-                    ) { Text("See all bets") }
-                }
-            }
-
-            if (joined) {
+            if (challenge.bets.isNotEmpty()) {
                 item {
                     AppOutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = onSummary,
-                    ) { Text("See summary") }
+                    ) { Text("See all bets") }
                 }
             }
 
             if (isOwner) {
+                val canPost = challenge.status == ChallengeStatus.LOCKED ||
+                    challenge.status == ChallengeStatus.OPEN
                 item {
                     AppOutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = onManage,
-                    ) { Text("Manage challenge") }
+                        onClick = onPostResults,
+                        enabled = canPost,
+                    ) {
+                        Text(
+                            if (challenge.status == ChallengeStatus.RESULTS_POSTED) "Results posted"
+                            else "Post results",
+                        )
+                    }
+                }
+                val canDelete = challenge.resultsPostedAt == null
+                if (canDelete) {
+                    item {
+                        AppTextButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onRequestDelete,
+                        ) {
+                            Text(
+                                "Delete challenge",
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -249,117 +307,125 @@ private fun DetailContent(
 }
 
 @Composable
-private fun BetListRow(number: Int, bet: Bet, detail: ChallengeDetail, onClick: () -> Unit) {
-    val pick = compactPick(bet = bet, payload = detail.myPredictions[bet.id])
-    val points = betPoints(bet = bet, detail = detail)
-    val status = detail.challenge.status
-
-    val subtitle = when {
-        pick != null -> pick
-        status == ChallengeStatus.LOCKED -> "Locked · no prediction"
-        else -> "Not predicted yet"
+private fun ParticipantRow(
+    participant: ParticipantInfo,
+    points: Int?,
+    canViewBets: Boolean,
+    onClick: (() -> Unit)?,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .padding(horizontal = standardPadding, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AvatarBubble(
+            displayName = participant.displayName,
+            avatarSeed = participant.avatarSeed,
+            size = 32.dp,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = participant.displayName,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            if (!canViewBets) {
+                Text(
+                    text = "Bets hidden",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (points != null) {
+            PointsPill(points = points)
+        }
+        if (canViewBets) {
+            Text(
+                text = "›",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
-    val trailing = points?.let { "$it pt" } ?: "›"
-
-    ListRow(
-        title = bet.title,
-        subtitle = subtitle,
-        leading = number.toString(),
-        trailing = trailing,
-        titleFontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        onClick = onClick,
-    )
 }
 
 // region Previews
-
-private val previewChallenge = Challenge(
-    id = "c1",
-    title = "World Cup 2026 Predictions",
-    description = "Predict the outcomes",
-    category = "sport",
-    visibility = Visibility.FRIENDS,
-    createdBy = "u1",
-    createdAt = Instant.fromEpochSeconds(0),
-    locksAt = null,
-    resultsPostedAt = null,
-    status = ChallengeStatus.OPEN,
-    joinedCount = 12,
-    promoted = false,
-    trusted = false,
-    bets = listOf(
-        Bet.BooleanProp(id = "b1", title = "Will Argentina win the final?"),
-        Bet.SinglePick(
-            id = "b2",
-            title = "Top scorer",
-            options = listOf(BetOption("o1", "Mbappe"), BetOption("o2", "Messi"), BetOption("o3", "Haaland")),
-        ),
-        Bet.Ranking(
-            id = "b3",
-            title = "Group A - top 2",
-            topN = 2,
-            options = listOf(
-                BetOption("g1", "France"),
-                BetOption("g2", "Belgium"),
-                BetOption("g3", "Croatia"),
-                BetOption("g4", "Senegal"),
-            ),
-        ),
-    ),
-    results = null,
-    leaderboard = null,
-)
-
-@Preview
-@Composable
-private fun Detail_Loading_Preview() {
-    ThemePreview {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-    }
-}
 
 @Preview
 @Composable
 private fun Detail_Ready_NotJoined_Preview() {
     ThemePreview {
         DetailContent(
-            data = ChallengeDetail(challenge = previewChallenge, myPredictions = emptyMap(), myRank = null),
+            data = sampleDetail(),
             isOwner = false,
+            myUid = "u1",
+            confirmingDelete = false,
             onPredict = {},
-            onBet = {},
-            onLeaderboard = {},
-            onBetList = {},
             onSummary = {},
-            onManage = {},
+            onPostResults = {},
+            onParticipant = {},
             onShare = {},
+            onInvite = {},
+            onRequestDelete = {},
+            onCancelDelete = {},
+            onConfirmDelete = {},
         )
     }
 }
 
 @Preview
 @Composable
-private fun Detail_Ready_Joined_Preview() {
+private fun Detail_Ready_Owner_Preview() {
     ThemePreview {
         DetailContent(
-            data = ChallengeDetail(
-                challenge = previewChallenge,
+            data = sampleDetail(
                 myPredictions = mapOf(
                     "b1" to PredictionPayload.BooleanProp(true),
-                    "b3" to PredictionPayload.Ranking(listOf("g1", "g2")),
                 ),
-                myRank = 3,
+                myRank = 1,
             ),
             isOwner = true,
+            myUid = "u1",
+            confirmingDelete = false,
             onPredict = {},
-            onBet = {},
-            onLeaderboard = {},
-            onBetList = {},
             onSummary = {},
-            onManage = {},
+            onPostResults = {},
+            onParticipant = {},
             onShare = {},
+            onInvite = {},
+            onRequestDelete = {},
+            onCancelDelete = {},
+            onConfirmDelete = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun Detail_Ready_BetsVisible_Preview() {
+    ThemePreview {
+        DetailContent(
+            data = sampleDetail(
+                myPredictions = mapOf("b1" to PredictionPayload.BooleanProp(true)),
+                myRank = 2,
+            ),
+            isOwner = false,
+            myUid = "u2",
+            confirmingDelete = false,
+            onPredict = {},
+            onSummary = {},
+            onPostResults = {},
+            onParticipant = {},
+            onShare = {},
+            onInvite = {},
+            onRequestDelete = {},
+            onCancelDelete = {},
+            onConfirmDelete = {},
         )
     }
 }
 
 // endregion
-

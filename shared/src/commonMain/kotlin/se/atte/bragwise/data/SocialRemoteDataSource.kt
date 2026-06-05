@@ -41,8 +41,8 @@ class SocialRemoteDataSource(
         )
     }
 
-    suspend fun sendFriendRequest(handle: String) {
-        functions.httpsCallable("sendFriendRequest")(hashMapOf("handle" to handle))
+    suspend fun sendFriendRequest(username: String) {
+        functions.httpsCallable("sendFriendRequest")(hashMapOf("handle" to username))
     }
 
     suspend fun acceptFriendRequest(requesterUid: String) {

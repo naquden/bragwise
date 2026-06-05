@@ -3,17 +3,11 @@ package se.atte.bragwise.domain
 import kotlin.time.Instant
 
 /**
- * Bragwise has two friend kinds.
+ * Cloud-only friend: uid-keyed, dual-write mirrored under
+ * `players/{uid}/private/social.friends`. Server source of truth.
  *
- *  - [CloudFriend] — uid-keyed, dual-write mirrored under
- *    `players/{uid}/private/social.friends`. Server source of truth.
- *  - [LocalFriend] — guest-only, on-device label with a stable
- *    `localId` UUID. Never leaves the device. On sign-up the user can
- *    map each local friend to a cloud handle via OB-06; the local row
- *    is then deleted and replaced by a real `sendFriendRequest`.
- *
- * `displayName` is mutable for both kinds (renames don't break keying);
- * `id` is the persistent identity (`uid` for cloud, `localId` for local).
+ * `displayName` is mutable (renames don't break keying);
+ * `id` is the persistent identity (`uid`).
  */
 sealed interface Friend {
     val id: String
@@ -26,12 +20,4 @@ data class CloudFriend(
 ) : Friend {
     override val id: String get() = player.uid
     override val displayName: String get() = player.displayName
-}
-
-data class LocalFriend(
-    val localId: String,
-    override val displayName: String,
-    val addedAt: Instant,
-) : Friend {
-    override val id: String get() = localId
 }

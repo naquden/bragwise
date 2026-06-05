@@ -19,10 +19,10 @@ interface ProfileRepository {
     fun observePublicProfile(uid: String): Flow<PublicProfile?>
     /** Notifications-enabled pref for the signed-in user. Emits true when signed out. */
     fun observeNotificationsEnabled(): Flow<Boolean>
-    suspend fun claimHandle(handle: String): Result<Unit>
+    suspend fun claimUsername(username: String): Result<Unit>
     suspend fun updateProfile(
         displayName: String? = null,
-        handle: String? = null,
+        username: String? = null,
         avatarSeed: String? = null,
     ): Result<Unit>
     suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit>
@@ -59,8 +59,8 @@ class FirebaseProfileRepository(
             }
         }
 
-    override suspend fun claimHandle(handle: String): Result<Unit> = runCatching {
-        remote.claimHandle(handle)
+    override suspend fun claimUsername(username: String): Result<Unit> = runCatching {
+        remote.claimUsername(username)
     }
 
     override suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit> = runCatching {
@@ -69,10 +69,10 @@ class FirebaseProfileRepository(
 
     override suspend fun updateProfile(
         displayName: String?,
-        handle: String?,
+        username: String?,
         avatarSeed: String?,
     ): Result<Unit> = runCatching {
-        remote.updateProfile(displayName = displayName, handle = handle, avatarSeed = avatarSeed)
+        remote.updateProfile(displayName = displayName, username = username, avatarSeed = avatarSeed)
     }
 
     override suspend fun recordActivity(): Result<Unit> = runCatching {

@@ -110,20 +110,25 @@ export const onMemberJoin = onDocumentCreated(
   'challenges/{challengeId}/players/{uid}',
   async (event) => {
     const data = event.data?.data();
-    // Creator auto-join is excluded from the count — they set isCreator=true.
-    if (!data || data.isCreator === true) return;
+    if (!data) return;
 
     const { challengeId, uid } = event.params;
+    const joinerSnap = await db.doc(`players/${uid}`).get();
+    const joinerData = joinerSnap.data() ?? {};
+    const joinerName: string = joinerData.displayName ?? 'Someone';
+
     await db.doc(`challenges/${challengeId}`).update({
       joinedCount: FieldValue.increment(1),
+      [`participants.${uid}`]: {
+        displayName: joinerName,
+        avatarSeed: joinerData.avatarSeed ?? uid,
+      },
     });
 
     // Notify the challenge creator — best-effort.
     const challengeSnap = await db.doc(`challenges/${challengeId}`).get();
     const creatorUid: string | undefined = challengeSnap.data()?.createdBy;
     if (creatorUid && creatorUid !== uid) {
-      const joinerSnap = await db.doc(`players/${uid}`).get();
-      const joinerName: string = joinerSnap.data()?.displayName ?? 'Someone';
       const challengeTitle: string = challengeSnap.data()?.title ?? 'your challenge';
       await sendToUser(creatorUid, {
         title: 'New participant!',
@@ -195,9 +200,11 @@ async function processDeleteChecklist(uid: string): Promise<void> {
       requestedAt: FieldValue.serverTimestamp(),
       steps: {
         handles: 'pending',
+        friend_refs: 'pending',
         players_subs: 'pending',
         players_subcoll: 'pending',
         invitations: 'pending',
+        push_tokens: 'pending',
         public_profile: 'pending',
         player_doc: 'pending',
         auth_user: 'done', // already deleted since we're in the trigger
@@ -216,7 +223,46 @@ async function processDeleteChecklist(uid: string): Promise<void> {
   }
   await tick('handles');
 
-  // Step 2: private subcollections
+  // Step 2: scrub references to this uid from other users' social and head-to-head docs.
+  // Must run before players_subs so the social doc is still readable on a resumed run.
+  const socialSnap = await db.doc(`players/${uid}/private/social`).get();
+  if (socialSnap.exists) {
+    const social = socialSnap.data()!;
+    const friendUids = Object.keys(social.friends ?? {});
+    const requestsInUids = Object.keys(social.requestsIn ?? {}); // they sent to us → clear their requestsOut
+    const requestsOutUids = Object.keys(social.requestsOut ?? {}); // we sent to them → clear their requestsIn
+
+    const refUpdates = new Map<string, Record<string, unknown>>();
+    const addPatch = (otherUid: string, patch: Record<string, unknown>) => {
+      refUpdates.set(otherUid, { ...(refUpdates.get(otherUid) ?? {}), ...patch });
+    };
+    for (const fid of friendUids) addPatch(fid, { [`friends.${uid}`]: FieldValue.delete() });
+    for (const rid of requestsInUids) addPatch(rid, { [`requestsOut.${uid}`]: FieldValue.delete() });
+    for (const rid of requestsOutUids) addPatch(rid, { [`requestsIn.${uid}`]: FieldValue.delete() });
+
+    const socialEntries = [...refUpdates.entries()];
+    for (const c of chunk(socialEntries, 500)) {
+      const batch = db.batch();
+      for (const [otherUid, patch] of c) {
+        batch.set(db.doc(`players/${otherUid}/private/social`), patch, { merge: true });
+      }
+      await batch.commit();
+    }
+
+    // Head-to-head vs entries keyed by the deleted uid. Use per-doc updates
+    // (not set/merge) so a friend who never accrued head-to-head stats doesn't
+    // get an empty doc created; a missing doc simply no-ops via allSettled.
+    for (const c of chunk(friendUids, 500)) {
+      await Promise.allSettled(
+        c.map((fid) =>
+          db.doc(`players/${fid}/private/headToHead`).update({ [`vs.${uid}`]: FieldValue.delete() }),
+        ),
+      );
+    }
+  }
+  await tick('friend_refs');
+
+  // Step 3: private subcollections
   const privateDocs = await db.collection(`players/${uid}/private`).listDocuments();
   if (privateDocs.length > 0) {
     const batch = db.batch();
@@ -225,7 +271,7 @@ async function processDeleteChecklist(uid: string): Promise<void> {
   }
   await tick('players_subs');
 
-  // Step 3: membership + prediction docs (collection-group)
+  // Step 4: membership + prediction docs (collection-group)
   const memberDocs = await db
     .collectionGroup('players')
     .where('uid', '==', uid)
@@ -239,6 +285,7 @@ async function processDeleteChecklist(uid: string): Promise<void> {
         batch.update(d.ref.parent.parent!, {
           joinedCount: FieldValue.increment(-1),
           [`leaderboard.${uid}`]: FieldValue.delete(),
+          [`participants.${uid}`]: FieldValue.delete(),
         });
       }
       await batch.commit();
@@ -246,7 +293,7 @@ async function processDeleteChecklist(uid: string): Promise<void> {
   }
   await tick('players_subcoll');
 
-  // Step 4: invitations
+  // Step 5: invitations
   const inviteDocs = await db
     .collectionGroup('invitations')
     .where('invitedUid', '==', uid)
@@ -261,11 +308,20 @@ async function processDeleteChecklist(uid: string): Promise<void> {
   }
   await tick('invitations');
 
-  // Step 5: public profile
+  // Step 6: push token subcollection (Firestore does not cascade-delete subcollections).
+  const tokenRefs = await db.collection(`players/${uid}/pushTokens`).listDocuments();
+  for (const c of chunk(tokenRefs, 500)) {
+    const batch = db.batch();
+    for (const ref of c) batch.delete(ref);
+    await batch.commit();
+  }
+  await tick('push_tokens');
+
+  // Step 7: public profile
   await db.doc(`publicProfiles/${uid}`).delete();
   await tick('public_profile');
 
-  // Step 6: root player doc
+  // Step 8: root player doc
   await db.doc(`players/${uid}`).delete();
   await tick('player_doc');
 
@@ -301,14 +357,47 @@ export const reconcileDeletions = onSchedule('every 60 minutes', async (_event) 
 
 const DELETE_AFTER_DAYS = 90;
 
+function locksAtMillis(v: unknown): number | null {
+  if (v == null) return null;
+  if (typeof v === 'string') {
+    const ms = Date.parse(v);
+    return Number.isNaN(ms) ? null : ms;
+  }
+  if (typeof v === 'number') return v;
+  if (typeof v === 'object' && typeof (v as { toMillis?: unknown }).toMillis === 'function') {
+    return (v as { toMillis: () => number }).toMillis();
+  }
+  return null;
+}
+
+async function purgeChallengeDeep(ref: FirebaseFirestore.DocumentReference): Promise<void> {
+  const [playerRefs, invitationRefs] = await Promise.all([
+    ref.collection('players').listDocuments(),
+    ref.collection('invitations').listDocuments(),
+  ]);
+  for (const c of chunk([...playerRefs, ...invitationRefs, ref], 500)) {
+    const batch = db.batch();
+    for (const r of c) batch.delete(r);
+    await batch.commit();
+  }
+}
+
 /**
- * Daily. Hard-deletes every challenge whose resultsPostedAt is older than
- * DELETE_AFTER_DAYS, along with its players and invitations subcollections.
+ * Daily. Hard-deletes challenges in two passes, both using DELETE_AFTER_DAYS:
+ *
+ * Pass 1 — resolved: resultsPostedAt < cutoff (original behaviour).
+ * Pass 2 — abandoned: resultsPostedAt == null and createdAt < cutoff.
+ *   A safety guard skips challenges still legitimately OPEN with a future
+ *   locksAt so long-running challenges aren't deleted mid-life. Decrement
+ *   the creator's activeChallenges counter (best-effort; createChallenge has
+ *   drift repair).
+ *
  * Processed in pages of 200 so a large backlog doesn't hit memory limits.
  */
 export const purgeOldChallenges = onSchedule('every 24 hours', async () => {
   const cutoff = new Date(Date.now() - DELETE_AFTER_DAYS * 86400_000);
 
+  // Pass 1: resolved challenges older than DELETE_AFTER_DAYS.
   for (;;) {
     const snap = await db
       .collection('challenges')
@@ -318,16 +407,39 @@ export const purgeOldChallenges = onSchedule('every 24 hours', async () => {
     if (snap.empty) break;
 
     for (const doc of snap.docs) {
-      const ref = doc.ref;
-      const [playerRefs, invitationRefs] = await Promise.all([
-        ref.collection('players').listDocuments(),
-        ref.collection('invitations').listDocuments(),
-      ]);
-      const allRefs = [...playerRefs, ...invitationRefs, ref];
-      for (const c of chunk(allRefs, 500)) {
-        const batch = db.batch();
-        for (const r of c) batch.delete(r);
-        await batch.commit();
+      await purgeChallengeDeep(doc.ref);
+    }
+
+    if (snap.size < 200) break;
+  }
+
+  // Pass 2: abandoned (never-resolved) challenges older than DELETE_AFTER_DAYS.
+  for (;;) {
+    const snap = await db
+      .collection('challenges')
+      .where('resultsPostedAt', '==', null)
+      .where('createdAt', '<', cutoff)
+      .limit(200)
+      .get();
+    if (snap.empty) break;
+
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      // Safety: skip challenges still legitimately accepting predictions.
+      const locksAtMs = locksAtMillis(data.locksAt);
+      if (data.status === 'OPEN' && locksAtMs != null && locksAtMs > Date.now()) continue;
+
+      await purgeChallengeDeep(doc.ref);
+
+      // Free the creator's active-challenge slot. Use update (not set/merge) so a
+      // deleted creator's counters doc isn't re-created as an orphan; a missing
+      // doc just throws and is swallowed (createChallenge has drift repair).
+      const createdBy = data.createdBy as string | undefined;
+      if (createdBy) {
+        await db
+          .doc(`players/${createdBy}/private/counters`)
+          .update({ activeChallenges: FieldValue.increment(-1) })
+          .catch(() => {/* no counters doc (e.g. deleted creator) — skip */});
       }
     }
 

@@ -92,10 +92,8 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = standardPadding, vertical = standardPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(text = "🏆", style = MaterialTheme.typography.displaySmall)
-                    Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Results are in!",
+                        text = "🏆 Results are in!",
                         style = MaterialTheme.typography.headlineLarge,
                         textAlign = TextAlign.Center,
                     )

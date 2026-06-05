@@ -48,18 +48,18 @@ class ProfileRemoteDataSource(
         functions.httpsCallable("recordActivity")(emptyMap<String, Any?>())
     }
 
-    suspend fun claimHandle(handle: String) {
-        functions.httpsCallable("claimHandle")(hashMapOf("handle" to handle))
+    suspend fun claimUsername(username: String) {
+        functions.httpsCallable("claimHandle")(hashMapOf("handle" to username))
     }
 
     suspend fun updateProfile(
         displayName: String?,
-        handle: String?,
+        username: String?,
         avatarSeed: String?,
     ) {
         val data = hashMapOf<String, Any?>()
         displayName?.let { data["displayName"] = it }
-        handle?.let { data["handle"] = it }
+        username?.let { data["handle"] = it }
         avatarSeed?.let { data["avatarSeed"] = it }
         if (data.isNotEmpty()) {
             functions.httpsCallable("updateProfile")(data)

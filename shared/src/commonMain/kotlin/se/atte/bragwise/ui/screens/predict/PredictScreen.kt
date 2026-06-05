@@ -29,7 +29,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import org.koin.compose.koinInject
+import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.mvi.ObserveEffects
+import se.atte.bragwise.ui.components.LoadingDialog
+import se.atte.bragwise.ui.components.NameGateDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -61,12 +65,25 @@ fun PredictScreen(
     onSubmitted: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val onboardingPrefs: OnboardingPrefs = koinInject()
 
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             PredictViewModel.Effect.Submitted -> onSubmitted()
             is PredictViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
+    }
+
+    if (state.submitting) {
+        LoadingDialog(message = "Saving predictions…")
+    }
+
+    if (state.needsName) {
+        NameGateDialog(
+            initialName = onboardingPrefs.chosenName.orEmpty(),
+            onConfirm = { name -> viewModel.onIntent(PredictViewModel.Intent.ConfirmName(name)) },
+            onDismiss = { viewModel.onIntent(PredictViewModel.Intent.DismissName) },
+        )
     }
 
     when (val ui = state.ui) {

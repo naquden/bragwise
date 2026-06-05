@@ -63,8 +63,14 @@ service cloud.firestore {
 
       match /players/{uid} {
         // Composite per-user doc: membership + this user's predictions.
-        // Owner-only — predictions are private to their owner.
-        allow read: if isSelf(uid);
+        // Readable by the owner, or by any signed-in user when the challenge
+        // creator has enabled betsVisible (display names and bets are treated
+        // as visible to participants in that case — creator opts in to spark
+        // discussion). isSignedIn() scopes this to authenticated users only;
+        // predictions are never exposed to anonymous/unauthenticated readers.
+        allow read: if isSelf(uid) ||
+          (isSignedIn() &&
+            get(/databases/$(database)/documents/challenges/$(challengeId)).data.betsVisible == true);
         allow write: if false;        // submitPredictions / publishChallenge / onUserDeleted
       }
 

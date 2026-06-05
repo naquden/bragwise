@@ -3,6 +3,7 @@ package se.atte.bragwise.data
 import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.serialization.Serializable
+import kotlin.time.Clock
 import kotlin.time.Instant
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
@@ -13,6 +14,7 @@ import se.atte.bragwise.domain.FriendRequests
 import se.atte.bragwise.domain.HeadToHead
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.OptionType
+import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
@@ -49,6 +51,12 @@ private data class PredictionPayloadDto(
 @Serializable
 private data class LeaderboardDto(
     val entries: Map<String, Int> = emptyMap(),
+)
+
+@Serializable
+private data class ParticipantDto(
+    val displayName: String = "",
+    val avatarSeed: String = "",
 )
 
 // ── Primitive helpers ────────────────────────────────────────────────────────
@@ -89,6 +97,11 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
         get<Map<String, Int>>(field = "leaderboard")
     }.getOrNull()
 
+    val participants: List<ParticipantInfo> = runCatching {
+        get<Map<String, ParticipantDto>>(field = "participants")
+            .map { (uid, dto) -> ParticipantInfo(uid = uid, displayName = dto.displayName, avatarSeed = dto.avatarSeed) }
+    }.getOrElse { emptyList() }
+
     return Challenge(
         id = id,
         title = strOrNull("title") ?: "",
@@ -101,15 +114,30 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
         createdAt = timestampOrNull("createdAt") ?: Instant.DISTANT_PAST,
         locksAt = timestampOrNull("locksAt"),
         resultsPostedAt = timestampOrNull("resultsPostedAt"),
-        status = runCatching {
-            ChallengeStatus.valueOf(strOrNull("status") ?: "DRAFT")
-        }.getOrDefault(ChallengeStatus.DRAFT),
+        status = run {
+            val storedStatus = runCatching {
+                ChallengeStatus.valueOf(strOrNull("status") ?: "DRAFT")
+            }.getOrDefault(ChallengeStatus.DRAFT)
+            val locksAtInstant = timestampOrNull("locksAt")
+            val resultsPostedAtInstant = timestampOrNull("resultsPostedAt")
+            if (storedStatus == ChallengeStatus.OPEN &&
+                locksAtInstant != null &&
+                resultsPostedAtInstant == null &&
+                Clock.System.now() >= locksAtInstant
+            ) {
+                ChallengeStatus.LOCKED
+            } else {
+                storedStatus
+            }
+        },
         joinedCount = longOrNull("joinedCount")?.toInt() ?: 0,
         promoted = boolOrNull("promoted") ?: false,
         trusted = boolOrNull("trusted") ?: false,
         bets = bets,
         results = results,
         leaderboard = leaderboard,
+        betsVisible = boolOrNull("betsVisible") ?: false,
+        participants = participants,
     )
 }
 
@@ -156,14 +184,14 @@ internal fun PredictionPayload.toMap(): Map<String, Any?> = when (this) {
 
 internal fun DocumentSnapshot.toPublicProfile(): PublicProfile = PublicProfile(
     uid = id,
-    handle = strOrNull("handle") ?: "",
+    username = strOrNull("handle") ?: "",
     displayName = strOrNull("displayName") ?: "",
     avatarSeed = strOrNull("avatarSeed") ?: "",
 )
 
 internal fun DocumentSnapshot.toPlayer(): Player = Player(
     uid = id,
-    handle = strOrNull("handle") ?: "",
+    username = strOrNull("handle") ?: "",
     displayName = strOrNull("displayName") ?: "",
     avatarSeed = strOrNull("avatarSeed") ?: "",
     createdAt = timestampOrNull("createdAt") ?: Instant.DISTANT_PAST,
@@ -178,7 +206,7 @@ internal fun DocumentSnapshot.toCloudFriends(): List<CloudFriend> = runCatching 
     data<SocialDocDto>().friends.map { (uid, ts) ->
         val since = ts.toInstant()
         CloudFriend(
-            player = Player(uid = uid, handle = "", displayName = uid, avatarSeed = uid, createdAt = since),
+            player = Player(uid = uid, username = "", displayName = uid, avatarSeed = uid, createdAt = since),
             since = since,
         )
     }

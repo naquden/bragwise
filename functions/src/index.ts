@@ -332,11 +332,6 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
     if (data.resultsPostedAt !== null && data.resultsPostedAt !== undefined) {
       throw new HttpsError('already-exists', 'results-already-posted');
     }
-    const locksAtMs = locksAtMillis(data.locksAt);
-    if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
-    if (locksAtMs > Date.now()) {
-      throw new HttpsError('failed-precondition', 'challenge-not-locked');
-    }
     tx.update(ref, {
       results,
       resultsPostedAt: FieldValue.serverTimestamp(),
@@ -576,9 +571,11 @@ export const deleteAccount = onCall(async (req: CallableRequest<unknown>) => {
     requestedAt: FieldValue.serverTimestamp(),
     steps: {
       handles: 'pending',
+      friend_refs: 'pending',
       players_subs: 'pending',
       players_subcoll: 'pending',
       invitations: 'pending',
+      push_tokens: 'pending',
       public_profile: 'pending',
       player_doc: 'pending',
       auth_user: 'pending',

@@ -61,7 +61,7 @@ class BragwiseApplication : Application() {
         val persistenceKey = FirebaseApp.getInstance().persistenceKey
         getSharedPreferences("com.google.firebase.appcheck.debug.store.$persistenceKey", Context.MODE_PRIVATE)
             .edit()
-            .putString("com.google.firebase.appcheck.debug.API_KEY", fixedToken)
+            .putString("com.google.firebase.appcheck.debug.DEBUG_SECRET", fixedToken)
             .apply()
     }
 }

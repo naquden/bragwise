@@ -53,6 +53,7 @@ class ResultsRevealViewModel(
     override fun onIntent(intent: Nothing) = Unit
 
     init {
+        val alreadySeen = seenStore.isSeen(challengeId = challengeId)
         auth.authState
             .flatMapLatest { authState ->
                 val myUid = (authState as? AuthState.SignedIn)?.uid ?: ""
@@ -60,7 +61,6 @@ class ResultsRevealViewModel(
                     challenges.observeChallengeDetail(id = challengeId),
                     challenges.observeLeaderboard(challengeId = challengeId),
                 ) { detail, leaderboard ->
-                    val alreadySeen = seenStore.isSeen(challengeId = challengeId)
                     val myEntry = leaderboard.firstOrNull { it.uid == myUid }
                     RevealData(
                         challengeTitle = detail.challenge.title,
@@ -68,7 +68,7 @@ class ResultsRevealViewModel(
                         myUid = myUid,
                         myRank = myEntry?.rank ?: detail.myRank,
                         myPoints = myEntry?.points ?: detail.challenge.leaderboard?.get(myUid),
-                        participantCount = detail.challenge.joinedCount,
+                        participantCount = maxOf(detail.challenge.joinedCount, leaderboard.size),
                         alreadySeen = alreadySeen,
                     )
                 }

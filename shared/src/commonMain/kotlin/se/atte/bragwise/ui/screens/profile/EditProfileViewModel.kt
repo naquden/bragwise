@@ -19,17 +19,17 @@ class EditProfileViewModel(
 ) {
     data class State(
         val initialised: Boolean = false,
-        val handle: String = "",
+        val username: String = "",
         val displayName: String = "",
         val avatarSeed: String = "",
-        val originalHandle: String = "",
+        val originalUsername: String = "",
         val saving: Boolean = false,
-        val handleError: String? = null,
+        val usernameError: String? = null,
         val email: String? = null,
     )
 
     sealed interface Intent {
-        data class SetHandle(val v: String) : Intent
+        data class SetUsername(val v: String) : Intent
         data class SetDisplayName(val v: String) : Intent
         data class SetAvatarSeed(val v: String) : Intent
         data object Save : Intent
@@ -48,8 +48,8 @@ class EditProfileViewModel(
                     if (it.initialised) it
                     else it.copy(
                         initialised = true,
-                        handle = player.handle,
-                        originalHandle = player.handle,
+                        username = player.username,
+                        originalUsername = player.username,
                         displayName = player.displayName,
                         avatarSeed = player.avatarSeed,
                     )
@@ -66,20 +66,20 @@ class EditProfileViewModel(
     }
 
     override fun onIntent(intent: Intent) = when (intent) {
-        is Intent.SetHandle -> update { it.copy(handle = intent.v, handleError = null) }
+        is Intent.SetUsername -> update { it.copy(username = intent.v, usernameError = null) }
         is Intent.SetDisplayName -> update { it.copy(displayName = intent.v) }
         is Intent.SetAvatarSeed -> update { it.copy(avatarSeed = intent.v) }
         Intent.Save -> {
             viewModelScope.launch {
                 update { it.copy(saving = true) }
                 val s = state.value
-                val handleChanged = s.handle != s.originalHandle && s.handle.isNotBlank()
-                val handleResult = if (handleChanged) profiles.claimHandle(s.handle) else Result.success(Unit)
-                handleResult
+                val usernameChanged = s.username != s.originalUsername && s.username.isNotBlank()
+                val claimResult = if (usernameChanged) profiles.claimUsername(s.username) else Result.success(Unit)
+                claimResult
                     .onSuccess {
                         profiles.updateProfile(
                             displayName = s.displayName.takeIf { it.isNotBlank() },
-                            handle = if (handleChanged) s.handle else null,
+                            username = if (usernameChanged) s.username else null,
                             avatarSeed = s.avatarSeed.takeIf { it.isNotBlank() },
                         ).onSuccess { emitEffect(Effect.Saved) }
                             .onFailure { emitEffect(Effect.Snackbar("Save failed: ${it.message ?: "unknown"}")) }
@@ -88,7 +88,7 @@ class EditProfileViewModel(
                         val isTaken = (error is FirebaseFunctionsException && error.code == FunctionsExceptionCode.ALREADY_EXISTS)
                             || error.message?.contains("handle-taken") == true
                         if (isTaken) {
-                            update { it.copy(handleError = "That username is already taken") }
+                            update { it.copy(usernameError = "That username is already taken") }
                         } else {
                             emitEffect(Effect.Snackbar("Failed to save username: ${error.message ?: "unknown"}"))
                         }

@@ -19,6 +19,14 @@ data class Challenge(
     val bets: List<Bet>,
     val results: Map<String, PredictionPayload>?,
     val leaderboard: Map<String, Int>?,
+    val betsVisible: Boolean = false,
+    val participants: List<ParticipantInfo> = emptyList(),
+)
+
+data class ParticipantInfo(
+    val uid: String,
+    val displayName: String,
+    val avatarSeed: String,
 )
 
 enum class Visibility { FRIENDS, INVITE_ONLY, PROMOTED }

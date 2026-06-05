@@ -26,6 +26,7 @@ interface ChallengeRepository {
     fun observePendingInvites(): Flow<List<Invitation>>
     fun observeChallengeDetail(id: String): Flow<ChallengeDetail>
     fun observeLeaderboard(challengeId: String, friendsOnly: Boolean = false): Flow<List<LeaderboardEntry>>
+    fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>>
     /** All finished (RESULTS_POSTED) challenges the current user participated in, newest first. */
     fun observeFinished(): Flow<List<Challenge>>
 
@@ -119,6 +120,9 @@ class FirebaseChallengeRepository(
 
     override fun observeLeaderboard(challengeId: String, friendsOnly: Boolean): Flow<List<LeaderboardEntry>> =
         remote.observeLeaderboard(challengeId)
+
+    override fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> =
+        remote.observeParticipantPredictions(challengeId = challengeId, uid = uid)
 
     override fun observeFinished(): Flow<List<Challenge>> =
         observeMine().map { challenges ->

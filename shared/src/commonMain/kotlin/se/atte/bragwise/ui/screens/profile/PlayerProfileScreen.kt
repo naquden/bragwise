@@ -53,7 +53,7 @@ private fun PlayerProfileContent(data: PlayerProfileViewModel.Data) {
     ) {
         item {
             SectionCard(title = data.profile.displayName) {
-                Text("@${data.profile.handle}", style = MaterialTheme.typography.bodyLarge)
+                Text("@${data.profile.username}", style = MaterialTheme.typography.bodyLarge)
             }
         }
         item {
@@ -84,7 +84,7 @@ private fun PlayerProfile_Preview() {
     ThemePreview {
         PlayerProfileContent(
             data = PlayerProfileViewModel.Data(
-                profile = PublicProfile(uid = "u2", handle = "alice", displayName = "Alice", avatarSeed = "alice"),
+                profile = PublicProfile(uid = "u2", username = "alice", displayName = "Alice", avatarSeed = "alice"),
                 head = HeadToHead.Record(wins = 3, losses = 1, ties = 2),
             ),
         )
@@ -97,7 +97,7 @@ private fun PlayerProfile_NoHistory_Preview() {
     ThemePreview {
         PlayerProfileContent(
             data = PlayerProfileViewModel.Data(
-                profile = PublicProfile(uid = "u3", handle = "bob", displayName = "Bob", avatarSeed = "bob"),
+                profile = PublicProfile(uid = "u3", username = "bob", displayName = "Bob", avatarSeed = "bob"),
                 head = null,
             ),
         )

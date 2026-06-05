@@ -23,6 +23,7 @@ import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
+import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
 
 class ChallengeRemoteDataSource(
@@ -193,6 +194,7 @@ class ChallengeRemoteDataSource(
             "visibility" to challenge.visibility.name,
             "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to create a challenge" }.toString(),
             "bets" to challenge.bets.map { it.toMap() },
+            "betsVisible" to challenge.betsVisible,
         )
         val result = functions.httpsCallable("createChallenge")(data)
         val resultData = result.data(MapSerializer(String.serializer(), String.serializer().nullable))
@@ -208,8 +210,19 @@ class ChallengeRemoteDataSource(
             "visibility" to challenge.visibility.name,
             "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to update a draft" }.toString(),
             "bets" to challenge.bets.map { it.toMap() },
+            "betsVisible" to challenge.betsVisible,
         )
         functions.httpsCallable("updateDraft")(data)
+    }
+
+    fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> = flow {
+        emitAll(
+            db.document("challenges/$challengeId/players/$uid").snapshots
+                .map { snap ->
+                    if (!snap.exists) emptyMap()
+                    else snap.toPredictionsMap()
+                },
+        )
     }
 
     suspend fun publishChallenge(challengeId: String) {

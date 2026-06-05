@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.ChallengeRepository
+import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.mvi.Cause
 import se.atte.bragwise.mvi.toCause
@@ -26,6 +27,7 @@ import kotlin.time.Instant
 class CreateChallengeViewModel(
     private val challenges: ChallengeRepository,
     private val social: SocialRepository,
+    private val ensureNamedAccount: EnsureNamedAccount,
 ) : ScreenViewModel<CreateChallengeViewModel.State, CreateChallengeViewModel.Intent, CreateChallengeViewModel.Effect>(
     initialState = State(),
 ) {
@@ -41,8 +43,11 @@ class CreateChallengeViewModel(
         val locksAt: Instant = Clock.System.now() + 7.days,
         val bets: List<Bet> = emptyList(),
         val invitedUids: Set<String> = emptySet(),
+        val betsVisible: Boolean = false,
         val submitting: Boolean = false,
         val error: String? = null,
+        val needsName: Boolean = false,
+        val pendingPublish: Boolean = false,
     )
 
     sealed interface Intent {
@@ -65,8 +70,11 @@ class CreateChallengeViewModel(
         data class RemoveBet(val betId: String) : Intent
         data class UpdateBet(val bet: Bet) : Intent
         data class SetInvitedUids(val uids: Set<String>) : Intent
+        data class SetBetsVisible(val visible: Boolean) : Intent
         data object Publish : Intent
         data object SaveDraft : Intent
+        data class ConfirmName(val name: String) : Intent
+        data object DismissName : Intent
     }
 
     sealed interface Effect {
@@ -115,8 +123,20 @@ class CreateChallengeViewModel(
                 it.copy(bets = it.bets.map { b -> if (b.id == intent.bet.id) intent.bet else b })
             }
             is Intent.SetInvitedUids -> update { it.copy(invitedUids = intent.uids) }
+            is Intent.SetBetsVisible -> update { it.copy(betsVisible = intent.visible) }
             Intent.Publish -> persist(publish = true)
             Intent.SaveDraft -> persist(publish = false)
+            is Intent.ConfirmName -> viewModelScope.launch {
+                update { it.copy(submitting = true, needsName = false) }
+                ensureNamedAccount.ensure(intent.name).fold(
+                    onSuccess = { persist(publish = state.value.pendingPublish) },
+                    onFailure = { e ->
+                        update { it.copy(submitting = false) }
+                        emitEffect(Effect.Snackbar("Couldn't set up account: ${e.message ?: "unknown"}"))
+                    },
+                )
+            }
+            Intent.DismissName -> update { it.copy(needsName = false, pendingPublish = false) }
         }
     }
 
@@ -125,6 +145,10 @@ class CreateChallengeViewModel(
         val s = state.value
         if (s.title.isBlank() || s.bets.isEmpty()) {
             emitEffect(Effect.Snackbar("Title and at least one bet required"))
+            return
+        }
+        if (ensureNamedAccount.name.value.isNullOrBlank()) {
+            update { it.copy(needsName = true, pendingPublish = publish) }
             return
         }
         update { it.copy(submitting = true, error = null) }
@@ -148,6 +172,7 @@ class CreateChallengeViewModel(
                 bets = s.bets,
                 results = null,
                 leaderboard = null,
+                betsVisible = s.betsVisible,
             )
             val created = challenges.createDraft(draft)
             update { it.copy(submitting = false) }

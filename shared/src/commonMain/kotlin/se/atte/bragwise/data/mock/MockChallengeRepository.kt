@@ -69,6 +69,9 @@ class MockChallengeRepository(
             buildMockLeaderboard(sortedEntries = sortedEntries)
         }
 
+    override fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> =
+        _predictions.map { it[challengeId] ?: emptyMap() }
+
     override fun observeFinished(): Flow<List<Challenge>> =
         _challenges.map { list ->
             list.filter { it.status == ChallengeStatus.RESULTS_POSTED }

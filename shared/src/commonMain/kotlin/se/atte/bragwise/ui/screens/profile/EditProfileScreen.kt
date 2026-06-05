@@ -36,6 +36,7 @@ import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AvatarBubble
 import se.atte.bragwise.ui.components.BottomActionBar
+import se.atte.bragwise.ui.components.LoadingDialog
 import se.atte.bragwise.ui.components.FlagImage
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.components.allFlagCodes
@@ -57,9 +58,13 @@ fun EditProfileScreen(
         }
     }
 
+    if (state.saving) {
+        LoadingDialog(message = "Saving…")
+    }
+
     EditProfileContent(
         state = state,
-        onSetHandle = { viewModel.onIntent(EditProfileViewModel.Intent.SetHandle(it)) },
+        onSetUsername = { viewModel.onIntent(EditProfileViewModel.Intent.SetUsername(it)) },
         onSetDisplayName = { viewModel.onIntent(EditProfileViewModel.Intent.SetDisplayName(it)) },
         onSetAvatarSeed = { viewModel.onIntent(EditProfileViewModel.Intent.SetAvatarSeed(it)) },
         onSave = { viewModel.onIntent(EditProfileViewModel.Intent.Save) },
@@ -71,7 +76,7 @@ private const val FLAGS_COLLAPSED_COUNT = 40
 @Composable
 private fun EditProfileContent(
     state: EditProfileViewModel.State,
-    onSetHandle: (String) -> Unit,
+    onSetUsername: (String) -> Unit,
     onSetDisplayName: (String) -> Unit,
     onSetAvatarSeed: (String) -> Unit,
     onSave: () -> Unit,
@@ -88,13 +93,13 @@ private fun EditProfileContent(
             item {
                 SectionCard(title = "Identity") {
                     OutlinedTextField(
-                        value = state.handle,
-                        onValueChange = onSetHandle,
-                        label = { Text("Username (@handle)") },
+                        value = state.username,
+                        onValueChange = onSetUsername,
+                        label = { Text("Username") },
                         prefix = { Text("@") },
-                        isError = state.handleError != null,
+                        isError = state.usernameError != null,
                         supportingText = {
-                            Text(state.handleError ?: "Your unique @name. Lowercase letters, numbers and _, 3-20 characters.")
+                            Text(state.usernameError ?: "Unique identifier used for friend requests and invitations. Lowercase letters, numbers and _, 3-20 characters.")
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -104,6 +109,7 @@ private fun EditProfileContent(
                         value = state.displayName,
                         onValueChange = onSetDisplayName,
                         label = { Text("Display name") },
+                        supportingText = { Text("Shown on challenges and the leaderboard.") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
@@ -232,12 +238,12 @@ private fun EditProfile_Preview() {
         EditProfileContent(
             state = EditProfileViewModel.State(
                 initialised = true,
-                handle = "bravefox4821",
+                username = "bravefox4821",
                 displayName = "Atte Lindqvist",
                 avatarSeed = "😎",
                 email = "atte@gmail.com",
             ),
-            onSetHandle = {},
+            onSetUsername = {},
             onSetDisplayName = {},
             onSetAvatarSeed = {},
             onSave = {},
@@ -252,13 +258,13 @@ private fun EditProfile_HandleError_Preview() {
         EditProfileContent(
             state = EditProfileViewModel.State(
                 initialised = true,
-                handle = "taken",
+                username = "taken",
                 displayName = "Atte Lindqvist",
                 avatarSeed = "flag:SE",
-                handleError = "That username is already taken",
+                usernameError = "That username is already taken",
                 email = "atte@gmail.com",
             ),
-            onSetHandle = {},
+            onSetUsername = {},
             onSetDisplayName = {},
             onSetAvatarSeed = {},
             onSave = {},

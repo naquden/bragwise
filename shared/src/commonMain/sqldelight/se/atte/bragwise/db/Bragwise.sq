@@ -1,18 +1,3 @@
-CREATE TABLE LocalFriend (
-    localId TEXT NOT NULL PRIMARY KEY,
-    displayName TEXT NOT NULL,
-    addedAtEpochMillis INTEGER NOT NULL
-);
-
-friendsAll:
-SELECT * FROM LocalFriend ORDER BY addedAtEpochMillis ASC;
-
-friendUpsert:
-INSERT OR REPLACE INTO LocalFriend VALUES (?, ?, ?);
-
-friendDelete:
-DELETE FROM LocalFriend WHERE localId = ?;
-
 CREATE TABLE LocalPrediction (
     challengeId TEXT NOT NULL,
     betId TEXT NOT NULL,

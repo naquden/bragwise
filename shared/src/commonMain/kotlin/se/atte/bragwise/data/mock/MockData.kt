@@ -7,6 +7,7 @@ import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.OptionType
+import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.Visibility
@@ -19,7 +20,7 @@ internal const val MOCK_EMAIL = "demo@bragwise.dev"
 
 internal val mockPlayer = Player(
     uid = MOCK_UID,
-    handle = "demoplayer",
+    username = "demoplayer",
     displayName = "Demo Player",
     avatarSeed = "demo",
     createdAt = Clock.System.now() - 30.days,
@@ -27,7 +28,7 @@ internal val mockPlayer = Player(
 
 internal val mockPublicProfile = PublicProfile(
     uid = MOCK_UID,
-    handle = "demoplayer",
+    username = "demoplayer",
     displayName = "Demo Player",
     avatarSeed = "demo",
 )
@@ -123,6 +124,12 @@ internal val mockChallenges = listOf(
         ),
         results = null,
         leaderboard = mapOf(MOCK_UID to 120, "uid-alice" to 80, "uid-bob" to 60),
+        betsVisible = true,
+        participants = listOf(
+            ParticipantInfo(uid = MOCK_UID, displayName = "Demo Player", avatarSeed = "demo"),
+            ParticipantInfo(uid = "uid-alice", displayName = "Alice", avatarSeed = "alice-seed"),
+            ParticipantInfo(uid = "uid-bob", displayName = "Bob", avatarSeed = "bob-seed"),
+        ),
     ),
     Challenge(
         id = "mock-challenge-002",
@@ -196,7 +203,7 @@ internal val mockCloudFriends = listOf(
     CloudFriend(
         player = Player(
             uid = "uid-alice",
-            handle = "alice",
+            username = "alice",
             displayName = "Alice",
             avatarSeed = "alice-seed",
             createdAt = now - 60.days,
@@ -206,7 +213,7 @@ internal val mockCloudFriends = listOf(
     CloudFriend(
         player = Player(
             uid = "uid-bob",
-            handle = "bobthebrave",
+            username = "bobthebrave",
             displayName = "Bob",
             avatarSeed = "bob-seed",
             createdAt = now - 45.days,
