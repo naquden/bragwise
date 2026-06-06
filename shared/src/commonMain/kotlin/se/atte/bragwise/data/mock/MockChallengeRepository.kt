@@ -35,14 +35,18 @@ class MockChallengeRepository(
 
     override fun observeMine(): Flow<List<Challenge>> =
         _challenges.map { list ->
-            list.filter { it.createdBy == currentUid || it.visibility == Visibility.FRIENDS }
+            list.filter { it.createdBy == currentUid && it.status != ChallengeStatus.RESULTS_POSTED }
                 .sortedByDescending { it.createdAt }
         }
 
     override fun observePromoted(): Flow<List<Challenge>> =
         _challenges.map { list -> list.filter { it.promoted && it.status == ChallengeStatus.OPEN } }
 
-    override fun observeFromFriends(): Flow<List<Challenge>> = flowOf(emptyList())
+    override fun observeFromFriends(): Flow<List<Challenge>> =
+        _challenges.map { list ->
+            list.filter { it.visibility == Visibility.FRIENDS && it.createdBy != currentUid && it.status == ChallengeStatus.OPEN }
+                .sortedByDescending { it.createdAt }
+        }
 
     override fun observePendingInvites(): Flow<List<Invitation>> = flowOf(emptyList())
 
@@ -157,6 +161,7 @@ private fun mockName(uid: String): String = when (uid) {
     "uid-alice" -> "Alice"
     "uid-bob" -> "Bob"
     "uid-carol" -> "Carol"
+    "uid-dave" -> "Dave"
     else -> uid
 }
 
@@ -165,5 +170,6 @@ private fun mockAvatarSeed(uid: String): String = when (uid) {
     "uid-alice" -> "a3"
     "uid-bob" -> "a5"
     "uid-carol" -> "a7"
+    "uid-dave" -> "a9"
     else -> "a2"
 }
