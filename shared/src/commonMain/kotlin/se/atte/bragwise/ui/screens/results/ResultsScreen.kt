@@ -1,5 +1,6 @@
 package se.atte.bragwise.ui.screens.results
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,6 +96,7 @@ private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> 
 @Composable
 private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (String) -> Unit) {
     val sc = LocalSectionColors.current
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
@@ -140,6 +142,7 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
         }
 
         Spacer(Modifier.height(32.dp))
+    }
     }
 }
 

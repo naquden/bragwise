@@ -224,8 +224,10 @@ private fun DetailContent(
                     )
                 }
                 item {
+                    val shown = challenge.participants.take(MAX_VISIBLE_PARTICIPANTS)
+                    val hasMore = challenge.participants.size > MAX_VISIBLE_PARTICIPANTS
                     ListGroup {
-                        challenge.participants.forEachIndexed { index, participant ->
+                        shown.forEachIndexed { index, participant ->
                             val points = challenge.leaderboard?.get(participant.uid)
                             val canViewBets = challenge.betsVisible || participant.uid == myUid
                             ParticipantRow(
@@ -234,7 +236,13 @@ private fun DetailContent(
                                 canViewBets = canViewBets,
                                 onClick = if (canViewBets) ({ onParticipant(participant.uid) }) else null,
                             )
-                            if (index < challenge.participants.size - 1) ListGroupDivider()
+                            if (index < shown.size - 1 || hasMore) ListGroupDivider()
+                        }
+                        if (hasMore) {
+                            ShowMoreRow(
+                                remaining = challenge.participants.size - shown.size,
+                                onClick = onSummary,
+                            )
                         }
                     }
                 }
@@ -253,15 +261,6 @@ private fun DetailContent(
                         modifier = Modifier.weight(1f),
                         onClick = onShare,
                     ) { Text("Share") }
-                }
-            }
-
-            if (challenge.bets.isNotEmpty()) {
-                item {
-                    AppOutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onSummary,
-                    ) { Text("See all bets") }
                 }
             }
 
@@ -351,6 +350,31 @@ private fun ParticipantRow(
         }
     }
 }
+
+@Composable
+private fun ShowMoreRow(remaining: Int, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = standardPadding, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = "Show more ($remaining)",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = "›",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private const val MAX_VISIBLE_PARTICIPANTS = 5
 
 // region Previews
 
