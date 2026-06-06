@@ -19,7 +19,7 @@ data class SectionColors(
 val LightSectionColors = SectionColors(
     mineBg = Color(0xFFE8DFFF), mineCard = Color(0xFFF3EEFF), onMine = Color(0xFF2A1B5C),
     promotedBg = Color(0xFFFFE4C2), promotedCard = Color(0xFFFFF1DC), onPromoted = Color(0xFF5A3A00),
-    friendsBg = Color(0xFFCFEFF7), friendsCard = Color(0xFFE6F7FB), onFriends = Color(0xFF003A52),
+    friendsBg = Color(0xFFC8EED8), friendsCard = Color(0xFFE2F7EC), onFriends = Color(0xFF003A1F),
     invitesBg = Color(0xFFD4F5A8), invitesCard = Color(0xFFE8FBC9), onInvites = Color(0xFF1A4200),
     historyBg = Color(0xFFEAEAEA), historyCard = Color(0xFFF5F5F5), onHistory = Color(0xFF3A3A3A),
 )
@@ -27,7 +27,7 @@ val LightSectionColors = SectionColors(
 val DarkSectionColors = SectionColors(
     mineBg = Color(0xFF2E2257), mineCard = Color(0xFF3D2E70), onMine = Color(0xFFE8DFFF),
     promotedBg = Color(0xFF4A3300), promotedCard = Color(0xFF5C4200), onPromoted = Color(0xFFFFE4C2),
-    friendsBg = Color(0xFF003A52), friendsCard = Color(0xFF00536F), onFriends = Color(0xFFCFEFF7),
+    friendsBg = Color(0xFF1A4A2E), friendsCard = Color(0xFF24623D), onFriends = Color(0xFFC8EED8),
     invitesBg = Color(0xFF265E00), invitesCard = Color(0xFF347C00), onInvites = Color(0xFFD4F5A8),
     historyBg = Color(0xFF2A2A2A), historyCard = Color(0xFF383838), onHistory = Color(0xFFD0D0D0),
 )

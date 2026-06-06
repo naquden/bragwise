@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Unspecified
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.ui.standardPadding
@@ -54,6 +55,7 @@ fun ChallengeCard(
             .padding(vertical = 4.dp)
             .appShadow(Elevation.Card, isDark = isDark, shape = shape)
             .then(accentBorder)
+            .testTag("challenge_card_${challenge.id}")
             .clickable(onClick = onClick),
         color = resolvedColor,
         shape = shape,

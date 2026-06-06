@@ -36,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import se.atte.bragwise.ui.LocalSnackbarHost
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -239,6 +240,7 @@ fun AppNav() {
                         icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
                         label = { Text(stringResource(Res.string.nav_tab_challenges)) },
                         colors = navItemColors,
+                        modifier = Modifier.testTag("nav_tab_challenges"),
                     )
                     NavigationBarItem(
                         selected = currentTab == Tab.Results,
@@ -262,6 +264,7 @@ fun AppNav() {
                         },
                         label = { Text(stringResource(Res.string.nav_tab_results)) },
                         colors = navItemColors,
+                        modifier = Modifier.testTag("nav_tab_results"),
                     )
                     NavigationBarItem(
                         selected = currentTab == Tab.Me,
@@ -269,6 +272,7 @@ fun AppNav() {
                         icon = { Icon(imageVector = Lucide.User, contentDescription = null) },
                         label = { Text(stringResource(Res.string.nav_tab_me)) },
                         colors = navItemColors,
+                        modifier = Modifier.testTag("nav_tab_me"),
                     )
                 }
             }
@@ -281,6 +285,7 @@ fun AppNav() {
                         else push(Route.SignIn)
                     },
                     shape = MaterialTheme.shapes.extraLarge,
+                    modifier = Modifier.testTag("fab_create"),
                 ) {
                     Icon(imageVector = Lucide.Plus, contentDescription = "Create challenge")
                 }

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -117,7 +118,10 @@ private fun SignInContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
         ) {
-            AppTextButton(onClick = onGuest) {
+            AppTextButton(
+                onClick = onGuest,
+                modifier = Modifier.testTag("sign_in_guest"),
+            ) {
                 Text("Continue as guest")
             }
         }

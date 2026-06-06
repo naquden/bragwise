@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -248,19 +249,21 @@ private fun DetailContent(
                 }
             }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
-                ) {
-                    AppOutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = onInvite,
-                    ) { Text("Invite friends") }
-                    AppOutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = onShare,
-                    ) { Text("Share") }
+            if (isOwner) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+                    ) {
+                        AppOutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onInvite,
+                        ) { Text("Invite friends") }
+                        AppOutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = onShare,
+                        ) { Text("Share") }
+                    }
                 }
             }
 
@@ -298,7 +301,7 @@ private fun DetailContent(
 
         BottomActionBar {
             AppButton(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("detail_make_predictions"),
                 onClick = onPredict,
             ) { Text(if (joined) "Edit predictions" else "Make predictions") }
         }
