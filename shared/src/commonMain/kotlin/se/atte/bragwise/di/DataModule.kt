@@ -12,6 +12,7 @@ import se.atte.bragwise.data.FirebaseAuthRepository
 import se.atte.bragwise.data.FirebaseChallengeRepository
 import se.atte.bragwise.data.FirebaseProfileRepository
 import se.atte.bragwise.data.FirebaseSocialRepository
+import se.atte.bragwise.data.LocalDraftStore
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.db.BragwiseDatabase
@@ -35,6 +36,7 @@ val dataModule = module {
     single { SocialRemoteDataSource() }
     singleOf(::SocialLocalDataSource)
     single { LocalPredictionStore(get<BragwiseDatabase>()) }
+    single { LocalDraftStore(get<BragwiseDatabase>()) }
     single { ResultsSeenStore(get<BragwiseDatabase>()) }
     single { PushTokenRegistrar(push = get(), auth = get()) }
     single { ActivityRegistrar(auth = get(), profile = get()) }
@@ -52,7 +54,7 @@ val dataModule = module {
             challengeRemote = get(),
         )
     }
-    single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), auth = get(), social = get()) }
+    single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), localDrafts = get(), auth = get(), social = get()) }
     single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get(), profiles = get()) }
     single<ProfileRepository> { FirebaseProfileRepository(remote = get(), local = get(), auth = get()) }
 }

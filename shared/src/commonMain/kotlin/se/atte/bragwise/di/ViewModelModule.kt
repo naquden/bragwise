@@ -27,7 +27,15 @@ val viewModelModule = module {
     viewModelOf(::MigrationViewModel)
     viewModelOf(::ChallengesViewModel)
     viewModelOf(::MeViewModel)
-    viewModelOf(::CreateChallengeViewModel)
+    viewModel<CreateChallengeViewModel> { params ->
+        CreateChallengeViewModel(
+            challenges = get(),
+            social = get(),
+            ensureNamedAccount = get(),
+            errorReporter = get(),
+            draftId = params.getOrNull<String>(),
+        )
+    }
     viewModelOf(::SignInViewModel)
     viewModelOf(::FriendsViewModel)
     viewModelOf(::FriendRequestsViewModel)

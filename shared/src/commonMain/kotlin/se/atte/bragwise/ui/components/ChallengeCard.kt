@@ -96,16 +96,23 @@ fun ChallengeCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (challenge.status == ChallengeStatus.LOCKED ||
-                        challenge.status == ChallengeStatus.RESULTS_POSTED
-                    ) {
-                        Text(
-                            text = if (challenge.status == ChallengeStatus.RESULTS_POSTED) "Finished"
-                                   else "🔒 LOCKED",
+                    when (challenge.status) {
+                        ChallengeStatus.DRAFT -> Text(
+                            text = "Draft",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.primary,
                         )
-                        Spacer(Modifier.width(standardPaddingSmall))
+                        ChallengeStatus.LOCKED,
+                        ChallengeStatus.RESULTS_POSTED -> {
+                            Text(
+                                text = if (challenge.status == ChallengeStatus.RESULTS_POSTED) "Finished"
+                                       else "🔒 LOCKED",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.width(standardPaddingSmall))
+                        }
+                        else -> Unit
                     }
                     if (rank != null) {
                         RankChip(rank = rank)

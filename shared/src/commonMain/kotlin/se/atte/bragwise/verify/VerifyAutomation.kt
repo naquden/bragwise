@@ -77,8 +77,7 @@ object VerifyAutomation {
             results = null,
             leaderboard = null,
         )
-        return challenges.createDraft(draft).mapCatching { saved ->
-            challenges.publish(challengeId = saved.id).getOrThrow()
+        return challenges.publish(draft).mapCatching { saved ->
             pendingRankingFill = rankingBet.id to listOf("o2", "o0", "o1")
             autoSubmitPredictions = true
             saved.id

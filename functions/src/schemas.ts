@@ -106,16 +106,6 @@ export const CreateChallengeSchema = CreateChallengeBaseSchema
   .superRefine(validateRankingTopN)
   .superRefine(validateNoDuplicateOptions);
 
-export const UpdateDraftSchema = CreateChallengeBaseSchema.extend({
-  challengeId: z.string().min(1),
-})
-  .superRefine(validateRankingTopN)
-  .superRefine(validateNoDuplicateOptions);
-
-export const PublishChallengeSchema = z.object({
-  challengeId: z.string().min(1),
-});
-
 export const SubmitPredictionsSchema = z.object({
   challengeId: z.string().min(1),
   predictions: z

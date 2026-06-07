@@ -22,12 +22,13 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
-/** Single-screen challenge creator — title, visibility and bets all on one form. */
+/** Single-screen challenge creator/editor — title, visibility and bets all on one form. */
 class CreateChallengeViewModel(
     private val challenges: ChallengeRepository,
     private val social: SocialRepository,
     private val ensureNamedAccount: EnsureNamedAccount,
     private val errorReporter: ErrorReporter,
+    draftId: String? = null,
 ) : ScreenViewModel<CreateChallengeViewModel.State, CreateChallengeViewModel.Intent, CreateChallengeViewModel.Effect>(
     initialState = State(),
 ) {
@@ -37,6 +38,7 @@ class CreateChallengeViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     data class State(
+        val draftId: String? = null,
         val title: String = "",
         val category: String = "Other",
         val visibility: Visibility = Visibility.FRIENDS,
@@ -83,6 +85,26 @@ class CreateChallengeViewModel(
         data class Snackbar(val text: String) : Effect
     }
 
+    init {
+        if (draftId != null) {
+            val draft = challenges.getDraft(draftId)
+            if (draft != null) {
+                update {
+                    it.copy(
+                        draftId = draftId,
+                        title = draft.title,
+                        category = draft.category,
+                        visibility = draft.visibility,
+                        locksAt = draft.locksAt ?: it.locksAt,
+                        bets = draft.bets,
+                        betsVisible = draft.betsVisible,
+                        invitedUids = draft.invitedUids,
+                    )
+                }
+            }
+        }
+    }
+
     override fun onIntent(intent: Intent) {
         when (intent) {
             is Intent.SetTitle -> update { it.copy(title = intent.title) }
@@ -124,12 +146,12 @@ class CreateChallengeViewModel(
             }
             is Intent.SetInvitedUids -> update { it.copy(invitedUids = intent.uids) }
             is Intent.SetBetsVisible -> update { it.copy(betsVisible = intent.visible) }
-            Intent.Publish -> persist(publish = true)
-            Intent.SaveDraft -> persist(publish = false)
+            Intent.SaveDraft -> persistDraft()
+            Intent.Publish -> publish()
             is Intent.ConfirmName -> viewModelScope.launch {
                 update { it.copy(submitting = true, needsName = false) }
                 ensureNamedAccount.ensure(intent.name).fold(
-                    onSuccess = { persist(publish = state.value.pendingPublish) },
+                    onSuccess = { publish() },
                     onFailure = { e ->
                         update { it.copy(submitting = false) }
                         errorReporter.report(e)
@@ -140,7 +162,26 @@ class CreateChallengeViewModel(
         }
     }
 
-    private fun persist(publish: Boolean) {
+    private fun persistDraft() {
+        if (state.value.submitting) return
+        val s = state.value
+        update { it.copy(submitting = true) }
+        viewModelScope.launch {
+            val draft = buildChallenge(s)
+            challenges.saveDraft(draft).fold(
+                onSuccess = { saved ->
+                    update { it.copy(submitting = false, draftId = saved.id) }
+                    emitEffect(Effect.DraftSaved(saved.id))
+                },
+                onFailure = { e ->
+                    update { it.copy(submitting = false) }
+                    errorReporter.report(e)
+                },
+            )
+        }
+    }
+
+    private fun publish() {
         if (state.value.submitting) return
         val s = state.value
         if (s.title.isBlank() || s.bets.isEmpty()) {
@@ -152,51 +193,47 @@ class CreateChallengeViewModel(
             return
         }
         if (ensureNamedAccount.name.value.isNullOrBlank()) {
-            update { it.copy(needsName = true, pendingPublish = publish) }
+            update { it.copy(needsName = true, pendingPublish = true) }
             return
         }
         update { it.copy(submitting = true, error = null) }
         viewModelScope.launch {
-            // Server stamps id/createdBy/createdAt — placeholders here are stripped
-            // by the callable. See plan §5 "Server-derived fields".
-            val draft = Challenge(
-                id = "",
-                title = s.title,
-                description = "",
-                category = s.category,
-                visibility = s.visibility,
-                createdBy = "",
-                createdAt = Clock.System.now(),
-                locksAt = s.locksAt,
-                resultsPostedAt = null,
-                status = ChallengeStatus.DRAFT,
-                joinedCount = 0,
-                promoted = false,
-                trusted = false,
-                bets = s.bets,
-                results = null,
-                leaderboard = null,
-                betsVisible = s.betsVisible,
-            )
-            val created = challenges.createDraft(draft)
-            update { it.copy(submitting = false) }
-            created.fold(
+            val draft = buildChallenge(s)
+            challenges.publish(draft).fold(
                 onSuccess = { saved ->
+                    update { it.copy(submitting = false) }
                     if (s.visibility == Visibility.INVITE_ONLY && s.invitedUids.isNotEmpty()) {
                         challenges.inviteFriends(saved.id, s.invitedUids.toList())
                             .onFailure { e -> errorReporter.report(e) }
                     }
-                    if (publish) {
-                        challenges.publish(saved.id).fold(
-                            onSuccess = { emitEffect(Effect.Published(saved.id)) },
-                            onFailure = { e -> errorReporter.report(e) },
-                        )
-                    } else {
-                        emitEffect(Effect.DraftSaved(saved.id))
-                    }
+                    emitEffect(Effect.Published(saved.id))
                 },
-                onFailure = { e -> errorReporter.report(e) },
+                onFailure = { e ->
+                    update { it.copy(submitting = false) }
+                    errorReporter.report(e)
+                },
             )
         }
     }
+
+    private fun buildChallenge(s: State): Challenge = Challenge(
+        id = s.draftId ?: "",
+        title = s.title,
+        description = "",
+        category = s.category,
+        visibility = s.visibility,
+        createdBy = "",
+        createdAt = Clock.System.now(),
+        locksAt = s.locksAt,
+        resultsPostedAt = null,
+        status = ChallengeStatus.DRAFT,
+        joinedCount = 0,
+        promoted = false,
+        trusted = false,
+        bets = s.bets,
+        results = null,
+        leaderboard = null,
+        betsVisible = s.betsVisible,
+        invitedUids = s.invitedUids,
+    )
 }

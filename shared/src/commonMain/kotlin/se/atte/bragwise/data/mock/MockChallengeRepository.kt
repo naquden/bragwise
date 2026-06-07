@@ -26,6 +26,7 @@ class MockChallengeRepository(
     private val auth: AuthRepository,
 ) : ChallengeRepository {
     private val _challenges = MutableStateFlow(mockChallenges)
+    private val _localDrafts = MutableStateFlow<List<Challenge>>(emptyList())
 
     // Keyed by challengeId → (betId → payload)
     private val _predictions = MutableStateFlow<Map<String, Map<String, PredictionPayload>>>(emptyMap())
@@ -34,9 +35,9 @@ class MockChallengeRepository(
         get() = (auth.authState.value as? AuthState.SignedIn)?.uid ?: MOCK_UID
 
     override fun observeMine(): Flow<List<Challenge>> =
-        _challenges.map { list ->
-            list.filter { it.createdBy == currentUid && it.status != ChallengeStatus.RESULTS_POSTED }
-                .sortedByDescending { it.createdAt }
+        combine(_challenges, _localDrafts) { server, drafts ->
+            val mine = server.filter { it.createdBy == currentUid && it.status != ChallengeStatus.RESULTS_POSTED }
+            (drafts + mine).distinctBy { it.id }.sortedByDescending { it.createdAt }
         }
 
     override fun observePromoted(): Flow<List<Challenge>> =
@@ -82,20 +83,32 @@ class MockChallengeRepository(
                 .sortedByDescending { it.resultsPostedAt }
         }
 
-    override suspend fun createDraft(challenge: Challenge): Result<Challenge> = runCatching {
-        val saved = challenge.copy(id = randomUuid(), createdBy = currentUid, createdAt = Clock.System.now())
-        _challenges.update { it + saved }
+    override suspend fun saveDraft(challenge: Challenge): Result<Challenge> = runCatching {
+        val id = challenge.id.ifBlank { randomUuid() }
+        val saved = challenge.copy(id = id, status = ChallengeStatus.DRAFT, createdAt = if (challenge.id.isBlank()) Clock.System.now() else challenge.createdAt)
+        _localDrafts.update { drafts ->
+            val existing = drafts.indexOfFirst { it.id == id }
+            if (existing >= 0) drafts.toMutableList().also { it[existing] = saved } else drafts + saved
+        }
         saved
     }
 
-    override suspend fun updateDraft(challenge: Challenge): Result<Unit> = runCatching {
-        _challenges.update { list -> list.map { if (it.id == challenge.id) challenge else it } }
+    override fun getDraft(id: String): Challenge? = _localDrafts.value.firstOrNull { it.id == id }
+
+    override suspend fun deleteDraft(id: String): Result<Unit> = runCatching {
+        _localDrafts.update { it.filterNot { d -> d.id == id } }
     }
 
-    override suspend fun publish(challengeId: String): Result<Unit> = runCatching {
-        _challenges.update { list ->
-            list.map { if (it.id == challengeId) it.copy(status = ChallengeStatus.OPEN) else it }
-        }
+    override suspend fun publish(challenge: Challenge): Result<Challenge> = runCatching {
+        _localDrafts.update { it.filterNot { d -> d.id == challenge.id } }
+        val saved = challenge.copy(
+            id = randomUuid(),
+            createdBy = currentUid,
+            createdAt = Clock.System.now(),
+            status = ChallengeStatus.OPEN,
+        )
+        _challenges.update { it + saved }
+        saved
     }
 
     override suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit> =

@@ -39,13 +39,11 @@ import {
   InviteFriendsSchema,
   MigrateGuestDataSchema,
   PostResultsSchema,
-  PublishChallengeSchema,
   RegisterPushTokenSchema,
   SetNotificationPrefSchema,
   SendFriendRequestSchema,
   SubmitPredictionsSchema,
   UnfriendSchema,
-  UpdateDraftSchema,
   UpdateProfileSchema,
 } from './schemas';
 
@@ -136,6 +134,8 @@ export const updateProfile = onCall(async (req: CallableRequest<unknown>) => {
 const ACTIVE_CHALLENGE_CAP = 30;
 
 // ─── createChallenge ─────────────────────────────────────────────────────────
+// Creates the challenge as OPEN in a single transaction (cap check + player doc).
+// Drafts are now local-only on the client; publishing is a single server call.
 
 export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
@@ -147,6 +147,7 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
 
   const ref = db.collection('challenges').doc();
   const counterRef = db.doc(`players/${uid}/private/counters`);
+  const playerRef = db.doc(`challenges/${ref.id}/players/${uid}`);
 
   await db.runTransaction(async (tx) => {
     const counterSnap = await tx.get(counterRef);
@@ -175,64 +176,13 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
       id: ref.id,
       createdBy: uid,
       createdAt: FieldValue.serverTimestamp(),
-      status: 'DRAFT',
+      publishedAt: FieldValue.serverTimestamp(),
+      status: 'OPEN',
       joinedCount: 0,
       promoted: false,
       trusted: false,
       leaderboard: null,
       resultsPostedAt: null,
-    });
-    tx.set(counterRef, { activeChallenges: FieldValue.increment(1) }, { merge: true });
-  });
-
-  return { challengeId: ref.id };
-});
-
-// ─── updateDraft ─────────────────────────────────────────────────────────────
-
-export const updateDraft = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
-  const uid = requireAuth(req);
-  requireVerifiedEmail(req);
-  await rateLimit(uid, 'updateDraft', 3600, 60);
-  const payload = validate(UpdateDraftSchema, req.data);
-
-  const ref = db.doc(`challenges/${payload.challengeId}`);
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) throw new HttpsError('not-found', 'challenge-not-found');
-    const data = snap.data()!;
-    if (data.createdBy !== uid) throw new HttpsError('permission-denied', 'not-creator');
-    if (data.status !== 'DRAFT') throw new HttpsError('failed-precondition', 'not-draft');
-
-    const { challengeId: _id, ...fields } = payload;
-    tx.update(ref, { ...fields, updatedAt: FieldValue.serverTimestamp() });
-  });
-});
-
-// ─── publishChallenge ─────────────────────────────────────────────────────────
-
-export const publishChallenge = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
-  const uid = requireAuth(req);
-  requireVerifiedEmail(req);
-  await rateLimit(uid, 'publishChallenge', 3600, 10);
-  const { challengeId } = validate(PublishChallengeSchema, req.data);
-  await audit(uid, 'publishChallenge', { challengeId });
-
-  const challengeRef = db.doc(`challenges/${challengeId}`);
-  const playerRef = db.doc(`challenges/${challengeId}/players/${uid}`);
-
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(challengeRef);
-    if (!snap.exists) throw new HttpsError('not-found', 'challenge-not-found');
-    const data = snap.data()!;
-    if (data.createdBy !== uid) throw new HttpsError('permission-denied', 'not-creator');
-    if (data.status !== 'DRAFT') throw new HttpsError('failed-precondition', 'not-draft');
-
-    tx.update(challengeRef, {
-      status: 'OPEN',
-      publishedAt: FieldValue.serverTimestamp(),
     });
     // Creator auto-joins without predictions — they're the one who posts results.
     tx.set(playerRef, {
@@ -241,7 +191,10 @@ export const publishChallenge = onCall(async (req: CallableRequest<unknown>) => 
       predictions: {},
       isCreator: true,
     });
+    tx.set(counterRef, { activeChallenges: FieldValue.increment(1) }, { merge: true });
   });
+
+  return { challengeId: ref.id };
 });
 
 // ─── submitPredictions ───────────────────────────────────────────────────────

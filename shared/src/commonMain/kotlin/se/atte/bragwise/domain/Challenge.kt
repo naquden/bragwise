@@ -21,6 +21,8 @@ data class Challenge(
     val leaderboard: Map<String, Int>?,
     val betsVisible: Boolean = false,
     val participants: List<ParticipantInfo> = emptyList(),
+    /** Populated for local drafts only; always empty for server-fetched challenges. */
+    val invitedUids: Set<String> = emptySet(),
 )
 
 data class ParticipantInfo(

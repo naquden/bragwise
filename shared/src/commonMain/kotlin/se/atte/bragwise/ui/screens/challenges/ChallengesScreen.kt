@@ -54,6 +54,7 @@ fun ChallengesScreen(
     viewModel: ChallengesViewModel,
     onNavigateToChallenge: (String) -> Unit,
     onNavigateToCreate: () -> Unit,
+    onNavigateToDraft: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -75,6 +76,7 @@ fun ChallengesScreen(
             ui = ui,
             onCreate = onNavigateToCreate,
             onChallenge = { viewModel.onIntent(ChallengesViewModel.Intent.OpenChallenge(it)) },
+            onDraft = onNavigateToDraft,
         )
     }
 }
@@ -84,6 +86,7 @@ private fun ChallengesContentRoot(
     ui: UiState<ChallengesViewModel.Sections>,
     onCreate: () -> Unit,
     onChallenge: (String) -> Unit,
+    onDraft: (String) -> Unit,
 ) {
     when (ui) {
         UiState.Loading -> Box(
@@ -106,6 +109,7 @@ private fun ChallengesContentRoot(
         is UiState.Ready -> ChallengesContent(
             sections = ui.data,
             onChallenge = onChallenge,
+            onDraft = onDraft,
         )
     }
 }
@@ -144,6 +148,7 @@ private data class SectionEntry(val bg: Color, val render: @Composable (topInset
 private fun ChallengesContent(
     sections: ChallengesViewModel.Sections,
     onChallenge: (String) -> Unit,
+    onDraft: (String) -> Unit,
 ) {
     val sc = LocalSectionColors.current
     val entries = buildList {
@@ -157,7 +162,12 @@ private fun ChallengesContent(
                 topInset = topInset,
             ) {
                 sections.mine.forEach { c ->
-                    ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, surfaceColor = sc.mineCard)
+                    val onClick = if (c.status == ChallengeStatus.DRAFT) {
+                        { onDraft(c.id) }
+                    } else {
+                        { onChallenge(c.id) }
+                    }
+                    ChallengeCard(challenge = c, onClick = onClick, surfaceColor = sc.mineCard)
                 }
             }
         })
@@ -269,7 +279,7 @@ private fun previewChallenge(id: String, title: String, promoted: Boolean = fals
 @Preview
 @Composable
 private fun Challenges_Empty_Preview() {
-    ThemePreview { ChallengesContentRoot(ui = UiState.Empty(), onCreate = {}, onChallenge = {}) }
+    ThemePreview { ChallengesContentRoot(ui = UiState.Empty(), onCreate = {}, onChallenge = {}, onDraft = {}) }
 }
 
 @Preview
@@ -289,7 +299,7 @@ private fun Challenges_Ready_Preview() {
         ),
     )
     ThemePreview {
-        ChallengesContentRoot(ui = UiState.Ready(sections), onCreate = {}, onChallenge = {})
+        ChallengesContentRoot(ui = UiState.Ready(sections), onCreate = {}, onChallenge = {}, onDraft = {})
     }
 }
 

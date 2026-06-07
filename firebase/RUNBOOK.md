@@ -32,22 +32,19 @@ firebase deploy
 ## Promote a challenge
 
 Promotion is **operator-only** (the developer). Clients can never write
-`promoted: true` or `trusted: true` — the `createChallenge` and `updateDraft`
-callables hard-reject those fields, and the `challenges/*` write rule is
-`false` for all SDK paths. The only legitimate writer is the Firebase Console
-itself (audited via Cloud Audit Logs against the operator's hardened Google
-account).
+`promoted: true` or `trusted: true` — the `createChallenge` callable hard-rejects
+those fields, and the `challenges/*` write rule is `false` for all SDK paths.
+The only legitimate writer is the Firebase Console itself (audited via Cloud
+Audit Logs against the operator's hardened Google account).
 
 1. Sign into the in-app account that the operator owns. Create the challenge
-   via the normal flow (`CR-01..03`). It lands as `visibility: FRIENDS` or
-   `INVITE_ONLY` like any user-created challenge.
-2. Publish it (status flips `DRAFT → OPEN`).
-3. Open Firebase Console → Firestore → `/challenges/{challengeId}`.
-4. Set fields in the Console UI (NOT via service-account key from a laptop):
+   via the normal flow and publish it (creates it as `OPEN` in one step).
+2. Open Firebase Console → Firestore → `/challenges/{challengeId}`.
+3. Set fields in the Console UI (NOT via service-account key from a laptop):
    - `visibility = "PROMOTED"`
    - `promoted = true`
    - `trusted = true` (only if the challenge should carry the ✓ Verified badge)
-5. Verify the challenge now appears in the Promoted section of the Challenges
+4. Verify the challenge now appears in the Promoted section of the Challenges
    screen for any signed-in user (and any guest opening the app).
 
 ## Post results for a promoted challenge

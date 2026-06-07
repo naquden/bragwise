@@ -122,7 +122,7 @@ private sealed interface Route {
     data class ChallengeDetail(val id: String) : Route
     data class Predict(val challengeId: String) : Route
     data class Leaderboard(val challengeId: String, val isPromoted: Boolean) : Route
-    data object Create : Route
+    data class Create(val draftId: String? = null) : Route
     data object SignIn : Route
     data object Friends : Route
     data object Welcome : Route
@@ -292,8 +292,7 @@ fun AppNav() {
             if (currentTab == Tab.Challenges) {
                 FloatingActionButton(
                     onClick = {
-                        if (authState.isFullyAuthed) push(Route.Create)
-                        else push(Route.SignIn)
+                        if (authState.isFullyAuthed) push(Route.Create()) else push(Route.SignIn)
                     },
                     shape = MaterialTheme.shapes.extraLarge,
                     modifier = Modifier.testTag("fab_create"),
@@ -411,7 +410,10 @@ private fun RouteContent(
                 viewModel = koinViewModel<ChallengesViewModel>(),
                 onNavigateToChallenge = { push(Route.ChallengeDetail(it)) },
                 onNavigateToCreate = {
-                    if (isSignedIn) push(Route.Create) else push(Route.SignIn)
+                    if (isSignedIn) push(Route.Create()) else push(Route.SignIn)
+                },
+                onNavigateToDraft = { draftId ->
+                    if (isSignedIn) push(Route.Create(draftId = draftId)) else push(Route.SignIn)
                 },
             )
             Tab.Results -> ResultsScreen(
@@ -450,8 +452,8 @@ private fun RouteContent(
             },
             onOpenProfile = { uid -> push(Route.PlayerProfile(uid)) },
         )
-        Route.Create -> CreateChallengeScreen(
-            viewModel = koinViewModel<CreateChallengeViewModel>(),
+        is Route.Create -> CreateChallengeScreen(
+            viewModel = koinViewModel<CreateChallengeViewModel>(key = route.draftId ?: "new") { parametersOf(route.draftId) },
             snackbarHostState = snackbarHostState,
             onPublished = { id -> replaceTop(Route.ChallengeDetail(id)) },
             onDraftSaved = { pop() },

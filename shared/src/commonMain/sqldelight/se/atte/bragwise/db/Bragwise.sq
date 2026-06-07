@@ -35,3 +35,24 @@ SELECT COUNT(*) FROM SeenResult WHERE challengeId = ?;
 
 seenResultAll:
 SELECT challengeId FROM SeenResult;
+
+CREATE TABLE LocalDraft (
+    id TEXT NOT NULL PRIMARY KEY,
+    json TEXT NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+draftUpsert:
+INSERT OR REPLACE INTO LocalDraft VALUES (?, ?, ?);
+
+draftAll:
+SELECT * FROM LocalDraft ORDER BY updatedAt DESC;
+
+draftById:
+SELECT * FROM LocalDraft WHERE id = ?;
+
+draftDelete:
+DELETE FROM LocalDraft WHERE id = ?;
+
+draftClear:
+DELETE FROM LocalDraft;

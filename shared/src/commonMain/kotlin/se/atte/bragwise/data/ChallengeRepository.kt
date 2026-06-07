@@ -6,17 +6,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
-import se.atte.bragwise.domain.ChallengeStatus
-import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
+import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.PredictionPayload
 
 interface ChallengeRepository {
@@ -30,9 +28,15 @@ interface ChallengeRepository {
     /** All finished (RESULTS_POSTED) challenges the current user participated in, newest first. */
     fun observeFinished(): Flow<List<Challenge>>
 
-    suspend fun createDraft(challenge: Challenge): Result<Challenge>
-    suspend fun updateDraft(challenge: Challenge): Result<Unit>
-    suspend fun publish(challengeId: String): Result<Unit>
+    /** Persist [challenge] as a local draft. Assigns a local UUID if [challenge.id] is blank. */
+    suspend fun saveDraft(challenge: Challenge): Result<Challenge>
+    /** Returns the local draft with [id], or null if not found. */
+    fun getDraft(id: String): Challenge?
+    /** Deletes the local draft with [id]. */
+    suspend fun deleteDraft(id: String): Result<Unit>
+    /** Publishes [challenge] to the server as OPEN in one call. Deletes the local draft on success. */
+    suspend fun publish(challenge: Challenge): Result<Challenge>
+
     suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit>
     suspend fun postResults(challengeId: String, results: Map<String, PredictionPayload>): Result<Unit>
     suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit>
@@ -58,6 +62,7 @@ private fun <T> Flow<T>.tagCR(name: String): Flow<T> = this
 class FirebaseChallengeRepository(
     val remote: ChallengeRemoteDataSource,
     private val local: ChallengeLocalDataSource,
+    private val localDrafts: LocalDraftStore,
     private val auth: AuthRepository,
     private val social: SocialRepository,
 ) : ChallengeRepository {
@@ -65,23 +70,22 @@ class FirebaseChallengeRepository(
         get() = (auth.authState.value as? AuthState.SignedIn)?.uid
 
     /**
-     * Combines challenges created by the user (including drafts) with challenges
-     * the user has joined as a participant. Deduplicates by id.
+     * Combines local drafts with server challenges (created by + joined).
+     * Local drafts appear in the list for all auth states.
      */
     override fun observeMine(): Flow<List<Challenge>> =
         auth.authState.flatMapLatest { state ->
-            // #region agent log
             crDbg("observeMine.authState type=${state::class.simpleName}")
-            // #endregion
             when (state) {
                 is AuthState.SignedIn -> combine(
                     remote.observeCreatedBy(state.uid).tagCR("createdBy"),
                     remote.observeJoined(state.uid).tagCR("joined"),
-                ) { created, joined ->
-                    (created + joined).distinctBy { it.id }
+                    localDrafts.observeDrafts(),
+                ) { created, joined, drafts ->
+                    (drafts + created + joined).distinctBy { it.id }
                         .sortedByDescending { it.createdAt }
                 }
-                else -> flowOf(emptyList())
+                else -> localDrafts.observeDrafts()
             }
         }
 
@@ -90,7 +94,7 @@ class FirebaseChallengeRepository(
 
     override fun observeFromFriends(): Flow<List<Challenge>> =
         auth.authState.flatMapLatest { state ->
-            val myUid = (state as? AuthState.SignedIn)?.uid ?: return@flatMapLatest flowOf(emptyList())
+            val myUid = (state as? AuthState.SignedIn)?.uid ?: return@flatMapLatest localDrafts.observeDrafts().map { emptyList() }
             combine(
                 social.observeFriends().map { friends -> friends.filterIsInstance<CloudFriend>().map { it.id } },
                 remote.observeJoined(myUid).map { joined -> joined.map { it.id }.toSet() },
@@ -108,7 +112,7 @@ class FirebaseChallengeRepository(
             when (state) {
                 is AuthState.SignedIn -> remote.observePendingInvites(state.uid)
                     .catch { emit(emptyList()) }
-                else -> flowOf(emptyList())
+                else -> localDrafts.observeDrafts().map { emptyList() }
             }
         }
 
@@ -127,23 +131,26 @@ class FirebaseChallengeRepository(
     override fun observeFinished(): Flow<List<Challenge>> =
         observeMine().map { challenges ->
             challenges
-                .filter { it.status == ChallengeStatus.RESULTS_POSTED }
+                .filter { it.status == se.atte.bragwise.domain.ChallengeStatus.RESULTS_POSTED }
                 .sortedByDescending { it.resultsPostedAt }
         }
 
     // ── Writes ────────────────────────────────────────────────────────────────
 
-    override suspend fun createDraft(challenge: Challenge): Result<Challenge> = runCatching {
-        val id = remote.createChallenge(challenge)
-        challenge.copy(id = id)
+    override suspend fun saveDraft(challenge: Challenge): Result<Challenge> = runCatching {
+        localDrafts.save(challenge)
     }
 
-    override suspend fun updateDraft(challenge: Challenge): Result<Unit> = runCatching {
-        remote.updateDraft(challenge)
+    override fun getDraft(id: String): Challenge? = localDrafts.get(id)
+
+    override suspend fun deleteDraft(id: String): Result<Unit> = runCatching {
+        localDrafts.delete(id)
     }
 
-    override suspend fun publish(challengeId: String): Result<Unit> = runCatching {
-        remote.publishChallenge(challengeId)
+    override suspend fun publish(challenge: Challenge): Result<Challenge> = runCatching {
+        val serverId = remote.createChallenge(challenge)
+        localDrafts.delete(challenge.id)
+        challenge.copy(id = serverId, status = se.atte.bragwise.domain.ChallengeStatus.OPEN)
     }
 
     override suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit> =

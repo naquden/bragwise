@@ -201,20 +201,6 @@ class ChallengeRemoteDataSource(
         return resultData["challengeId"] ?: error("createChallenge returned no challengeId")
     }
 
-    suspend fun updateDraft(challenge: Challenge) {
-        val data = hashMapOf<String, Any?>(
-            "challengeId" to challenge.id,
-            "title" to challenge.title,
-            "description" to challenge.description,
-            "category" to challenge.category,
-            "visibility" to challenge.visibility.name,
-            "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to update a draft" }.toString(),
-            "bets" to challenge.bets.map { it.toMap() },
-            "betsVisible" to challenge.betsVisible,
-        )
-        functions.httpsCallable("updateDraft")(data)
-    }
-
     fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> = flow {
         emitAll(
             db.document("challenges/$challengeId/players/$uid").snapshots
@@ -223,10 +209,6 @@ class ChallengeRemoteDataSource(
                     else snap.toPredictionsMap()
                 },
         )
-    }
-
-    suspend fun publishChallenge(challengeId: String) {
-        functions.httpsCallable("publishChallenge")(hashMapOf("challengeId" to challengeId))
     }
 
     suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>) {

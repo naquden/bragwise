@@ -65,7 +65,7 @@ service cloud.firestore {
         || isSelf(resource.data.createdBy)
         || exists(/databases/$(database)/documents/challenges/$(challengeId)/invitations/$(request.auth.uid))
         || exists(/databases/$(database)/documents/challenges/$(challengeId)/players/$(request.auth.uid));
-      allow write: if false;          // createChallenge / publishChallenge / postResults / triggers
+      allow write: if false;          // createChallenge / postResults / triggers
 
       match /players/{uid} {
         // Composite per-user doc: membership + this user's predictions.
@@ -78,7 +78,7 @@ service cloud.firestore {
           (isSignedIn() &&
             get(/databases/$(database)/documents/challenges/$(challengeId)).data.betsVisible == true &&
             exists(/databases/$(database)/documents/challenges/$(challengeId)/players/$(request.auth.uid)));
-        allow write: if false;        // submitPredictions / publishChallenge / onUserDeleted
+        allow write: if false;        // submitPredictions / createChallenge / onUserDeleted
       }
 
       match /invitations/{uid} {
