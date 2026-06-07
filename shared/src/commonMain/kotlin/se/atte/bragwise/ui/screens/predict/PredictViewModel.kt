@@ -126,6 +126,18 @@ class PredictViewModel(
             saveLocally()
             return
         }
+        // If we have no bets at all it means Firestore's security rules blocked the
+        // bets field — the user does not have access to this challenge.  Surface a
+        // NoAccess error immediately instead of sending an empty payload that would
+        // return an opaque "invalid-argument" from the server before the eligibility
+        // check ever runs.
+        val bets = (state.value.ui as? UiState.Ready)?.data?.bets.orEmpty()
+        if (bets.isEmpty() && drafts.isEmpty()) {
+            update { it.copy(submitting = false) }
+            println("$PRED_DBG submit.no_access challengeId=$challengeId bets=0 drafts=0")
+            errorReporter.report(se.atte.bragwise.mvi.Cause.NoAccess)
+            return
+        }
         val predictions = drafts.map { (betId, payload) -> Prediction(betId, payload) }
         println("$PRED_DBG submit.start challengeId=$challengeId drafts=${predictions.size} payloads=$drafts")
         val result = challenges.submitPredictions(challengeId, predictions)

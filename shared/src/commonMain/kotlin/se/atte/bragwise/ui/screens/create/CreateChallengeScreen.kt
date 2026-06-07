@@ -56,6 +56,7 @@ import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
+import se.atte.bragwise.ui.components.DeadlinePickerField
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
@@ -173,6 +174,15 @@ fun CreateChallengeScreen(
             }
 
             item {
+                SectionCard(title = "Deadline") {
+                    DeadlinePickerField(
+                        locksAt = state.locksAt,
+                        onLocksAtChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetLocksAt(it)) },
+                    )
+                }
+            }
+
+            item {
                 SectionCard(title = "Who can join") {
                     Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
                         AppFilterChip(
@@ -191,7 +201,7 @@ fun CreateChallengeScreen(
                     }
                     Text(
                         text = when (state.visibility) {
-                            Visibility.FRIENDS -> "Auto-invites all your current and future friends."
+                            Visibility.FRIENDS -> "Any of your friends can join with the link."
                             Visibility.INVITE_ONLY -> "Only people you explicitly invite can join."
                             Visibility.PROMOTED -> ""
                         },
@@ -200,12 +210,6 @@ fun CreateChallengeScreen(
                         modifier = Modifier.padding(top = 12.dp),
                     )
                     if (state.visibility == Visibility.INVITE_ONLY) {
-                        Text(
-                            text = "You can also share the challenge link with anyone after creating it.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
                         val inviteLabel = if (state.invitedUids.isNotEmpty()) {
                             "${state.invitedUids.size} friends invited — Edit"
                         } else {

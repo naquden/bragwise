@@ -56,7 +56,10 @@ export const CreateChallengeSchema = z.object({
   description: z.string().max(2000).default(''),
   category: z.string().min(1),
   visibility: VisibilitySchema,
-  locksAt: z.string().datetime(), // ISO-8601 UTC
+  locksAt: z.string().datetime().refine(
+    (s) => { const ms = Date.parse(s); return !Number.isNaN(ms) && ms > Date.now(); },
+    { message: 'locksAt-must-be-future' },
+  ),
   bets: z.array(BetSchema).min(1),
   betsVisible: z.boolean().default(false),
   // Hard-rejected if present:

@@ -17,6 +17,9 @@
     <string name="error_auth">Sign-in expired. Please sign in again.</string>
     <string name="error_email_unverified">Verify your email to keep playing.</string>
     <string name="error_challenge_cap">You can have up to 30 active challenges. Finish or delete one first.</string>
+    <string name="error_no_access">You don't have access to this challenge. Ask the creator to invite you.</string>
+    <string name="error_challenge_closed">This challenge is locked — predictions are closed.</string>
+    <string name="error_not_found">This challenge no longer exists.</string>
     <string name="error_unknown">Something went wrong.</string>
     <string name="error_dialog_dismiss">OK</string>
 
@@ -74,9 +77,8 @@
     <string name="cc_who_can_join">Who can join</string>
     <string name="cc_visibility_friends">Friends</string>
     <string name="cc_visibility_invite_only">Invite only</string>
-    <string name="cc_visibility_friends_hint">Auto-invites all your current and future friends.</string>
+    <string name="cc_visibility_friends_hint">Any of your friends can join with the link.</string>
     <string name="cc_visibility_invite_only_hint">Only people you explicitly invite can join.</string>
-    <string name="cc_share_after_create_hint">You can also share the challenge link with anyone after creating it.</string>
     <string name="cc_pick_friends">Pick friends</string>
     <string name="cc_invited_summary">%1$d friends invited — Edit</string>
     <string name="cc_invite_dialog_title">Invite friends</string>
@@ -89,6 +91,8 @@
     <string name="cc_bet_type_single_pick">Single pick</string>
     <string name="cc_bet_type_ranking">Ranking</string>
     <string name="cc_bet_remove">Remove bet</string>
+    <string name="cc_deadline_label">Deadline</string>
+    <string name="cc_deadline_hint">When predictions lock. No edits after this.</string>
     <string name="cc_save_draft">Save draft</string>
     <string name="cc_publish">Publish</string>
 </resources>

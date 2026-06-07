@@ -54,11 +54,17 @@ service cloud.firestore {
     }
 
     match /challenges/{challengeId} {
-      // Anyone (guest or signed-in) with the challengeId may read it.
-      // The 20-char Firestore-generated ID is an unguessable bearer
-      // capability — same model as a Google Doc share link. App Check is
-      // still enforced on the SDK side so this is not an open quota drain.
-      allow read: if true;
+      // FRIENDS / PROMOTED keep the bearer-capability model: the 20-char
+      // Firestore-generated ID is an unguessable share link (same model as a
+      // Google Doc link). App Check is enforced SDK-side so this is not an open
+      // quota drain. INVITE_ONLY is gated — only the creator, an explicit
+      // invitee, or an existing member may read it; a leaked id alone is not
+      // enough. A missing `visibility` field (legacy docs) is treated as
+      // not-INVITE_ONLY and stays readable, matching the client default.
+      allow read: if resource.data.visibility != 'INVITE_ONLY'
+        || isSelf(resource.data.createdBy)
+        || exists(/databases/$(database)/documents/challenges/$(challengeId)/invitations/$(request.auth.uid))
+        || exists(/databases/$(database)/documents/challenges/$(challengeId)/players/$(request.auth.uid));
       allow write: if false;          // createChallenge / publishChallenge / postResults / triggers
 
       match /players/{uid} {

@@ -276,12 +276,23 @@ export const submitPredictions = onCall(async (req: CallableRequest<unknown>) =>
     }
 
     // Eligibility: creator, existing member, existing invitee, PROMOTED, or
-    // FRIENDS (join-by-link: anyone with the challengeId share link can participate).
-    // INVITE_ONLY still requires an explicit invitation.
+    // FRIENDS where the caller is one of the creator's accepted friends.
+    // Friendship is symmetric (acceptFriendRequest writes friends[other] on
+    // both sides), so the creator's social doc is authoritative. INVITE_ONLY
+    // still requires an explicit invitation.
+    let friendEligible = false;
+    if (challenge.visibility === 'FRIENDS' && challenge.createdBy !== uid) {
+      const creatorSocial = await tx.get(
+        db.doc(`players/${challenge.createdBy}/private/social`),
+      );
+      friendEligible = creatorSocial.exists &&
+        (creatorSocial.data()!.friends ?? {})[uid] != null;
+    }
+
     const isEligible =
       challenge.createdBy === uid ||
       challenge.visibility === 'PROMOTED' ||
-      challenge.visibility === 'FRIENDS' ||
+      friendEligible ||
       playerSnap.exists ||
       (await tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`))).exists;
 

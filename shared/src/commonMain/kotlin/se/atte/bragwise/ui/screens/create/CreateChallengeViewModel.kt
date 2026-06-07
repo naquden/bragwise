@@ -147,6 +147,10 @@ class CreateChallengeViewModel(
             emitEffect(Effect.Snackbar("Title and at least one bet required"))
             return
         }
+        if (s.locksAt <= Clock.System.now()) {
+            emitEffect(Effect.Snackbar("Deadline must be in the future"))
+            return
+        }
         if (ensureNamedAccount.name.value.isNullOrBlank()) {
             update { it.copy(needsName = true, pendingPublish = publish) }
             return
