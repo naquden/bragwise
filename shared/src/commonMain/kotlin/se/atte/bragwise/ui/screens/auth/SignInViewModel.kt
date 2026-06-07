@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.isFullyAuthed
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 
 /**
@@ -19,6 +20,7 @@ import se.atte.bragwise.mvi.ScreenViewModel
  */
 class SignInViewModel(
     private val auth: AuthRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<SignInViewModel.State, SignInViewModel.Intent, SignInViewModel.Effect>(
     initialState = State(),
 ) {
@@ -86,7 +88,7 @@ class SignInViewModel(
             update { it.copy(submitting = false) }
             r.fold(
                 onSuccess = { update { s -> s.copy(sentTo = email) } },
-                onFailure = { e -> emitEffect(Effect.Snackbar(e.message ?: "Couldn't send link")) },
+                onFailure = { e -> errorReporter.report(e) },
             )
         }
     }

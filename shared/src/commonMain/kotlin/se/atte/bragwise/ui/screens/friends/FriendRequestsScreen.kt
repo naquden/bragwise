@@ -3,13 +3,14 @@ package se.atte.bragwise.ui.screens.friends
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -24,12 +25,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppOutlinedButton
+import se.atte.bragwise.ui.components.ListGroupDivider
 import se.atte.bragwise.ui.components.SectionCard
+import se.atte.bragwise.ui.standardPadding
+import se.atte.bragwise.ui.standardPaddingSmall
 
-/**
- * LB-03 Friend requests inbox. Accept/decline incoming; outgoing
- * shown as a read-only count for now.
- */
 @Composable
 fun FriendRequestsScreen(
     viewModel: FriendRequestsViewModel,
@@ -45,8 +45,8 @@ fun FriendRequestsScreen(
     }
 
     FriendRequestsContent(
-        incoming = state.requests.incoming.keys.toList(),
-        outgoing = state.requests.outgoing.size,
+        incoming = state.incoming,
+        outgoing = state.outgoing,
         acting = state.acting,
         onAccept = { viewModel.onIntent(FriendRequestsViewModel.Intent.Accept(it)) },
         onDecline = { viewModel.onIntent(FriendRequestsViewModel.Intent.Decline(it)) },
@@ -55,13 +55,13 @@ fun FriendRequestsScreen(
 
 @Composable
 private fun FriendRequestsContent(
-    incoming: List<String>,
-    outgoing: Int,
+    incoming: List<FriendRequestsViewModel.RequestRow>,
+    outgoing: List<FriendRequestsViewModel.RequestRow>,
     acting: Set<String>,
     onAccept: (String) -> Unit,
     onDecline: (String) -> Unit,
 ) {
-    if (incoming.isEmpty() && outgoing == 0) {
+    if (incoming.isEmpty() && outgoing.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No pending requests")
         }
@@ -70,67 +70,125 @@ private fun FriendRequestsContent(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
+        verticalArrangement = Arrangement.spacedBy(standardPadding),
     ) {
         if (incoming.isNotEmpty()) {
             item {
                 SectionCard(title = "Incoming (${incoming.size})") {
-                    Text(
-                        "Tap accept to add as a friend.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            items(items = incoming, key = { it }) { uid ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(uid, style = MaterialTheme.typography.bodyLarge)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val isActing = uid in acting
-                        AppOutlinedButton(
-                            onClick = { onDecline(uid) },
-                            enabled = !isActing,
-                        ) { Text("Decline") }
-                        AppButton(
-                            onClick = { onAccept(uid) },
-                            enabled = !isActing,
-                        ) { Text("Accept") }
+                    incoming.forEachIndexed { index, row ->
+                        RequestRow(
+                            row = row,
+                            isActing = row.uid in acting,
+                            onAccept = onAccept,
+                            onDecline = onDecline,
+                        )
+                        if (index < incoming.size - 1) ListGroupDivider()
                     }
                 }
             }
         }
-        if (outgoing > 0) {
+        if (outgoing.isNotEmpty()) {
             item {
-                SectionCard(title = "Outgoing ($outgoing)") {
-                    Text(
-                        "Waiting for the other person to accept.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                SectionCard(title = "Sent (${outgoing.size})") {
+                    outgoing.forEachIndexed { index, row ->
+                        SentRow(row = row)
+                        if (index < outgoing.size - 1) ListGroupDivider()
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+private fun RequestRow(
+    row: FriendRequestsViewModel.RequestRow,
+    isActing: Boolean,
+    onAccept: (String) -> Unit,
+    onDecline: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(text = row.displayName, style = MaterialTheme.typography.bodyLarge)
+            if (row.username != null) {
+                Text(
+                    text = "@${row.username}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+            AppOutlinedButton(
+                onClick = { onDecline(row.uid) },
+                enabled = !isActing,
+            ) { Text("Decline") }
+            AppButton(
+                onClick = { onAccept(row.uid) },
+                enabled = !isActing,
+            ) {
+                if (isActing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = LocalContentColor.current,
+                    )
+                } else {
+                    Text("Accept")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SentRow(row: FriendRequestsViewModel.RequestRow) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(text = row.displayName, style = MaterialTheme.typography.bodyLarge)
+            if (row.username != null) {
+                Text(
+                    text = "@${row.username}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Text(
+            text = "Pending",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 // region Previews
+
+private fun previewRow(n: Int) = FriendRequestsViewModel.RequestRow(
+    uid = "u$n",
+    displayName = "User $n",
+    username = "user$n",
+)
 
 @Preview
 @Composable
 private fun FriendRequests_Preview() {
     ThemePreview {
         FriendRequestsContent(
-            incoming = listOf("alice", "bob"),
-            outgoing = 1,
+            incoming = listOf(previewRow(1), previewRow(2)),
+            outgoing = listOf(previewRow(3)),
             acting = emptySet(),
             onAccept = {},
             onDecline = {},
@@ -144,7 +202,7 @@ private fun FriendRequests_Empty_Preview() {
     ThemePreview {
         FriendRequestsContent(
             incoming = emptyList(),
-            outgoing = 0,
+            outgoing = emptyList(),
             acting = emptySet(),
             onAccept = {},
             onDecline = {},

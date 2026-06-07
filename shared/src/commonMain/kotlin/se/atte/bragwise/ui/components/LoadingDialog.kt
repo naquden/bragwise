@@ -2,7 +2,7 @@ package se.atte.bragwise.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -22,7 +22,7 @@ fun LoadingDialog(message: String = "Please wait…") {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                CircularProgressIndicator(modifier = Modifier.height(20.dp))
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 Text(text = message)
             }
         },

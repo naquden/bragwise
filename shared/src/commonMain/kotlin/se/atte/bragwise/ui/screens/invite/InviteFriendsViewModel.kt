@@ -12,12 +12,14 @@ import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Friend
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 
 class InviteFriendsViewModel(
     private val challengeId: String,
     private val social: SocialRepository,
     private val challenges: ChallengeRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<InviteFriendsViewModel.State, InviteFriendsViewModel.Intent, InviteFriendsViewModel.Effect>(
     initialState = State(),
 ) {
@@ -57,7 +59,7 @@ class InviteFriendsViewModel(
                 update { it.copy(sending = true) }
                 challenges.inviteFriends(challengeId, state.value.selected.toList())
                     .onSuccess { emitEffect(Effect.Sent) }
-                    .onFailure { emitEffect(Effect.Snackbar("Invite failed: ${it.message ?: "unknown"}")) }
+                    .onFailure { errorReporter.report(it) }
                 update { it.copy(sending = false) }
             }
             Unit

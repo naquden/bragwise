@@ -11,6 +11,7 @@ import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.domain.Player
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.theme.ThemeMode
 
@@ -18,6 +19,7 @@ class MeViewModel(
     private val profile: ProfileRepository,
     private val auth: AuthRepository,
     private val themePrefs: ThemePrefs,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<MeViewModel.State, MeViewModel.Intent, MeViewModel.Effect>(
     initialState = State(themeMode = themePrefs.mode.value),
 ) {
@@ -132,7 +134,7 @@ class MeViewModel(
                 profile.setNotificationsEnabled(intent.enabled)
                     .onFailure {
                         update { s -> s.copy(notificationsEnabled = !intent.enabled) }
-                        emitEffect(Effect.Snackbar("Couldn't update notifications"))
+                        errorReporter.report(it)
                     }
             }
             Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }
@@ -141,7 +143,7 @@ class MeViewModel(
                 update { it.copy(confirmingDelete = false) }
                 auth.deleteAccount()
                     .onSuccess { emitEffect(Effect.Deleted) }
-                    .onFailure { emitEffect(Effect.Snackbar("Delete failed: ${it.message ?: "unknown"}")) }
+                    .onFailure { errorReporter.report(it) }
             }
         }
     }

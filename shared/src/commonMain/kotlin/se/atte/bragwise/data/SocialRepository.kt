@@ -5,6 +5,7 @@ package se.atte.bragwise.data
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Friend
 import se.atte.bragwise.domain.FriendRequests
@@ -25,11 +26,26 @@ class FirebaseSocialRepository(
     val remote: SocialRemoteDataSource,
     private val local: SocialLocalDataSource,
     private val auth: AuthRepository,
+    private val profiles: ProfileRepository,
 ) : SocialRepository {
     override fun observeFriends(): Flow<List<Friend>> =
         auth.authState.flatMapLatest { state ->
             when (state) {
-                is AuthState.SignedIn -> remote.observeCloudFriends(state.uid)
+                is AuthState.SignedIn -> remote.observeCloudFriends(state.uid).flatMapLatest { friends ->
+                    profiles.observeProfiles(friends.map { it.id }).map { byUid ->
+                        friends.map { friend ->
+                            val profile = byUid[friend.id]
+                            if (profile == null) friend
+                            else friend.copy(
+                                player = friend.player.copy(
+                                    username = profile.username,
+                                    displayName = profile.displayName,
+                                    avatarSeed = profile.avatarSeed,
+                                ),
+                            )
+                        }
+                    }
+                }
                 else -> flowOf(emptyList<CloudFriend>())
             }
         }

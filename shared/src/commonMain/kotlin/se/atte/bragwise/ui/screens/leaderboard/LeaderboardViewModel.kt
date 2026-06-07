@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.domain.LeaderboardEntry
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -17,6 +18,7 @@ class LeaderboardViewModel(
     private val challengeId: String,
     isPromoted: Boolean,
     private val challenges: ChallengeRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<LeaderboardViewModel.State, LeaderboardViewModel.Intent, LeaderboardViewModel.Effect>(
     initialState = State(ui = UiState.Loading, friendsOnly = false, showTabs = isPromoted),
 ) {
@@ -43,7 +45,10 @@ class LeaderboardViewModel(
                     it.copy(ui = if (entries.isEmpty()) UiState.Empty() else UiState.Ready(entries))
                 }
             }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 

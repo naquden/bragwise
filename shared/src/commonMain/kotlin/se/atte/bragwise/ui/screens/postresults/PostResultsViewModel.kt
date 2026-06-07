@@ -10,6 +10,7 @@ import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -17,6 +18,7 @@ import se.atte.bragwise.mvi.toCause
 class PostResultsViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<PostResultsViewModel.State, PostResultsViewModel.Intent, PostResultsViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -45,7 +47,10 @@ class PostResultsViewModel(
         challenges.observeChallengeDetail(challengeId)
             .distinctUntilChanged()
             .onEach { detail -> update { it.copy(ui = UiState.Ready(detail)) } }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 
@@ -66,7 +71,7 @@ class PostResultsViewModel(
                 update { it.copy(submitting = true, confirming = false) }
                 challenges.postResults(challengeId, state.value.results)
                     .onSuccess { emitEffect(Effect.Posted) }
-                    .onFailure { emitEffect(Effect.Snackbar("Post failed: ${it.message ?: "unknown"}")) }
+                    .onFailure { errorReporter.report(it) }
                 update { it.copy(submitting = false) }
             }
             Unit

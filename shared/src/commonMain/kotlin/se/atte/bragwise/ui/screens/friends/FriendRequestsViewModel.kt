@@ -1,20 +1,36 @@
 package se.atte.bragwise.ui.screens.friends
 
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.SocialRepository
-import se.atte.bragwise.domain.FriendRequests
+import se.atte.bragwise.data.observeProfiles
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class FriendRequestsViewModel(
     private val social: SocialRepository,
+    private val profiles: ProfileRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<FriendRequestsViewModel.State, FriendRequestsViewModel.Intent, FriendRequestsViewModel.Effect>(
     initialState = State(),
 ) {
+    data class RequestRow(
+        val uid: String,
+        val displayName: String,
+        val username: String?,
+    )
+
     data class State(
-        val requests: FriendRequests = FriendRequests(emptyMap(), emptyMap()),
+        val incoming: List<RequestRow> = emptyList(),
+        val outgoing: List<RequestRow> = emptyList(),
         val acting: Set<String> = emptySet(),
     )
 
@@ -29,7 +45,22 @@ class FriendRequestsViewModel(
 
     init {
         social.observeFriendRequests()
-            .onEach { reqs -> update { it.copy(requests = reqs) } }
+            .flatMapLatest { friendRequests ->
+                val incomingUids = friendRequests.incoming.keys.toList()
+                val outgoingUids = friendRequests.outgoing.keys.toList()
+                combine(
+                    profiles.observeProfiles(incomingUids),
+                    profiles.observeProfiles(outgoingUids),
+                ) { incomingByUid, outgoingByUid ->
+                    Pair(
+                        incomingUids.map { uid -> toRow(uid = uid, profile = incomingByUid[uid]) },
+                        outgoingUids.map { uid -> toRow(uid = uid, profile = outgoingByUid[uid]) },
+                    )
+                }
+            }
+            .onEach { (incomingRows, outgoingRows) ->
+                update { it.copy(incoming = incomingRows, outgoing = outgoingRows) }
+            }
             .launchIn(viewModelScope)
     }
 
@@ -43,8 +74,14 @@ class FriendRequestsViewModel(
     private fun act(uid: String, op: suspend () -> Result<Unit>) {
         viewModelScope.launch {
             update { it.copy(acting = it.acting + uid) }
-            op().onFailure { emitEffect(Effect.Snackbar("Failed: ${it.message ?: "unknown"}")) }
+            op().onFailure { errorReporter.report(it) }
             update { it.copy(acting = it.acting - uid) }
         }
     }
+
+    private fun toRow(uid: String, profile: se.atte.bragwise.domain.PublicProfile?) = RequestRow(
+        uid = uid,
+        displayName = profile?.displayName ?: uid,
+        username = profile?.username?.ifBlank { null },
+    )
 }

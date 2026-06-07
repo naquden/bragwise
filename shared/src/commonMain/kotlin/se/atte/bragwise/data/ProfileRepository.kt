@@ -4,9 +4,11 @@ package se.atte.bragwise.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 
@@ -79,3 +81,17 @@ class FirebaseProfileRepository(
         remote.recordActivity()
     }
 }
+
+fun ProfileRepository.observeProfiles(uids: List<String>): Flow<Map<String, PublicProfile?>> =
+    if (uids.isEmpty()) {
+        flowOf(emptyMap())
+    } else {
+        combine(
+            uids.map { uid ->
+                observePublicProfile(uid)
+                    .onStart { emit(null) }
+                    .catch { emit(null) }
+                    .map { uid to it }
+            },
+        ) { it.toMap() }
+    }

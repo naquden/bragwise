@@ -9,6 +9,7 @@ import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.HeadToHead
 import se.atte.bragwise.domain.PublicProfile
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -17,6 +18,7 @@ class PlayerProfileViewModel(
     private val uid: String,
     private val profiles: ProfileRepository,
     private val social: SocialRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<PlayerProfileViewModel.State, Nothing, Nothing>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -29,13 +31,13 @@ class PlayerProfileViewModel(
 
     init {
         combine(profiles.observePublicProfile(uid), social.observeHeadToHead()) { p, h ->
-            if (p == null) {
-                update { it.copy(ui = UiState.Empty()) }
-            } else {
-                update { it.copy(ui = UiState.Ready(Data(profile = p, head = h.vs[uid]))) }
-            }
+            val profile = p ?: PublicProfile(uid = uid, username = "", displayName = uid, avatarSeed = uid)
+            update { it.copy(ui = UiState.Ready(Data(profile = profile, head = h.vs[uid]))) }
         }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 

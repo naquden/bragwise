@@ -25,6 +25,8 @@ import se.atte.bragwise.data.SocialRemoteDataSource
 import se.atte.bragwise.data.SocialRepository
 
 val dataModule = module {
+    single { se.atte.bragwise.mvi.ErrorReporter() }
+
     // Data sources — use no-arg construction so each class relies on its own
     // default Firebase singleton (Firebase.auth / Firebase.firestore / Firebase.functions).
     single { AuthRemoteDataSource() }
@@ -51,6 +53,6 @@ val dataModule = module {
         )
     }
     single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), auth = get(), social = get()) }
-    single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get()) }
+    single<SocialRepository> { FirebaseSocialRepository(remote = get(), local = get(), auth = get(), profiles = get()) }
     single<ProfileRepository> { FirebaseProfileRepository(remote = get(), local = get(), auth = get()) }
 }

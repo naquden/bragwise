@@ -15,6 +15,7 @@ import se.atte.bragwise.data.signedInUid
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.Prediction
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -26,6 +27,7 @@ class PredictViewModel(
     private val auth: AuthRepository,
     private val localPredictions: LocalPredictionStore,
     private val ensureNamedAccount: EnsureNamedAccount,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<PredictViewModel.State, PredictViewModel.Intent, PredictViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -83,7 +85,10 @@ class PredictViewModel(
                     )
                 }
             }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 
@@ -102,9 +107,7 @@ class PredictViewModel(
             is Intent.ConfirmName -> viewModelScope.launch {
                 update { it.copy(needsName = false) }
                 ensureNamedAccount.ensure(intent.name)
-                    .onFailure { e ->
-                        emitEffect(Effect.Snackbar("Couldn't set up account: ${e.message ?: "unknown"}"))
-                    }
+                    .onFailure { e -> errorReporter.report(e) }
             }
             Intent.DismissName -> update { it.copy(needsName = false) }
         }
@@ -135,7 +138,7 @@ class PredictViewModel(
             onFailure = { e ->
                 println("$PRED_DBG submit.failure class=${e::class.simpleName} message=${e.message}")
                 println("$PRED_DBG submit.failure.stack ${e.stackTraceToString()}")
-                emitEffect(Effect.Snackbar("Submit failed: ${e::class.simpleName}: ${e.message}"))
+                errorReporter.report(e)
             },
         )
     }
@@ -151,7 +154,7 @@ class PredictViewModel(
             },
             onFailure = { e ->
                 println("$PRED_DBG submit.local.failure class=${e::class.simpleName} message=${e.message}")
-                emitEffect(Effect.Snackbar("Submit failed: ${e::class.simpleName}: ${e.message}"))
+                errorReporter.report(e)
             },
         )
     }

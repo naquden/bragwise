@@ -9,8 +9,7 @@ import kotlinx.coroutines.launch
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.SocialRepository
-import se.atte.bragwise.mvi.Cause
-import se.atte.bragwise.mvi.toCause
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
@@ -28,6 +27,7 @@ class CreateChallengeViewModel(
     private val challenges: ChallengeRepository,
     private val social: SocialRepository,
     private val ensureNamedAccount: EnsureNamedAccount,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<CreateChallengeViewModel.State, CreateChallengeViewModel.Intent, CreateChallengeViewModel.Effect>(
     initialState = State(),
 ) {
@@ -132,7 +132,7 @@ class CreateChallengeViewModel(
                     onSuccess = { persist(publish = state.value.pendingPublish) },
                     onFailure = { e ->
                         update { it.copy(submitting = false) }
-                        emitEffect(Effect.Snackbar("Couldn't set up account: ${e.message ?: "unknown"}"))
+                        errorReporter.report(e)
                     },
                 )
             }
@@ -180,25 +180,18 @@ class CreateChallengeViewModel(
                 onSuccess = { saved ->
                     if (s.visibility == Visibility.INVITE_ONLY && s.invitedUids.isNotEmpty()) {
                         challenges.inviteFriends(saved.id, s.invitedUids.toList())
-                            .onFailure { e -> emitEffect(Effect.Snackbar(e.message ?: "Invite failed")) }
+                            .onFailure { e -> errorReporter.report(e) }
                     }
                     if (publish) {
                         challenges.publish(saved.id).fold(
                             onSuccess = { emitEffect(Effect.Published(saved.id)) },
-                            onFailure = { e -> emitEffect(Effect.Snackbar(e.message ?: "Publish failed")) },
+                            onFailure = { e -> errorReporter.report(e) },
                         )
                     } else {
                         emitEffect(Effect.DraftSaved(saved.id))
                     }
                 },
-                onFailure = { e ->
-                    val msg = if (e.toCause() == Cause.CapReached) {
-                        "You can have up to 30 active challenges. Finish or delete one first."
-                    } else {
-                        e.message ?: "Create failed"
-                    }
-                    emitEffect(Effect.Snackbar(msg))
-                },
+                onFailure = { e -> errorReporter.report(e) },
             )
         }
     }

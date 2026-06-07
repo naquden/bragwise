@@ -37,6 +37,7 @@ val viewModelModule = module {
             uid = params.get<String>(),
             profiles = get(),
             social = get(),
+            errorReporter = get(),
         )
     }
 
@@ -46,6 +47,7 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             challenges = get(),
             auth = get(),
+            errorReporter = get(),
         )
     }
     viewModel<PredictViewModel> { params ->
@@ -55,12 +57,14 @@ val viewModelModule = module {
             auth = get(),
             localPredictions = get(),
             ensureNamedAccount = get(),
+            errorReporter = get(),
         )
     }
     viewModel<BetListViewModel> { params ->
         BetListViewModel(
             challengeId = params.get<String>(),
             challenges = get(),
+            errorReporter = get(),
         )
     }
     viewModel<InviteFriendsViewModel> { params ->
@@ -68,12 +72,14 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             social = get(),
             challenges = get(),
+            errorReporter = get(),
         )
     }
     viewModel<PostResultsViewModel> { params ->
         PostResultsViewModel(
             challengeId = params.get<String>(),
             challenges = get(),
+            errorReporter = get(),
         )
     }
     viewModel<LeaderboardViewModel> { params ->
@@ -81,6 +87,7 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             isPromoted = params.get<Boolean>(),
             challenges = get(),
+            errorReporter = get(),
         )
     }
     viewModel<ParticipantBetsViewModel> { params ->
@@ -88,6 +95,7 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             uid = params.get<String>(),
             challenges = get(),
+            errorReporter = get(),
         )
     }
     viewModelOf(::ResultsViewModel)
@@ -97,6 +105,7 @@ val viewModelModule = module {
             challenges = get(),
             auth = get(),
             seenStore = get(),
+            errorReporter = get(),
         )
     }
 }

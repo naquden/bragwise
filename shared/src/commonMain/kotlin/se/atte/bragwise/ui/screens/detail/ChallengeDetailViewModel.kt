@@ -14,6 +14,7 @@ import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.shareUrlForChallenge
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -28,6 +29,7 @@ class ChallengeDetailViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,
     private val auth: AuthRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<ChallengeDetailViewModel.State, ChallengeDetailViewModel.Intent, ChallengeDetailViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -86,7 +88,10 @@ class ChallengeDetailViewModel(
             }
         }
             .distinctUntilChanged()
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 
@@ -108,7 +113,7 @@ class ChallengeDetailViewModel(
                         if (e is FirebaseFunctionsException && e.code == FunctionsExceptionCode.NOT_FOUND) {
                             emitEffect(Effect.Deleted)
                         } else {
-                            emitEffect(Effect.Snackbar(SnackbarMessage.DeleteFailed(e.message ?: "unknown")))
+                            errorReporter.report(e)
                         }
                     }
             }

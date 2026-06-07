@@ -17,6 +17,7 @@ import se.atte.bragwise.db.BragwiseDatabase
 import se.atte.bragwise.push.PushTokenRegistrar
 
 val mockDataModule = module {
+    single { se.atte.bragwise.mvi.ErrorReporter() }
     single<AuthRepository> { MockAuthRepository() }
     single<ChallengeRepository> { MockChallengeRepository(auth = get()) }
     single { LocalPredictionStore(get<BragwiseDatabase>()) }

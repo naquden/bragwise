@@ -3,13 +3,13 @@ package se.atte.bragwise.ui.screens.friends
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -47,7 +47,7 @@ import kotlin.time.Instant
 fun FriendsScreen(
     viewModel: FriendsViewModel,
     snackbarHostState: SnackbarHostState,
-    onOpenCloudProfile: (handle: String) -> Unit,
+    onOpenCloudProfile: (uid: String) -> Unit,
     onOpenFriendRequests: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -73,29 +73,76 @@ private fun FriendsBody(
     onOpenFriendRequests: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        androidx.compose.animation.Crossfade(
-            targetState = state.ui,
-            animationSpec = androidx.compose.animation.core.tween(durationMillis = 200),
-            label = "friends-ui",
-            modifier = Modifier.weight(1f),
-        ) { ui ->
-            when (ui) {
-                UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-                is UiState.Empty -> EmptyState()
-                is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = ui.cause.toUserMessage(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
+            verticalArrangement = Arrangement.spacedBy(standardPadding),
+        ) {
+            if (state.incoming.isNotEmpty()) {
+                item {
+                    PendingRequestsSection(
+                        incoming = state.incoming,
+                        acting = state.acting,
+                        onAccept = { onIntent(FriendsViewModel.Intent.Accept(it)) },
+                        onDecline = { onIntent(FriendsViewModel.Intent.Decline(it)) },
                     )
                 }
-                is UiState.Ready -> FriendsList(
-                    friends = ui.data,
-                    onIntent = onIntent,
-                    onOpenFriendRequests = onOpenFriendRequests,
-                )
+            }
+
+            val requestSubtitle = listOfNotNull(
+                state.incoming.size.takeIf { it > 0 }?.let { "$it incoming" },
+                state.outgoingCount.takeIf { it > 0 }?.let { "$it sent" },
+            ).joinToString(" · ").ifBlank { null }
+            item {
+                ListGroup {
+                    ListRow(
+                        title = "Friend requests",
+                        subtitle = requestSubtitle,
+                        onClick = onOpenFriendRequests,
+                    )
+                }
+            }
+
+            when (val ui = state.ui) {
+                UiState.Loading -> item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(standardPaddingLarge), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is UiState.Empty -> item {
+                    EmptyState(hasPending = state.incoming.isNotEmpty())
+                }
+                is UiState.Failed -> item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(standardPaddingLarge), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = ui.cause.toUserMessage(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                is UiState.Ready -> {
+                    val cloud = ui.data.filterIsInstance<CloudFriend>()
+                    if (cloud.isNotEmpty()) {
+                        item {
+                            SectionCard(title = "Friends (${cloud.size})") {
+                                ListGroup {
+                                    cloud.forEachIndexed { index, friend ->
+                                        ListRow(
+                                            title = friend.displayName,
+                                            subtitle = "@${friend.player.username}",
+                                            leading = "👤",
+                                            onClick = { onIntent(FriendsViewModel.Intent.OpenCloud(friend.player.uid)) },
+                                        )
+                                        if (index < cloud.size - 1) ListGroupDivider()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -122,9 +169,54 @@ private fun FriendsBody(
 }
 
 @Composable
-private fun EmptyState() {
+private fun PendingRequestsSection(
+    incoming: List<FriendsViewModel.RequestRow>,
+    acting: Set<String>,
+    onAccept: (String) -> Unit,
+    onDecline: (String) -> Unit,
+) {
+    SectionCard(title = "Pending requests (${incoming.size})") {
+        incoming.forEachIndexed { index, row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(text = row.displayName, style = MaterialTheme.typography.bodyLarge)
+                    if (row.username != null) {
+                        Text(
+                            text = "@${row.username}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                val isActing = row.uid in acting
+                Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                    AppOutlinedButton(
+                        onClick = { onDecline(row.uid) },
+                        enabled = !isActing,
+                    ) { Text("Decline") }
+                    AppButton(
+                        onClick = { onAccept(row.uid) },
+                        enabled = !isActing,
+                    ) { Text("Accept") }
+                }
+            }
+            if (index < incoming.size - 1) ListGroupDivider()
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(hasPending: Boolean = false) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(standardPaddingLarge),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(standardPaddingLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -133,51 +225,11 @@ private fun EmptyState() {
         Text(text = "No friends yet", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(standardPaddingSmall))
         Text(
-            text = "Add friends by their @username to compete on shared challenges.",
+            text = if (hasPending) "Accept a pending request above, or add friends by their @username."
+            else "Add friends by their @username to compete on shared challenges.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-@Composable
-private fun FriendsList(
-    friends: List<Friend>,
-    onIntent: (FriendsViewModel.Intent) -> Unit,
-    onOpenFriendRequests: () -> Unit,
-) {
-    val cloud = friends.filterIsInstance<CloudFriend>()
-
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
-        verticalArrangement = Arrangement.spacedBy(standardPadding),
-    ) {
-        item {
-            ListGroup {
-                ListRow(
-                    title = "Friend requests",
-                    onClick = onOpenFriendRequests,
-                )
-            }
-        }
-        if (cloud.isNotEmpty()) {
-            item {
-                SectionCard(title = "Friends (${cloud.size})") {
-                    ListGroup {
-                        cloud.forEachIndexed { index, friend ->
-                            ListRow(
-                                title = friend.displayName,
-                                subtitle = "@${friend.player.username}",
-                                leading = "👤",
-                                onClick = { onIntent(FriendsViewModel.Intent.OpenCloud(friend.player.uid)) },
-                            )
-                            if (index < cloud.size - 1) ListGroupDivider()
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -236,12 +288,34 @@ private fun previewCloudFriend(n: Int) = CloudFriend(
     since = Instant.fromEpochSeconds(0),
 )
 
+private fun previewRequest(n: Int) = FriendsViewModel.RequestRow(
+    uid = "u$n",
+    displayName = "User $n",
+    username = "user$n",
+)
+
 @Preview
 @Composable
 private fun Friends_Empty_Preview() {
     ThemePreview {
         FriendsBody(
             state = FriendsViewModel.State(ui = UiState.Empty()),
+            onIntent = {},
+            onOpenFriendRequests = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun Friends_EmptyWithPending_Preview() {
+    ThemePreview {
+        FriendsBody(
+            state = FriendsViewModel.State(
+                ui = UiState.Empty(),
+                incoming = listOf(previewRequest(1), previewRequest(2)),
+                outgoingCount = 1,
+            ),
             onIntent = {},
             onOpenFriendRequests = {},
         )
@@ -258,6 +332,22 @@ private fun Friends_Ready_Preview() {
     ThemePreview {
         FriendsBody(
             state = FriendsViewModel.State(ui = UiState.Ready(friends)),
+            onIntent = {},
+            onOpenFriendRequests = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun Friends_ReadyWithPending_Preview() {
+    val friends: List<Friend> = listOf(previewCloudFriend(1))
+    ThemePreview {
+        FriendsBody(
+            state = FriendsViewModel.State(
+                ui = UiState.Ready(friends),
+                incoming = listOf(previewRequest(2)),
+            ),
             onIntent = {},
             onOpenFriendRequests = {},
         )

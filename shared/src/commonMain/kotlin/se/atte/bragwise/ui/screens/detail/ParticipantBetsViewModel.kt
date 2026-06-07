@@ -11,6 +11,7 @@ import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -19,6 +20,7 @@ class ParticipantBetsViewModel(
     private val challengeId: String,
     private val uid: String,
     private val challenges: ChallengeRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<ParticipantBetsViewModel.State, Nothing, Nothing>(
     initialState = State(),
 ) {
@@ -49,7 +51,10 @@ class ParticipantBetsViewModel(
         }
             .distinctUntilChanged()
             .onEach { data -> update { it.copy(ui = UiState.Ready(data)) } }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 }

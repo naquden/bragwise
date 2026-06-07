@@ -12,6 +12,7 @@ import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.data.signedInUid
 import se.atte.bragwise.domain.LeaderboardEntry
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -22,6 +23,7 @@ class ResultsRevealViewModel(
     private val challenges: ChallengeRepository,
     private val auth: AuthRepository,
     private val seenStore: ResultsSeenStore,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<ResultsRevealViewModel.State, Nothing, Nothing>(
     initialState = State(),
 ) {
@@ -78,7 +80,10 @@ class ResultsRevealViewModel(
                 // Mark as seen after first successful load
                 seenStore.markSeen(challengeId = challengeId)
             }
-            .catch { error -> update { it.copy(ui = UiState.Failed(error.toCause())) } }
+            .catch { error ->
+                update { it.copy(ui = UiState.Failed(error.toCause())) }
+                errorReporter.report(error)
+            }
             .launchIn(viewModelScope)
     }
 }

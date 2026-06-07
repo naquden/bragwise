@@ -13,6 +13,7 @@ import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.mvi.Cause
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -39,6 +40,7 @@ private fun <T> Flow<T>.tag(name: String): Flow<T> = this
 class ChallengesViewModel(
     private val challenges: ChallengeRepository,
     private val social: SocialRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<ChallengesViewModel.State, ChallengesViewModel.Intent, ChallengesViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -96,6 +98,7 @@ class ChallengesViewModel(
                 dbg("combine.error type=${e::class.simpleName} msg=${e.message}")
                 // #endregion
                 update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
             }
             .launchIn(viewModelScope)
     }

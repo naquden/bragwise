@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
@@ -14,6 +15,7 @@ import se.atte.bragwise.mvi.toCause
 class BetListViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,
+    private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<BetListViewModel.State, BetListViewModel.Intent, BetListViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -34,7 +36,10 @@ class BetListViewModel(
                     it.copy(ui = ui)
                 }
             }
-            .catch { e -> update { it.copy(ui = UiState.Failed(e.toCause())) } }
+            .catch { e ->
+                update { it.copy(ui = UiState.Failed(e.toCause())) }
+                errorReporter.report(e)
+            }
             .launchIn(viewModelScope)
     }
 

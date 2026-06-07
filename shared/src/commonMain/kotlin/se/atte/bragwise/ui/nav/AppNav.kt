@@ -31,10 +31,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import se.atte.bragwise.ui.LocalSnackbarHost
+import se.atte.bragwise.ui.components.ErrorDialog
+import se.atte.bragwise.mvi.AppError
+import se.atte.bragwise.mvi.ErrorReporter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
@@ -164,6 +169,12 @@ fun AppNav() {
         .collectAsState(initial = 0)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val errorReporter: ErrorReporter = koinInject()
+    var appError by remember { mutableStateOf<AppError?>(null) }
+    LaunchedEffect(errorReporter) {
+        errorReporter.errors.collect { appError = it }
+    }
 
     fun push(next: Route) {
         if (backStack.last() != next) backStack.add(next)
@@ -374,6 +385,10 @@ fun AppNav() {
                 }
             }
         }
+    }
+
+    appError?.let { error ->
+        ErrorDialog(error = error, onDismiss = { appError = null })
     }
 }
 
