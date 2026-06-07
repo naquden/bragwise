@@ -8,5 +8,15 @@
         "6F:4D:61:55:7D:B9:5A:BF:69:FB:01:8D:78:D9:EF:2A:D2:1A:F5:81:94:2A:6D:D9:EE:AA:56:31:23:97:6A:98"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "se.atte.bragwise.dev",
+      "sha256_cert_fingerprints": [
+        "6F:4D:61:55:7D:B9:5A:BF:69:FB:01:8D:78:D9:EF:2A:D2:1A:F5:81:94:2A:6D:D9:EE:AA:56:31:23:97:6A:98"
+      ]
+    }
   }
 ]

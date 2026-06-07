@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.Flow
  */
 class AuthRemoteDataSource(
     private val auth: FirebaseAuth = Firebase.auth,
-    private val actionCodeSettings: ActionCodeSettings = defaultActionCodeSettings(),
+    private val actionCodeSettings: ActionCodeSettings = defaultActionCodeSettings(packageName = "se.atte.bragwise"),
     private val functions: FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
 ) {
     val currentUser: FirebaseUser? get() = auth.currentUser
@@ -77,11 +77,11 @@ class AuthRemoteDataSource(
         // App Links intent-filter / Associated Domains entitlement.
         private const val EMAIL_LINK_RETURN_URL = "$APP_LINK_BASE_URL/auth/finish"
 
-        fun defaultActionCodeSettings(): ActionCodeSettings = ActionCodeSettings(
+        fun defaultActionCodeSettings(packageName: String): ActionCodeSettings = ActionCodeSettings(
             url = EMAIL_LINK_RETURN_URL,
             canHandleCodeInApp = true,
             androidPackageName = AndroidPackageName(
-                packageName = "se.atte.bragwise",
+                packageName = packageName,
                 installIfNotAvailable = true,
                 minimumVersion = null,
             ),

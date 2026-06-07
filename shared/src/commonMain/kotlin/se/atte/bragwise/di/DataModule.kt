@@ -3,7 +3,6 @@ package se.atte.bragwise.di
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import se.atte.bragwise.data.ActivityRegistrar
-import se.atte.bragwise.data.AuthRemoteDataSource
 import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeLocalDataSource
@@ -29,7 +28,8 @@ val dataModule = module {
 
     // Data sources — use no-arg construction so each class relies on its own
     // default Firebase singleton (Firebase.auth / Firebase.firestore / Firebase.functions).
-    single { AuthRemoteDataSource() }
+    // AuthRemoteDataSource is registered in platformModule (Android/iOS) so it can
+    // supply the runtime package name for magic-link ActionCodeSettings.
     single { ChallengeRemoteDataSource() }
     singleOf(::ChallengeLocalDataSource)
     single { SocialRemoteDataSource() }

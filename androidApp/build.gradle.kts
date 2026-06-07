@@ -42,6 +42,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 
     defaultConfig {
@@ -73,6 +74,12 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            resValue(type = "string", name = "app_name", value = "Bragwise")
+        }
+        getByName("debug") {
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue(type = "string", name = "app_name", value = "Bragwise Dev")
         }
     }
     compileOptions {

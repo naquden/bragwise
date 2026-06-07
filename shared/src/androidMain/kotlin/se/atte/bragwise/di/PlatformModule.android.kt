@@ -7,6 +7,7 @@ import se.atte.bragwise.data.AndroidAuthLocalDataSource
 import se.atte.bragwise.data.AndroidOnboardingPrefs
 import se.atte.bragwise.data.AndroidThemePrefs
 import se.atte.bragwise.data.AuthLocalDataSource
+import se.atte.bragwise.data.AuthRemoteDataSource
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.data.db.DatabaseDriverFactory
@@ -17,6 +18,13 @@ import se.atte.bragwise.platform.PlatformShare
 
 actual val platformModule: Module = module {
     single<AuthLocalDataSource> { AndroidAuthLocalDataSource(context = androidContext()) }
+    single {
+        AuthRemoteDataSource(
+            actionCodeSettings = AuthRemoteDataSource.defaultActionCodeSettings(
+                packageName = androidContext().packageName,
+            ),
+        )
+    }
     single<OnboardingPrefs> { AndroidOnboardingPrefs(context = androidContext()) }
     single<ThemePrefs> { AndroidThemePrefs(context = androidContext()) }
     single<PlatformShare> { AndroidPlatformShare(context = androidContext()) }
