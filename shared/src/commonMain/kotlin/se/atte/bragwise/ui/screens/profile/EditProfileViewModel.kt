@@ -19,6 +19,8 @@ class EditProfileViewModel(
 ) {
     data class State(
         val initialised: Boolean = false,
+        val profileLoaded: Boolean = false,
+        val userEdited: Boolean = false,
         val username: String = "",
         val displayName: String = "",
         val avatarSeed: String = "",
@@ -45,9 +47,9 @@ class EditProfileViewModel(
             .onEach { player ->
                 if (player == null) return@onEach
                 update {
-                    if (it.initialised) it
+                    if (it.profileLoaded || it.userEdited) it.copy(profileLoaded = true)
                     else it.copy(
-                        initialised = true,
+                        profileLoaded = true,
                         username = player.username,
                         originalUsername = player.username,
                         displayName = player.displayName,
@@ -59,16 +61,17 @@ class EditProfileViewModel(
 
         auth.authState
             .onEach { authState ->
+                val signedIn = authState is AuthState.SignedIn
                 val email = (authState as? AuthState.SignedIn)?.email
-                update { it.copy(email = email) }
+                update { it.copy(email = email, initialised = it.initialised || signedIn) }
             }
             .launchIn(viewModelScope)
     }
 
     override fun onIntent(intent: Intent) = when (intent) {
-        is Intent.SetUsername -> update { it.copy(username = intent.v, usernameError = null) }
-        is Intent.SetDisplayName -> update { it.copy(displayName = intent.v) }
-        is Intent.SetAvatarSeed -> update { it.copy(avatarSeed = intent.v) }
+        is Intent.SetUsername -> update { it.copy(username = intent.v, usernameError = null, userEdited = true) }
+        is Intent.SetDisplayName -> update { it.copy(displayName = intent.v, userEdited = true) }
+        is Intent.SetAvatarSeed -> update { it.copy(avatarSeed = intent.v, userEdited = true) }
         Intent.Save -> {
             viewModelScope.launch {
                 update { it.copy(saving = true) }
