@@ -30,7 +30,7 @@ import {
   validate,
   verifyAppCheck,
 } from './lib/middleware';
-import { db, FieldValue, auth as adminAuth } from './lib/admin';
+import { db, FieldValue, Timestamp, auth as adminAuth } from './lib/admin';
 import {
   ClaimHandleSchema,
   CreateChallengeSchema,
@@ -173,6 +173,7 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
 
     tx.set(ref, {
       ...payload,
+      locksAt: Timestamp.fromMillis(Date.parse(payload.locksAt)),
       id: ref.id,
       createdBy: uid,
       createdAt: FieldValue.serverTimestamp(),
