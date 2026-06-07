@@ -142,6 +142,10 @@ fun CreateChallengeScreen(
         OptionType.NONE -> options.map { it.trim() }.filter { it.isNotEmpty() }
             .mapIndexed { index, label -> BetOption(id = "o$index", label = label) }
     }
+    val hasDuplicateOptions = resolvedOptions
+        .map { option -> option.countryCode ?: option.label.trim().lowercase() }
+        .let { keys -> keys.size != keys.toSet().size }
+    val duplicateOptionError = if (hasDuplicateOptions) "Remove duplicate options before saving" else null
 
     if (showFriendPicker) {
         FriendPickerDialog(
@@ -273,12 +277,13 @@ fun CreateChallengeScreen(
                         onCountryOptionsChange = { countryOptions = it },
                         topN = topN,
                         onTopNChange = { topN = it },
-                        canSave = newBetTitle.isNotBlank() && when (betType) {
+                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
                             BetType.YesNo -> true
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
                         },
                         saveLabel = "Save bet",
+                        duplicateOptionError = duplicateOptionError,
                         onCancel = {
                             editingBetId = null
                             resetEditor()
@@ -339,12 +344,13 @@ fun CreateChallengeScreen(
                         onCountryOptionsChange = { countryOptions = it },
                         topN = topN,
                         onTopNChange = { topN = it },
-                        canSave = newBetTitle.isNotBlank() && when (betType) {
+                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
                             BetType.YesNo -> true
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
                         },
                         saveLabel = "Save bet",
+                        duplicateOptionError = duplicateOptionError,
                         onCancel = {
                             editingBetId = null
                             resetEditor()
@@ -419,6 +425,7 @@ private fun BetEditor(
     saveLabel: String,
     onSave: () -> Unit,
     onCancel: () -> Unit,
+    duplicateOptionError: String? = null,
 ) {
     SectionCard {
         Row(
@@ -503,6 +510,14 @@ private fun BetEditor(
             TopNStepper(
                 value = topN,
                 onValueChange = onTopNChange,
+                modifier = Modifier.padding(top = standardPaddingSmall),
+            )
+        }
+        if (duplicateOptionError != null) {
+            Text(
+                text = duplicateOptionError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = standardPaddingSmall),
             )
         }

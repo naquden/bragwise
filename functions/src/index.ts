@@ -418,14 +418,11 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
     ? (socialSnap.data()!.friends ?? {})
     : {};
 
-  for (const targetUid of uids) {
-    if (!(targetUid in friends)) {
-      throw new HttpsError('invalid-argument', 'not-a-friend');
-    }
-  }
+  const eligibleUids = uids.filter((targetUid) => targetUid in friends);
+  if (eligibleUids.length === 0) return;
 
   const batch = db.batch();
-  for (const targetUid of uids) {
+  for (const targetUid of eligibleUids) {
     batch.set(db.doc(`challenges/${challengeId}/invitations/${targetUid}`), {
       invitedUid: targetUid,
       invitedBy: uid,
@@ -438,7 +435,7 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
   const inviterName: string = inviterSnap.data()?.displayName ?? 'Someone';
   const challengeTitle: string = challenge.title ?? 'a challenge';
   await Promise.all(
-    uids.map((targetUid) =>
+    eligibleUids.map((targetUid) =>
       sendToUser(targetUid, {
         title: "You're invited!",
         body: `${inviterName} invited you to ${challengeTitle}`,

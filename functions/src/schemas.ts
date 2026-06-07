@@ -51,7 +51,42 @@ export const BetSchema = z.discriminatedUnion('kind', [
 
 export const VisibilitySchema = z.enum(['FRIENDS', 'INVITE_ONLY']); // PROMOTED never accepted from client
 
-export const CreateChallengeSchema = z.object({
+// Validates that each RANKING bet has topN <= options.length.
+// Applied via superRefine so the base object shape remains extendable.
+function validateRankingTopN(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z.RefinementCtx) {
+  data.bets.forEach((bet, index) => {
+    if (bet.kind === 'RANKING' && bet.topN > bet.options.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'topN-exceeds-option-count',
+        path: ['bets', index, 'topN'],
+      });
+    }
+  });
+}
+
+// Validates that no bet contains duplicate options.
+// Dedup key: countryCode when present, otherwise normalized label (trim + lowercase).
+// Prevents ambiguous predictions and unresolvable results.
+function validateNoDuplicateOptions(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z.RefinementCtx) {
+  data.bets.forEach((bet, betIndex) => {
+    if (bet.kind === 'BOOLEAN_PROP') return;
+    const seen = new Set<string>();
+    bet.options.forEach((option, optionIndex) => {
+      const key = option.countryCode ?? option.label.trim().toLowerCase();
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'duplicate-option',
+          path: ['bets', betIndex, 'options', optionIndex],
+        });
+      }
+      seen.add(key);
+    });
+  });
+}
+
+const CreateChallengeBaseSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(2000).default(''),
   category: z.string().min(1),
@@ -67,9 +102,15 @@ export const CreateChallengeSchema = z.object({
   trusted: z.never().optional(),
 });
 
-export const UpdateDraftSchema = CreateChallengeSchema.extend({
+export const CreateChallengeSchema = CreateChallengeBaseSchema
+  .superRefine(validateRankingTopN)
+  .superRefine(validateNoDuplicateOptions);
+
+export const UpdateDraftSchema = CreateChallengeBaseSchema.extend({
   challengeId: z.string().min(1),
-});
+})
+  .superRefine(validateRankingTopN)
+  .superRefine(validateNoDuplicateOptions);
 
 export const PublishChallengeSchema = z.object({
   challengeId: z.string().min(1),
