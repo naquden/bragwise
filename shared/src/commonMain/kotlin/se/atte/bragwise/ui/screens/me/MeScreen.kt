@@ -39,6 +39,9 @@ import bragwise.shared.generated.resources.settings_theme_dark
 import bragwise.shared.generated.resources.settings_theme_light
 import bragwise.shared.generated.resources.settings_theme_system
 import bragwise.shared.generated.resources.settings_theme_title
+import androidx.compose.material3.Icon
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.UsersRound
 import org.jetbrains.compose.resources.stringResource
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.theme.ThemeMode
@@ -195,7 +198,7 @@ private fun MeContent(
         ListGroup {
             ListRow(
                 title = "Friends",
-                leading = "👥",
+                leadingIcon = { Icon(imageVector = Lucide.UsersRound, contentDescription = null) },
                 onClick = onFriends,
             )
             if (isSignedIn) {
