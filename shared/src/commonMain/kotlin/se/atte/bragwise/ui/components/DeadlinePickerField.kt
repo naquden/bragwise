@@ -144,7 +144,7 @@ private fun formatDeadline(instant: Instant): String {
     val hour = (remSec / 3600L).toInt()
     val minute = ((remSec % 3600L) / 60L).toInt()
     val monthName = arrayOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")[month - 1]
-    return "$day $monthName $year, %02d:%02d UTC".format(hour, minute)
+    return "$day $monthName $year, ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} UTC"
 }
 
 private fun isLeap(y: Int) = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)

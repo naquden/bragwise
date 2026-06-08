@@ -360,10 +360,8 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
     const data = snap.data()!;
     if (data.createdBy !== uid) throw new HttpsError('permission-denied', 'not-creator');
 
-    // Deadline gate: can only post once the challenge is locked.
-    const locksAtMs = locksAtMillis(data.locksAt);
-    if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
-    if (locksAtMs > Date.now()) throw new HttpsError('failed-precondition', 'not-yet-locked');
+    // Creator may post results at any time, ending the challenge early.
+    // No deadline gate — posting transitions status straight to RESULTS_POSTED.
 
     const bets: Bet[] = data.bets ?? [];
     validateResults(bets, results as Record<string, PredictionPayload>);

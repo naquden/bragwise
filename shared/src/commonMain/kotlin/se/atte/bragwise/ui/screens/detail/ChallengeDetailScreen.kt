@@ -287,7 +287,8 @@ private fun DetailContent(
             }
 
             if (isOwner) {
-                val canPost = challenge.status == ChallengeStatus.LOCKED
+                val canPost = challenge.status == ChallengeStatus.OPEN ||
+                    challenge.status == ChallengeStatus.LOCKED
                 item {
                     AppOutlinedButton(
                         modifier = Modifier.fillMaxWidth(),

@@ -293,8 +293,18 @@ fun AppNav() {
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)
                     .padding(padding),
-                enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
-                exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 4 }) + fadeOut() },
+                enterTransition = {
+                    val fromTab = tabRoutes.indexOfFirst { initialState.destination.hasRoute(it::class) }
+                    val toTab = tabRoutes.indexOfFirst { targetState.destination.hasRoute(it::class) }
+                    val dir = if (fromTab != -1 && toTab != -1 && toTab < fromTab) -1 else 1
+                    slideInHorizontally(initialOffsetX = { it * dir }) + fadeIn()
+                },
+                exitTransition = {
+                    val fromTab = tabRoutes.indexOfFirst { initialState.destination.hasRoute(it::class) }
+                    val toTab = tabRoutes.indexOfFirst { targetState.destination.hasRoute(it::class) }
+                    val dir = if (fromTab != -1 && toTab != -1 && toTab < fromTab) 1 else -1
+                    slideOutHorizontally(targetOffsetX = { it / 4 * dir }) + fadeOut()
+                },
                 popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn() },
                 popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() },
             ) {
@@ -451,7 +461,7 @@ fun AppNav() {
                         snackbarHostState = snackbarHostState,
                         onPosted = {
                             navController.navigate(RouteResultsReveal(challengeId = route.challengeId)) {
-                                popUpTo(navController.currentBackStackEntry!!.destination.id) { inclusive = true }
+                                popUpTo(RouteChallengeDetail::class) { inclusive = true }
                             }
                         },
                     )
