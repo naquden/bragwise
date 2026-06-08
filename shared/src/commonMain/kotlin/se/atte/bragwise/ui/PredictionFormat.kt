@@ -72,5 +72,19 @@ fun betPoints(bet: Bet, detail: ChallengeDetail): Int? {
     return ScoringEngine.score(bet = bet, prediction = prediction, result = result)
 }
 
-/** Number of bets in the challenge the user has predicted. */
-fun ChallengeDetail.predictedCount(): Int = challenge.bets.count { myPredictions.containsKey(it.id) }
+/**
+ * True when a payload is present and valid for [bet].
+ * Ranking requires all [Bet.Ranking.topN] slots filled with known, distinct option ids.
+ */
+fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
+    is Bet.Ranking -> {
+        val ids = (this as? PredictionPayload.Ranking)?.orderedOptionIds.orEmpty()
+        val validIds = bet.options.map { it.id }.toSet()
+        ids.count { it.isNotEmpty() && it in validIds } == bet.topN
+    }
+    is Bet.SinglePick -> this is PredictionPayload.SinglePick && bet.options.any { it.id == this.optionId }
+    is Bet.BooleanProp -> this is PredictionPayload.BooleanProp
+}
+
+/** Number of bets the user has a valid complete prediction for. */
+fun ChallengeDetail.predictedCount(): Int = challenge.bets.count { myPredictions[it.id].isCompleteFor(it) }

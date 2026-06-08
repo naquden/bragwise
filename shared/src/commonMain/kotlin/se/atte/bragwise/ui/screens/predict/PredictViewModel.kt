@@ -101,7 +101,7 @@ class PredictViewModel(
                 it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.BooleanProp(intent.value)))
             }
             is Intent.SetRanking -> update {
-                it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.Ranking(intent.orderedOptionIds)))
+                it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.Ranking(intent.orderedOptionIds.filter { id -> id.isNotEmpty() })))
             }
             Intent.Submit -> submit()
             is Intent.ConfirmName -> viewModelScope.launch {
@@ -145,11 +145,13 @@ class PredictViewModel(
         result.fold(
             onSuccess = {
                 println("$PRED_DBG submit.success challengeId=$challengeId")
+                localPredictions.deleteForChallenge(challengeId)
                 emitEffect(Effect.Submitted)
             },
             onFailure = { e ->
                 println("$PRED_DBG submit.failure class=${e::class.simpleName} message=${e.message}")
                 println("$PRED_DBG submit.failure.stack ${e.stackTraceToString()}")
+                emitEffect(Effect.Snackbar("Couldn't save predictions — try again"))
                 errorReporter.report(e)
             },
         )

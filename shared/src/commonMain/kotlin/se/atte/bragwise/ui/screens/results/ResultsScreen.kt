@@ -27,6 +27,7 @@ import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.Visibility
+import se.atte.bragwise.domain.scoring.competitionRanks
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.LocalSectionColors
@@ -149,11 +150,7 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
 private fun myRankFor(challenge: Challenge, myUid: String): Int? {
     if (myUid.isEmpty()) return null
     val board = challenge.leaderboard ?: return null
-    return board.entries
-        .sortedByDescending { it.value }
-        .indexOfFirst { it.key == myUid }
-        .takeIf { it >= 0 }
-        ?.let { it + 1 }
+    return competitionRanks(board).firstOrNull { it.uid == myUid }?.rank
 }
 
 // region Previews

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import se.atte.bragwise.domain.LeaderboardEntry
+import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.standardPadding
@@ -48,21 +49,30 @@ import se.atte.bragwise.ui.components.RankChip
 @Composable
 fun ResultsRevealScreen(viewModel: ResultsRevealViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    when (val ui = state.ui) {
-        UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+    var showConfetti by remember { mutableStateOf(false) }
+    ObserveEffects(effects = viewModel.effects) { effect ->
+        when (effect) {
+            ResultsRevealViewModel.Effect.PlayConfetti -> showConfetti = true
         }
-        is UiState.Empty -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "No results yet")
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (val ui = state.ui) {
+            UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            is UiState.Empty -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = "No results yet")
+            }
+            is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = ui.cause.toUserMessage(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            is UiState.Ready -> ResultsRevealBody(data = ui.data)
         }
-        is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = ui.cause.toUserMessage(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        is UiState.Ready -> ResultsRevealBody(data = ui.data)
+        if (showConfetti) Confetti(modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -70,15 +80,13 @@ fun ResultsRevealScreen(viewModel: ResultsRevealViewModel) {
 private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
     var showBanner by remember { mutableStateOf(data.alreadySeen) }
     var showField by remember { mutableStateOf(data.alreadySeen) }
-    var showConfetti by remember { mutableStateOf(false) }
 
-    LaunchedEffect(data.leaderboard) {
+    LaunchedEffect(Unit) {
         if (!data.alreadySeen) {
             delay(1700)
             showBanner = true
             delay(200)
             showField = true
-            if (data.iAmWinner) showConfetti = true
         }
     }
 
@@ -131,6 +139,7 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                         myPoints = data.myPoints,
                         participantCount = data.participantCount,
                         iAmWinner = data.iAmWinner,
+                        iAmCreator = data.iAmCreator,
                         modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall),
                     )
                 }
@@ -143,7 +152,7 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                 ) {
                     Column {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall))
-                        val label = if (data.participantCount > 20) "Top 10" else "All results"
+                        val label = if (data.leaderboard.size > 10) "Top 10" else "All results"
                         Text(
                             text = "$label (${data.participantCount})",
                             style = MaterialTheme.typography.titleMedium,
@@ -173,10 +182,6 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
 
             item { Spacer(Modifier.height(32.dp)) }
         }
-
-        if (showConfetti) {
-            Confetti(modifier = Modifier.fillMaxSize())
-        }
     }
 }
 
@@ -186,6 +191,7 @@ private fun YourResultBanner(
     myPoints: Int?,
     participantCount: Int,
     iAmWinner: Boolean,
+    iAmCreator: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val (emoji, headline, subtitle) = when {
@@ -193,11 +199,17 @@ private fun YourResultBanner(
         myRank == 2 -> Triple("🥈", "Runner-up!", "#2 of $participantCount")
         myRank == 3 -> Triple("🥉", "3rd place!", "#3 of $participantCount")
         myRank != null -> Triple("🎯", "Your result", "#$myRank of $participantCount")
+        iAmCreator -> Triple("🎬", "You hosted this!", "Here's how your challenge played out")
         else -> Triple("🎯", "You didn't predict", "Join next time to compete")
+    }
+    val surfaceColor = when {
+        iAmWinner -> MaterialTheme.colorScheme.primaryContainer
+        iAmCreator && myRank == null -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = if (iAmWinner) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        color = surfaceColor,
         shape = MaterialTheme.shapes.large,
     ) {
         Row(
@@ -284,6 +296,30 @@ private fun ResultsRevealBody_Preview() {
                 myPoints = 92,
                 participantCount = 4,
                 alreadySeen = true,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
+    val entries = listOf(
+        LeaderboardEntry(uid = "u2", displayName = "Alice", avatarSeed = "a3", points = 78, rank = 1),
+        LeaderboardEntry(uid = "u3", displayName = "Bob", avatarSeed = "a5", points = 65, rank = 2),
+        LeaderboardEntry(uid = "u4", displayName = "Carol", avatarSeed = "a7", points = 50, rank = 3),
+    )
+    ThemePreview {
+        ResultsRevealBody(
+            data = ResultsRevealViewModel.RevealData(
+                challengeTitle = "Champions League Final",
+                leaderboard = entries,
+                myUid = "u1",
+                myRank = null,
+                myPoints = null,
+                participantCount = 3,
+                alreadySeen = true,
+                iAmCreator = true,
             ),
         )
     }

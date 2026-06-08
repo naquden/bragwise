@@ -33,6 +33,7 @@ import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.LoadingDialog
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
+import se.atte.bragwise.ui.isCompleteFor
 import se.atte.bragwise.ui.preview.sampleBets
 
 /**

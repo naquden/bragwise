@@ -1,21 +1,22 @@
 package se.atte.bragwise.data
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import se.atte.bragwise.db.BragwiseDatabase
 
-/**
- * Tracks which challenge result reveals the current user has already opened.
- * Drives the unseen badge on the Results tab and the confetti one-shot guard.
- */
-class ResultsSeenStore(db: BragwiseDatabase) {
+class ResultsSeenStore(
+    db: BragwiseDatabase,
+    private val dispatcher: CoroutineDispatcher,
+) {
     private val queries = db.bragwiseQueries
+
+    val seenIds: Flow<Set<String>> =
+        queries.seenResultAll().asFlow().mapToList(dispatcher).map { it.toSet() }
 
     fun markSeen(challengeId: String) {
         queries.seenResultInsert(challengeId)
     }
-
-    fun isSeen(challengeId: String): Boolean =
-        queries.seenResultContains(challengeId).executeAsOne() > 0L
-
-    fun seenIds(): Set<String> =
-        queries.seenResultAll().executeAsList().toSet()
 }

@@ -31,6 +31,9 @@ import {
   verifyAppCheck,
 } from './lib/middleware';
 import { db, FieldValue, Timestamp, auth as adminAuth } from './lib/admin';
+import { validateResults, validatePredictionMap } from './predictionValidation';
+import { computeLeaderboard, competitionRanks } from './leaderboard';
+import { Bet, PredictionPayload } from './scoring';
 import {
   ClaimHandleSchema,
   CreateChallengeSchema,
@@ -44,10 +47,39 @@ import {
   SendFriendRequestSchema,
   SubmitPredictionsSchema,
   UnfriendSchema,
+  WithdrawFriendRequestSchema,
   UpdateProfileSchema,
+  RecomputeLeaderboardSchema,
 } from './schemas';
+import { applyTransition } from './lib/friendships';
+
+// ─── applyHandleChange ───────────────────────────────────────────────────────
+// Shared transaction helper: claim newHandle for uid, releasing previous handle.
+// Throws HttpsError('already-exists', 'handle-taken') if taken by another user.
+
+async function applyHandleChange(
+  tx: FirebaseFirestore.Transaction,
+  uid: string,
+  newHandle: string,
+  profileRef: FirebaseFirestore.DocumentReference,
+): Promise<void> {
+  const handleRef = db.doc(`handles/${newHandle}`);
+  const [handleSnap, profileSnap] = await Promise.all([
+    tx.get(handleRef),
+    tx.get(profileRef),
+  ]);
+  if (handleSnap.exists && (handleSnap.data()!.uid as string) !== uid) {
+    throw new HttpsError('already-exists', 'handle-taken');
+  }
+  const prev = profileSnap.exists ? (profileSnap.data()!.handle as string | undefined) : undefined;
+  if (prev && prev !== newHandle) {
+    tx.delete(db.doc(`handles/${prev}`));
+  }
+  tx.set(handleRef, { uid, claimedAt: FieldValue.serverTimestamp() });
+}
 
 // ─── claimHandle ────────────────────────────────────────────────────────────
+// Standalone first-claim / onboarding flow. Edit-profile uses updateProfile.
 
 export const claimHandle = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
@@ -55,39 +87,19 @@ export const claimHandle = onCall(async (req: CallableRequest<unknown>) => {
   await rateLimit(uid, 'claimHandle', 86400, 10);
   const { handle } = validate(ClaimHandleSchema, req.data);
 
-  const handleRef = db.doc(`handles/${handle}`);
   const profileRef = db.doc(`publicProfiles/${uid}`);
   const playerRef = db.doc(`players/${uid}`);
 
   await db.runTransaction(async (tx) => {
-    const [handleSnap, profileSnap] = await Promise.all([
-      tx.get(handleRef),
-      tx.get(profileRef),
-    ]);
-
-    if (handleSnap.exists) {
-      const owner = handleSnap.data()!.uid as string | undefined;
-      // Allow reclaiming own handle (idempotent).
-      if (owner !== uid) {
-        throw new HttpsError('already-exists', 'handle-taken');
-      }
-    }
-
-    // Release previous handle if the player already had one.
-    if (profileSnap.exists) {
-      const prev = profileSnap.data()!.handle as string | undefined;
-      if (prev && prev !== handle) {
-        tx.delete(db.doc(`handles/${prev}`));
-      }
-    }
-
-    tx.set(handleRef, { uid, claimedAt: FieldValue.serverTimestamp() });
+    await applyHandleChange(tx, uid, handle, profileRef);
     tx.set(profileRef, { handle }, { merge: true });
     tx.set(playerRef, { handle }, { merge: true });
   });
 });
 
 // ─── updateProfile ───────────────────────────────────────────────────────────
+// Single transactional write covering handle claim + publicProfiles + players.
+// Throws field-tagged HttpsError messages so the client can route to the right field.
 
 export const updateProfile = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
@@ -98,37 +110,21 @@ export const updateProfile = onCall(async (req: CallableRequest<unknown>) => {
   const profileRef = db.doc(`publicProfiles/${uid}`);
   const playerRef = db.doc(`players/${uid}`);
 
-  // Handle change is a sub-transaction — delegate to claimHandle logic.
-  if (payload.handle !== undefined) {
-    const handleRef = db.doc(`handles/${payload.handle}`);
-    await db.runTransaction(async (tx) => {
-      const [handleSnap, profileSnap] = await Promise.all([
-        tx.get(handleRef),
-        tx.get(profileRef),
-      ]);
-      if (handleSnap.exists && (handleSnap.data()!.uid as string) !== uid) {
-        throw new HttpsError('already-exists', 'handle-taken');
-      }
-      const prev = profileSnap.exists ? (profileSnap.data()!.handle as string | undefined) : undefined;
-      if (prev && prev !== payload.handle) {
-        tx.delete(db.doc(`handles/${prev}`));
-      }
-      tx.set(handleRef, { uid, claimedAt: FieldValue.serverTimestamp() });
-    });
-  }
-
   const updates: Record<string, unknown> = {};
   if (payload.displayName !== undefined) updates.displayName = payload.displayName;
   if (payload.handle !== undefined) updates.handle = payload.handle;
   if (payload.avatarSeed !== undefined) updates.avatarSeed = payload.avatarSeed;
   updates.updatedAt = FieldValue.serverTimestamp();
 
-  if (Object.keys(updates).length > 1) {
-    await Promise.all([
-      profileRef.set(updates, { merge: true }),
-      playerRef.set(updates, { merge: true }),
-    ]);
-  }
+  if (Object.keys(updates).length <= 1) return;
+
+  await db.runTransaction(async (tx) => {
+    if (payload.handle !== undefined) {
+      await applyHandleChange(tx, uid, payload.handle, profileRef);
+    }
+    tx.set(profileRef, updates, { merge: true });
+    tx.set(playerRef, updates, { merge: true });
+  });
 });
 
 const ACTIVE_CHALLENGE_CAP = 30;
@@ -147,10 +143,15 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
 
   const ref = db.collection('challenges').doc();
   const counterRef = db.doc(`players/${uid}/private/counters`);
-  const playerRef = db.doc(`challenges/${ref.id}/players/${uid}`);
+  const socialRef = db.doc(`players/${uid}/private/social`);
+
+  let eligibleInvitees: string[] = [];
 
   await db.runTransaction(async (tx) => {
-    const counterSnap = await tx.get(counterRef);
+    const [counterSnap, socialSnap] = await Promise.all([
+      tx.get(counterRef),
+      tx.get(socialRef),
+    ]);
     const active: number = counterSnap.exists
       ? (counterSnap.data()!.activeChallenges ?? 0)
       : 0;
@@ -171,8 +172,22 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
       tx.set(counterRef, { activeChallenges: liveCount }, { merge: true });
     }
 
+    // Resolve invitation eligibility inside the transaction for consistency.
+    const requestedUids: string[] = payload.invitedUids ?? [];
+    if (requestedUids.length > 0) {
+      const friends: Record<string, unknown> = socialSnap.exists
+        ? (socialSnap.data()!.friends ?? {})
+        : {};
+      eligibleInvitees = requestedUids.filter((u) => u in friends);
+      if (payload.visibility === 'INVITE_ONLY' && eligibleInvitees.length === 0) {
+        throw new HttpsError('failed-precondition', 'invite-only-no-reachable-invitees');
+      }
+    }
+
+    // Strip client-supplied invite list from the persisted challenge doc.
+    const { invitedUids: _invitedUids, ...challengeFields } = payload;
     tx.set(ref, {
-      ...payload,
+      ...challengeFields,
       locksAt: Timestamp.fromMillis(Date.parse(payload.locksAt)),
       id: ref.id,
       createdBy: uid,
@@ -185,98 +200,148 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
       leaderboard: null,
       resultsPostedAt: null,
     });
-    // Creator auto-joins without predictions — they're the one who posts results.
+    tx.set(counterRef, { activeChallenges: FieldValue.increment(1) }, { merge: true });
+
+    // Write invitation docs atomically with the challenge.
+    for (const inviteeUid of eligibleInvitees) {
+      tx.set(db.doc(`challenges/${ref.id}/invitations/${inviteeUid}`), {
+        invitedUid: inviteeUid,
+        invitedBy: uid,
+        invitedAt: FieldValue.serverTimestamp(),
+      });
+    }
+  });
+
+  // Push notifications are best-effort and sent after the transaction commits.
+  if (eligibleInvitees.length > 0) {
+    const [inviterSnap, challengeSnap] = await Promise.all([
+      db.doc(`players/${uid}`).get(),
+      db.doc(`challenges/${ref.id}`).get(),
+    ]);
+    const inviterName: string = inviterSnap.data()?.displayName ?? 'Someone';
+    const challengeTitle: string = challengeSnap.data()?.title ?? 'a challenge';
+    await Promise.all(
+      eligibleInvitees.map((targetUid) =>
+        sendToUser(targetUid, {
+          title: "You're invited!",
+          body: `${inviterName} invited you to ${challengeTitle}`,
+          channel: CHANNEL_CHALLENGES,
+          deepLink: `https://bragwise.firebaseapp.com/c/${ref.id}`,
+        }).catch(() => {}),
+      ),
+    );
+  }
+
+  return { challengeId: ref.id, invited: String(eligibleInvitees.length), requested: String((payload.invitedUids ?? []).length) };
+});
+
+// ─── applyPredictions (shared core) ──────────────────────────────────────────
+
+async function applyPredictions(
+  tx: FirebaseFirestore.Transaction,
+  uid: string,
+  challengeId: string,
+  predMap: Record<string, PredictionPayload>,
+  opts?: { skipIfExists?: boolean },
+): Promise<void> {
+  const challengeRef = db.doc(`challenges/${challengeId}`);
+  const playerRef = db.doc(`challenges/${challengeId}/players/${uid}`);
+
+  const [challengeSnap, playerSnap] = await Promise.all([
+    tx.get(challengeRef),
+    tx.get(playerRef),
+  ]);
+
+  if (!challengeSnap.exists) throw new HttpsError('not-found', 'challenge-not-found');
+  const challenge = challengeSnap.data()!;
+
+  if (challenge.status !== 'OPEN') {
+    throw new HttpsError('failed-precondition', 'challenge-not-open');
+  }
+  const locksAtMs = locksAtMillis(challenge.locksAt);
+  if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
+  if (locksAtMs <= Date.now()) {
+    throw new HttpsError('failed-precondition', 'challenge-locked');
+  }
+
+  let friendEligible = false;
+  if (challenge.visibility === 'FRIENDS' && challenge.createdBy !== uid) {
+    const creatorSocial = await tx.get(
+      db.doc(`players/${challenge.createdBy}/private/social`),
+    );
+    friendEligible = creatorSocial.exists &&
+      (creatorSocial.data()!.friends ?? {})[uid] != null;
+  }
+
+  const isEligible =
+    challenge.createdBy === uid ||
+    challenge.visibility === 'PROMOTED' ||
+    friendEligible ||
+    playerSnap.exists ||
+    (await tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`))).exists;
+
+  if (!isEligible) throw new HttpsError('permission-denied', 'not-eligible');
+
+  const bets: Bet[] = challenge.bets ?? [];
+  validatePredictionMap(bets, predMap);
+
+  if (!playerSnap.exists) {
     tx.set(playerRef, {
       uid,
       joinedAt: FieldValue.serverTimestamp(),
-      predictions: {},
-      isCreator: true,
+      predictions: predMap,
+      isCreator: challenge.createdBy === uid,
     });
-    tx.set(counterRef, { activeChallenges: FieldValue.increment(1) }, { merge: true });
-  });
-
-  return { challengeId: ref.id };
-});
+  } else if (opts?.skipIfExists) {
+    throw new HttpsError('already-exists', 'already-predicted');
+  } else {
+    tx.update(playerRef, { predictions: predMap, updatedAt: FieldValue.serverTimestamp() });
+  }
+}
 
 // ─── submitPredictions ───────────────────────────────────────────────────────
 
 export const submitPredictions = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   // Anonymous guests have a real uid and can submit — email verification is NOT required.
-  // App Check + rate limiting guard against abuse.
   const uid = requireAuth(req);
   await rateLimit(uid, 'submitPredictions', 3600, 600);
   const { challengeId, predictions } = validate(SubmitPredictionsSchema, req.data);
 
-  const challengeRef = db.doc(`challenges/${challengeId}`);
-  const playerRef = db.doc(`challenges/${challengeId}/players/${uid}`);
+  const predMap: Record<string, PredictionPayload> = {};
+  for (const p of predictions) predMap[p.betId] = p.payload as PredictionPayload;
 
-  await db.runTransaction(async (tx) => {
-    const [challengeSnap, playerSnap] = await Promise.all([
-      tx.get(challengeRef),
-      tx.get(playerRef),
-    ]);
-
-    if (!challengeSnap.exists) throw new HttpsError('not-found', 'challenge-not-found');
-    const challenge = challengeSnap.data()!;
-
-    if (challenge.status !== 'OPEN') {
-      throw new HttpsError('failed-precondition', 'challenge-not-open');
-    }
-    const locksAtMs = locksAtMillis(challenge.locksAt);
-    if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
-    if (locksAtMs <= Date.now()) {
-      throw new HttpsError('failed-precondition', 'challenge-locked');
-    }
-
-    // Eligibility: creator, existing member, existing invitee, PROMOTED, or
-    // FRIENDS where the caller is one of the creator's accepted friends.
-    // Friendship is symmetric (acceptFriendRequest writes friends[other] on
-    // both sides), so the creator's social doc is authoritative. INVITE_ONLY
-    // still requires an explicit invitation.
-    let friendEligible = false;
-    if (challenge.visibility === 'FRIENDS' && challenge.createdBy !== uid) {
-      const creatorSocial = await tx.get(
-        db.doc(`players/${challenge.createdBy}/private/social`),
-      );
-      friendEligible = creatorSocial.exists &&
-        (creatorSocial.data()!.friends ?? {})[uid] != null;
-    }
-
-    const isEligible =
-      challenge.createdBy === uid ||
-      challenge.visibility === 'PROMOTED' ||
-      friendEligible ||
-      playerSnap.exists ||
-      (await tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`))).exists;
-
-    if (!isEligible) throw new HttpsError('permission-denied', 'not-eligible');
-
-    const bets: Array<{ id: string }> = challenge.bets ?? [];
-    const predMap: Record<string, unknown> = {};
-    for (const p of predictions) predMap[p.betId] = p.payload;
-
-    if (!playerSnap.exists) {
-      // First submission must cover every bet.
-      if (predictions.length !== bets.length) {
-        throw new HttpsError('invalid-argument', 'incomplete-predictions');
-      }
-      tx.set(playerRef, {
-        uid,
-        joinedAt: FieldValue.serverTimestamp(),
-        predictions: predMap,
-        isCreator: false,
-      });
-    } else {
-      // Edit — dot-path update only the submitted bets.
-      const updates: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
-      for (const [betId, payload] of Object.entries(predMap)) {
-        updates[`predictions.${betId}`] = payload;
-      }
-      tx.update(playerRef, updates);
-    }
-  });
+  await db.runTransaction((tx) => applyPredictions(tx, uid, challengeId, predMap));
 });
+
+// ─── recomputeLeaderboardTx ──────────────────────────────────────────────────
+
+/**
+ * Reads all player docs (excluding `excludeUid` if supplied) and recomputes
+ * `leaderboard` + `rankedLeaderboard` from the challenge's stored results.
+ * Returns the two maps; callers apply them via tx.update / tx.set.
+ */
+async function recomputeLeaderboardTx(
+  tx: FirebaseFirestore.Transaction,
+  challengeRef: FirebaseFirestore.DocumentReference,
+  data: FirebaseFirestore.DocumentData,
+  excludeUid?: string,
+): Promise<{ leaderboard: Record<string, number>; rankedLeaderboard: Record<string, number> }> {
+  const bets: Bet[] = data.bets ?? [];
+  const results = (data.results ?? {}) as Record<string, PredictionPayload>;
+  const playersSnap = await tx.get(challengeRef.collection('players'));
+  const players = playersSnap.docs
+    .filter((d) => d.id !== excludeUid)
+    .map((d) => ({
+      uid: (d.data().uid ?? d.id) as string,
+      predictions: (d.data().predictions ?? {}) as Record<string, PredictionPayload>,
+    }));
+  const leaderboard = computeLeaderboard(bets, players, results);
+  const ranked = competitionRanks(leaderboard);
+  const rankedLeaderboard: Record<string, number> = {};
+  for (const e of ranked) rankedLeaderboard[e.uid] = e.rank;
+  return { leaderboard, rankedLeaderboard };
+}
 
 // ─── postResults ─────────────────────────────────────────────────────────────
 
@@ -284,7 +349,7 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
-  await rateLimit(uid, 'postResults', 3600, 10);
+  await rateLimit(uid, 'postResults', 3600, 20);
   const { challengeId, results } = validate(PostResultsSchema, req.data);
   await audit(uid, 'postResults', { challengeId });
 
@@ -294,16 +359,41 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
     if (!snap.exists) throw new HttpsError('not-found', 'challenge-not-found');
     const data = snap.data()!;
     if (data.createdBy !== uid) throw new HttpsError('permission-denied', 'not-creator');
-    if (data.resultsPostedAt !== null && data.resultsPostedAt !== undefined) {
-      throw new HttpsError('already-exists', 'results-already-posted');
-    }
+
+    // Deadline gate: can only post once the challenge is locked.
+    const locksAtMs = locksAtMillis(data.locksAt);
+    if (locksAtMs == null) throw new HttpsError('failed-precondition', 'no-locks-at');
+    if (locksAtMs > Date.now()) throw new HttpsError('failed-precondition', 'not-yet-locked');
+
+    const bets: Bet[] = data.bets ?? [];
+    validateResults(bets, results as Record<string, PredictionPayload>);
+
+    // Read all players in-transaction to compute leaderboard.
+    const playersSnap = await tx.get(db.collection(`challenges/${challengeId}/players`));
+    const players = playersSnap.docs.map((d) => ({
+      uid: (d.data().uid ?? d.id) as string,
+      predictions: (d.data().predictions ?? {}) as Record<string, PredictionPayload>,
+    }));
+
+    const leaderboard = computeLeaderboard(bets, players, results as Record<string, PredictionPayload>);
+    const ranked = competitionRanks(leaderboard);
+    const rankedLeaderboard: Record<string, number> = {};
+    for (const e of ranked) rankedLeaderboard[e.uid] = e.rank;
+
+    const isFirstPost = data.resultsPostedAt == null;
+
     tx.update(ref, {
       results,
       resultsPostedAt: FieldValue.serverTimestamp(),
       status: 'RESULTS_POSTED',
+      leaderboard,
+      rankedLeaderboard,
     });
-    const counterRef = db.doc(`players/${uid}/private/counters`);
-    tx.set(counterRef, { activeChallenges: FieldValue.increment(-1) }, { merge: true });
+
+    if (isFirstPost) {
+      const counterRef = db.doc(`players/${uid}/private/counters`);
+      tx.set(counterRef, { activeChallenges: FieldValue.increment(-1) }, { merge: true });
+    }
   });
 });
 
@@ -345,6 +435,35 @@ export const deleteChallenge = onCall(async (req: CallableRequest<unknown>) => {
     for (const ref of allRefs.slice(i, i + BATCH_SIZE)) batch.delete(ref);
     await batch.commit();
   }
+});
+
+// ─── recomputeLeaderboard ─────────────────────────────────────────────────────
+
+/**
+ * Lets the challenge creator recompute scores and ranks after results have
+ * already been posted — for example after a member deletion leaves stale ranks,
+ * or to correct a calculation. Does NOT bump `resultsPostedAt`, so
+ * `onResultsPosted` (push notifications / H2H) will not re-fire.
+ */
+export const recomputeLeaderboard = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  requireVerifiedEmail(req);
+  await rateLimit(uid, 'recomputeLeaderboard', 3600, 30);
+  const { challengeId } = validate(RecomputeLeaderboardSchema, req.data);
+  await audit(uid, 'recomputeLeaderboard', { challengeId });
+
+  const ref = db.doc(`challenges/${challengeId}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'challenge-not-found');
+    const data = snap.data()!;
+    if (data.createdBy !== uid) throw new HttpsError('permission-denied', 'not-creator');
+    if (data.resultsPostedAt == null) throw new HttpsError('failed-precondition', 'results-not-posted');
+
+    const { leaderboard, rankedLeaderboard } = await recomputeLeaderboardTx(tx, ref, data);
+    tx.update(ref, { leaderboard, rankedLeaderboard });
+  });
 });
 
 // ─── inviteFriends ────────────────────────────────────────────────────────────
@@ -409,36 +528,14 @@ export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) =>
   await rateLimit(uid, 'sendFriendRequest', 86400, 50);
   const { handle } = validate(SendFriendRequestSchema, req.data);
 
-  // Resolve handle → uid.
   const handleSnap = await db.doc(`handles/${handle}`).get();
   if (!handleSnap.exists) throw new HttpsError('not-found', 'handle-not-found');
   const targetUid = handleSnap.data()!.uid as string;
 
   if (targetUid === uid) throw new HttpsError('invalid-argument', 'cannot-friend-self');
 
-  const mySocialRef = db.doc(`players/${uid}/private/social`);
-  const theirSocialRef = db.doc(`players/${targetUid}/private/social`);
-
   await db.runTransaction(async (tx) => {
-    const [mySnap, theirSnap] = await Promise.all([
-      tx.get(mySocialRef),
-      tx.get(theirSocialRef),
-    ]);
-    const myData = mySnap.data() ?? {};
-    const theirData = theirSnap.data() ?? {};
-    const myFriends: Record<string, unknown> = myData.friends ?? {};
-
-    if (targetUid in myFriends) {
-      throw new HttpsError('already-exists', 'already-friends');
-    }
-    const theirRequestsIn: Record<string, unknown> = theirData.requestsIn ?? {};
-    if (uid in theirRequestsIn) {
-      throw new HttpsError('already-exists', 'request-already-sent');
-    }
-
-    const now = FieldValue.serverTimestamp();
-    tx.set(mySocialRef, { requestsOut: { [targetUid]: now } }, { merge: true });
-    tx.set(theirSocialRef, { requestsIn: { [uid]: now } }, { merge: true });
+    await applyTransition(tx, uid, targetUid, 'send');
   });
 
   // Notify target — best-effort, outside the transaction.
@@ -456,30 +553,12 @@ export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) =>
 export const acceptFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
+  requireVerifiedEmail(req);
   await rateLimit(uid, 'acceptFriendRequest', 3600, 100);
   const { requesterUid } = validate(FriendRequestActionSchema, req.data);
 
-  const mySocialRef = db.doc(`players/${uid}/private/social`);
-  const theirSocialRef = db.doc(`players/${requesterUid}/private/social`);
-
   await db.runTransaction(async (tx) => {
-    const mySnap = await tx.get(mySocialRef);
-    const myData = mySnap.data() ?? {};
-    const requestsIn: Record<string, unknown> = myData.requestsIn ?? {};
-
-    if (!(requesterUid in requestsIn)) {
-      throw new HttpsError('not-found', 'request-not-found');
-    }
-
-    const now = FieldValue.serverTimestamp();
-    tx.set(mySocialRef, {
-      friends: { [requesterUid]: now },
-      requestsIn: { [requesterUid]: FieldValue.delete() },
-    }, { merge: true });
-    tx.set(theirSocialRef, {
-      friends: { [uid]: now },
-      requestsOut: { [uid]: FieldValue.delete() },
-    }, { merge: true });
+    await applyTransition(tx, uid, requesterUid, 'accept');
   });
 });
 
@@ -488,16 +567,27 @@ export const acceptFriendRequest = onCall(async (req: CallableRequest<unknown>) 
 export const declineFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
+  requireVerifiedEmail(req);
   await rateLimit(uid, 'declineFriendRequest', 3600, 100);
   const { requesterUid } = validate(FriendRequestActionSchema, req.data);
 
-  const mySocialRef = db.doc(`players/${uid}/private/social`);
-  const theirSocialRef = db.doc(`players/${requesterUid}/private/social`);
+  await db.runTransaction(async (tx) => {
+    await applyTransition(tx, uid, requesterUid, 'decline');
+  });
+});
 
-  const batch = db.batch();
-  batch.set(mySocialRef, { requestsIn: { [requesterUid]: FieldValue.delete() } }, { merge: true });
-  batch.set(theirSocialRef, { requestsOut: { [uid]: FieldValue.delete() } }, { merge: true });
-  await batch.commit();
+// ─── withdrawFriendRequest ────────────────────────────────────────────────────
+
+export const withdrawFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  requireVerifiedEmail(req);
+  await rateLimit(uid, 'withdrawFriendRequest', 3600, 100);
+  const { otherUid } = validate(WithdrawFriendRequestSchema, req.data);
+
+  await db.runTransaction(async (tx) => {
+    await applyTransition(tx, uid, otherUid, 'withdraw');
+  });
 });
 
 // ─── unfriend ─────────────────────────────────────────────────────────────────
@@ -505,16 +595,13 @@ export const declineFriendRequest = onCall(async (req: CallableRequest<unknown>)
 export const unfriend = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
+  requireVerifiedEmail(req);
   await rateLimit(uid, 'unfriend', 3600, 50);
   const { otherUid } = validate(UnfriendSchema, req.data);
 
-  const mySocialRef = db.doc(`players/${uid}/private/social`);
-  const theirSocialRef = db.doc(`players/${otherUid}/private/social`);
-
-  const batch = db.batch();
-  batch.set(mySocialRef, { friends: { [otherUid]: FieldValue.delete() } }, { merge: true });
-  batch.set(theirSocialRef, { friends: { [uid]: FieldValue.delete() } }, { merge: true });
-  await batch.commit();
+  await db.runTransaction(async (tx) => {
+    await applyTransition(tx, uid, otherUid, 'unfriend');
+  });
 });
 
 // ─── deleteAccount ────────────────────────────────────────────────────────────
@@ -557,54 +644,40 @@ export const migrateGuestData = onCall(async (req: CallableRequest<unknown>) => 
   await rateLimit(uid, 'migrateGuestData', 86400, 1);
   const { predictions } = validate(MigrateGuestDataSchema, req.data);
 
-  // For each local prediction, attempt to submit it if the challenge is still
-  // OPEN, not yet locked, and the user is eligible (PROMOTED) or invited.
-  // Silent per-item failures are intentional — some challenges may be locked
-  // or the user may not be eligible for FRIENDS/INVITE_ONLY ones.
+  // Group by challengeId — each challenge migrates as one complete submission.
+  // A partial set (missing bets) is rejected by validatePredictionMap → counted as failed.
+  const byChallenge = new Map<string, Record<string, PredictionPayload>>();
+  for (const { challengeId, betId, payload } of predictions) {
+    if (!byChallenge.has(challengeId)) byChallenge.set(challengeId, {});
+    byChallenge.get(challengeId)![betId] = payload as PredictionPayload;
+  }
+
+  const challengeIds = [...byChallenge.keys()];
   const results = await Promise.allSettled(
-    predictions.map(async ({ challengeId, betId, payload }) => {
-      const challengeRef = db.doc(`challenges/${challengeId}`);
-      const playerRef = db.doc(`challenges/${challengeId}/players/${uid}`);
-
-      await db.runTransaction(async (tx) => {
-        const [challengeSnap, playerSnap, inviteSnap] = await Promise.all([
-          tx.get(challengeRef),
-          tx.get(playerRef),
-          tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`)),
-        ]);
-        if (!challengeSnap.exists) throw new Error('not-found');
-        const c = challengeSnap.data()!;
-        if (c.status !== 'OPEN') throw new Error('not-open');
-        const locksAtMs = locksAtMillis(c.locksAt);
-        if (locksAtMs == null || locksAtMs <= Date.now()) throw new Error('locked');
-
-        const eligible =
-          c.createdBy === uid ||
-          c.visibility === 'PROMOTED' ||
-          playerSnap.exists ||
-          inviteSnap.exists;
-        if (!eligible) throw new Error('not-eligible');
-
-        if (!playerSnap.exists) {
-          tx.set(playerRef, {
-            uid,
-            joinedAt: FieldValue.serverTimestamp(),
-            predictions: { [betId]: payload },
-            isCreator: false,
-          });
-        } else {
-          tx.update(playerRef, {
-            [`predictions.${betId}`]: payload,
-            updatedAt: FieldValue.serverTimestamp(),
-          });
-        }
-      });
-    }),
+    challengeIds.map((challengeId) =>
+      db.runTransaction((tx) =>
+        applyPredictions(tx, uid, challengeId, byChallenge.get(challengeId)!, { skipIfExists: true }),
+      ),
+    ),
   );
 
-  const migrated = results.filter((r) => r.status === 'fulfilled').length;
-  const failed = results.filter((r) => r.status === 'rejected').length;
-  return { migrated, failed };
+  const migrated: string[] = [];
+  const skipped: string[] = [];
+  const failed: string[] = [];
+  results.forEach((result, i) => {
+    const challengeId = challengeIds[i];
+    if (result.status === 'fulfilled') {
+      migrated.push(challengeId);
+    } else if (
+      result.reason instanceof HttpsError &&
+      result.reason.code === 'already-exists'
+    ) {
+      skipped.push(challengeId);
+    } else {
+      failed.push(challengeId);
+    }
+  });
+  return { migrated, skipped, failed };
 });
 
 // ─── registerPushToken ────────────────────────────────────────────────────────

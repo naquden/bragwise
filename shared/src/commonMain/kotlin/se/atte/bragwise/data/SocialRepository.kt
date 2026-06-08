@@ -19,6 +19,7 @@ interface SocialRepository {
     suspend fun sendFriendRequest(username: String): Result<Unit>
     suspend fun acceptFriendRequest(requesterUid: String): Result<Unit>
     suspend fun declineFriendRequest(requesterUid: String): Result<Unit>
+    suspend fun withdrawFriendRequest(otherUid: String): Result<Unit>
     suspend fun unfriend(otherUid: String): Result<Unit>
 }
 
@@ -76,6 +77,10 @@ class FirebaseSocialRepository(
 
     override suspend fun declineFriendRequest(requesterUid: String): Result<Unit> = runCatching {
         remote.declineFriendRequest(requesterUid)
+    }
+
+    override suspend fun withdrawFriendRequest(otherUid: String): Result<Unit> = runCatching {
+        remote.withdrawFriendRequest(otherUid)
     }
 
     override suspend fun unfriend(otherUid: String): Result<Unit> = runCatching {

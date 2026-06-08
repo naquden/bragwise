@@ -2,23 +2,24 @@ import { onDocumentUpdated, onDocumentCreated, onDocumentWritten } from 'firebas
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { auth } from 'firebase-functions/v1';
 import { db, FieldValue, auth as adminAuth } from './lib/admin';
-import { score, Bet, PredictionPayload } from './scoring';
 import { sendToUser, CHANNEL_RESULTS, CHANNEL_CHALLENGES, CHANNEL_SOCIAL } from './push';
+import type { FriendshipDoc } from './lib/friendships';
+import { computeLeaderboard, competitionRanks } from './leaderboard';
+import type { Bet, PredictionPayload } from './scoring';
 
 // ─── onResultsPosted ──────────────────────────────────────────────────────────
 
 /**
- * Fires on any write to a challenge doc. Only acts when `resultsPostedAt`
+ * Fires on any write to a challenge doc. Acts when `resultsPostedAt`
  * transitions null → non-null (the sentinel set by `postResults`).
  *
- * Phase 1:
- *   1. Scan composite player docs, score each against results, write
- *      `challenges/{c}.leaderboard` map { uid → points }.
- *   2. Per-participant: read private/social, accumulate friend-pair h2h
- *      deltas in memory, issue ONE update per side.
+ * Side-effects only — scoring and leaderboard are already written by
+ * `postResults` transactionally. This trigger does push notifications
+ * and head-to-head bookkeeping, both idempotent.
  *
- * Head-to-head writes are NOT retried on transient failure — FieldValue.increment
- * is not idempotent and h2h is a rivalry signal, not load-bearing data.
+ * H2H is stored as a per-challenge keyed set under
+ * `players/{uid}/private/headToHead/byChallenge/{challengeId}` so
+ * re-delivery overwrites the same doc (no-op).
  */
 export const onResultsPosted = onDocumentUpdated(
   'challenges/{challengeId}',
@@ -32,65 +33,45 @@ export const onResultsPosted = onDocumentUpdated(
     if (after.resultsPostedAt === null || after.resultsPostedAt === undefined) return;
 
     const challengeId = event.params.challengeId;
-    const results: Record<string, PredictionPayload> = after.results ?? {};
-    const bets: Bet[] = after.bets ?? [];
+    const leaderboard: Record<string, number> = after.leaderboard ?? {};
+    const rankedLeaderboard: Record<string, number> = after.rankedLeaderboard ?? {};
+    const participants = Object.keys(leaderboard);
 
-    // 1. Scan player docs and compute scores.
-    const playersSnap = await db.collection(`challenges/${challengeId}/players`).get();
-    const leaderboard: Record<string, number> = {};
-    for (const playerDoc of playersSnap.docs) {
-      const data = playerDoc.data();
-      const playerUid: string = data.uid ?? playerDoc.id;
-      const predictions: Record<string, PredictionPayload> = data.predictions ?? {};
-      let total = 0;
-      for (const bet of bets) {
-        const pred = predictions[bet.id];
-        const result = results[bet.id];
-        if (pred && result) {
-          try { total += score(bet, pred, result); } catch (_) { /* mismatch — skip */ }
-        }
-      }
-      leaderboard[playerUid] = total;
-    }
+    // Early-return: no players scored.
+    if (participants.length === 0) return;
 
-    await db.doc(`challenges/${challengeId}`).update({ leaderboard });
-
-    // 2. Notify each participant of their result — best-effort.
+    // 1. Notify each participant of their result — best-effort.
     const challengeTitle: string = after.title ?? 'A challenge';
-    const sortedUids = Object.entries(leaderboard)
-      .sort(([, a], [, b]) => b - a)
-      .map(([uid]) => uid);
     await Promise.allSettled(
-      sortedUids.map((uid, idx) =>
-        sendToUser(uid, {
+      participants.map((uid) => {
+        const rank = rankedLeaderboard[uid] ?? '?';
+        const pts = leaderboard[uid] ?? 0;
+        return sendToUser(uid, {
           title: 'Results are in!',
-          body: `${challengeTitle} — you finished #${idx + 1} with ${leaderboard[uid]} pts`,
+          body: `${challengeTitle} — you finished #${rank} with ${pts} pts`,
           channel: CHANNEL_RESULTS,
           deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}`,
-        }),
-      ),
+        });
+      }),
     );
 
-    // 3. Head-to-head deltas — best-effort, NOT retried.
-    const participants = Object.keys(leaderboard);
+    // 2. Head-to-head — idempotent per-challenge set, best-effort.
     await Promise.allSettled(
       participants.map(async (pid) => {
         const socialSnap = await db.doc(`players/${pid}/private/social`).get();
         if (!socialSnap.exists) return;
         const friends: Record<string, unknown> = socialSnap.data()!.friends ?? {};
         const myPoints = leaderboard[pid];
-        const updates: Record<string, unknown> = {};
+        const vs: Record<string, 'win' | 'loss' | 'tie'> = {};
         for (const fid of Object.keys(friends)) {
           if (!(fid in leaderboard)) continue;
           const theirPoints = leaderboard[fid];
-          let outcome: 'wins' | 'losses' | 'ties';
-          if (myPoints > theirPoints) outcome = 'wins';
-          else if (myPoints < theirPoints) outcome = 'losses';
-          else outcome = 'ties';
-          updates[`vs.${fid}.${outcome}`] = FieldValue.increment(1);
+          vs[fid] = myPoints > theirPoints ? 'win' : myPoints < theirPoints ? 'loss' : 'tie';
         }
-        if (Object.keys(updates).length > 0) {
-          await db.doc(`players/${pid}/private/headToHead`).set(updates, { merge: true });
+        if (Object.keys(vs).length > 0) {
+          await db
+            .doc(`players/${pid}/private/headToHead/byChallenge/${challengeId}`)
+            .set({ vs });
         }
       }),
     );
@@ -140,42 +121,134 @@ export const onMemberJoin = onDocumentCreated(
   },
 );
 
-// ─── onFriendAccepted ─────────────────────────────────────────────────────────
+// ─── onFriendshipWritten ──────────────────────────────────────────────────────
 
 /**
- * Fires on every write to `players/{uid}/private/social`. Only acts when
- * the `friends` map has grown (new entries added), to notify each new friend
- * that their request was accepted.
+ * Fires on every write to `friendships/{pairId}` — the canonical source of
+ * truth for a relationship. Derives both members' social-doc projections
+ * from the authoritative (state, requestedBy) pair. Idempotent & convergent:
+ * re-delivery recomputes the same projection, cannot orphan an edge.
  *
- * The system never auto-creates challenge invitations on a new friendship.
- * A friend's FRIENDS-visibility challenges are surfaced to the viewer through
- * the friend-graph discovery query (`observeFromFriends`), not via invitation
- * docs. "Invitations" are reserved for explicit `inviteFriends` calls.
+ * States:
+ *  ACCEPTED → both sides friends[other]=acceptedAt; clear requestsIn/requestsOut.
+ *  PENDING  → requestedBy side requestsOut[other]; other side requestsIn[requestedBy].
+ *  deleted  → clear all four entries (mirrors onUserDeleted scrub).
+ *
+ * Push notification: fires "request accepted" on PENDING→ACCEPTED transition
+ * (notifies the original requester that their request was accepted).
+ * The system never auto-creates challenge invitations on friendship: FRIENDS-
+ * visibility challenges are surfaced via observeFromFriends, not invitation docs.
+ *
+ * On ACCEPTED→deleted (unfriend): best-effort revocation of challenge invitations
+ * for challenges created by either party.
  */
-export const onFriendAccepted = onDocumentWritten(
-  'players/{uid}/private/social',
+export const onFriendshipWritten = onDocumentWritten(
+  'friendships/{pairId}',
   async (event) => {
-    const uid = event.params.uid;
-    const before: Record<string, unknown> = event.data?.before.data()?.friends ?? {};
-    const after: Record<string, unknown> = event.data?.after.data()?.friends ?? {};
+    const before = event.data?.before.exists ? (event.data.before.data() as FriendshipDoc) : null;
+    const after = event.data?.after.exists ? (event.data.after.data() as FriendshipDoc) : null;
 
-    const newFriendUids = Object.keys(after).filter((fid) => !(fid in before));
-    if (newFriendUids.length === 0) return;
+    const members: [string, string] = after?.members ?? before?.members ?? ['', ''];
+    const [uidA, uidB] = members;
+    if (!uidA || !uidB) return;
 
-    // Notify each new friend that their request was accepted — best-effort.
-    const acceptorSnap = await db.doc(`players/${uid}`).get();
-    const acceptorName: string = acceptorSnap.data()?.displayName ?? 'Someone';
-    await Promise.allSettled(
-      newFriendUids.map((friendUid) =>
-        sendToUser(friendUid, {
+    const socialA = db.doc(`players/${uidA}/private/social`);
+    const socialB = db.doc(`players/${uidB}/private/social`);
+
+    if (after?.state === 'ACCEPTED') {
+      const acceptedAt = after.acceptedAt ?? FieldValue.serverTimestamp();
+      await Promise.all([
+        socialA.set({
+          friends: { [uidB]: acceptedAt },
+          requestsIn: { [uidB]: FieldValue.delete() },
+          requestsOut: { [uidB]: FieldValue.delete() },
+        }, { merge: true }),
+        socialB.set({
+          friends: { [uidA]: acceptedAt },
+          requestsIn: { [uidA]: FieldValue.delete() },
+          requestsOut: { [uidA]: FieldValue.delete() },
+        }, { merge: true }),
+      ]);
+
+      // Notify the original requester that their request was accepted.
+      if (before?.state === 'PENDING' || !before) {
+        const requestedBy = after.requestedBy;
+        const acceptorUid = requestedBy === uidA ? uidB : uidA;
+        const acceptorSnap = await db.doc(`players/${acceptorUid}`).get();
+        const acceptorName: string = acceptorSnap.data()?.displayName ?? 'Someone';
+        await sendToUser(requestedBy, {
           title: 'Friend request accepted!',
           body: `${acceptorName} accepted your friend request`,
           channel: CHANNEL_SOCIAL,
-        }),
-      ),
-    );
+        }).catch(() => {/* best-effort */});
+      }
+    } else if (after?.state === 'PENDING') {
+      const requestedBy = after.requestedBy;
+      const requestedAt = after.requestedAt ?? FieldValue.serverTimestamp();
+      const other = requestedBy === uidA ? uidB : uidA;
+      await Promise.all([
+        db.doc(`players/${requestedBy}/private/social`).set({
+          requestsOut: { [other]: requestedAt },
+          requestsIn: { [other]: FieldValue.delete() },
+          friends: { [other]: FieldValue.delete() },
+        }, { merge: true }),
+        db.doc(`players/${other}/private/social`).set({
+          requestsIn: { [requestedBy]: requestedAt },
+          requestsOut: { [requestedBy]: FieldValue.delete() },
+          friends: { [requestedBy]: FieldValue.delete() },
+        }, { merge: true }),
+      ]);
+    } else {
+      // Doc deleted — clear all four entries on both sides.
+      await Promise.all([
+        socialA.set({
+          friends: { [uidB]: FieldValue.delete() },
+          requestsIn: { [uidB]: FieldValue.delete() },
+          requestsOut: { [uidB]: FieldValue.delete() },
+        }, { merge: true }),
+        socialB.set({
+          friends: { [uidA]: FieldValue.delete() },
+          requestsIn: { [uidA]: FieldValue.delete() },
+          requestsOut: { [uidA]: FieldValue.delete() },
+        }, { merge: true }),
+      ]);
+
+      // On unfriend (ACCEPTED→deleted), revoke challenge invitations best-effort.
+      if (before?.state === 'ACCEPTED') {
+        await revokeInvitationsOnUnfriend(uidA, uidB).catch(() => {/* best-effort */});
+      }
+    }
   },
 );
+
+async function revokeInvitationsOnUnfriend(uidA: string, uidB: string): Promise<void> {
+  // Find invitations where one party invited the other for their own challenges.
+  const [invitesForA, invitesForB] = await Promise.all([
+    db.collectionGroup('invitations').where('invitedUid', '==', uidA).get(),
+    db.collectionGroup('invitations').where('invitedUid', '==', uidB).get(),
+  ]);
+
+  const toDelete: FirebaseFirestore.DocumentReference[] = [];
+
+  for (const doc of invitesForA.docs) {
+    const challengeRef = doc.ref.parent.parent;
+    if (!challengeRef) continue;
+    const challengeSnap = await challengeRef.get();
+    if (challengeSnap.data()?.createdBy === uidB) toDelete.push(doc.ref);
+  }
+  for (const doc of invitesForB.docs) {
+    const challengeRef = doc.ref.parent.parent;
+    if (!challengeRef) continue;
+    const challengeSnap = await challengeRef.get();
+    if (challengeSnap.data()?.createdBy === uidA) toDelete.push(doc.ref);
+  }
+
+  for (const c of chunk(toDelete, 500)) {
+    const batch = db.batch();
+    for (const ref of c) batch.delete(ref);
+    await batch.commit();
+  }
+}
 
 // ─── onUserDeleted ────────────────────────────────────────────────────────────
 
@@ -249,14 +322,21 @@ async function processDeleteChecklist(uid: string): Promise<void> {
       await batch.commit();
     }
 
-    // Head-to-head vs entries keyed by the deleted uid. Use per-doc updates
-    // (not set/merge) so a friend who never accrued head-to-head stats doesn't
-    // get an empty doc created; a missing doc simply no-ops via allSettled.
-    for (const c of chunk(friendUids, 500)) {
+    // Head-to-head: delete per-challenge docs where this uid appeared.
+    // New path: players/{fid}/private/headToHead/byChallenge/{challengeId} = { vs: { [uid]: ... } }
+    // We scrub the uid key from each byChallenge doc across all friends.
+    for (const c of chunk(friendUids, 50)) {
       await Promise.allSettled(
-        c.map((fid) =>
-          db.doc(`players/${fid}/private/headToHead`).update({ [`vs.${uid}`]: FieldValue.delete() }),
-        ),
+        c.map(async (fid) => {
+          const byChallengeDocs = await db
+            .collection(`players/${fid}/private/headToHead/byChallenge`)
+            .listDocuments();
+          await Promise.allSettled(
+            byChallengeDocs.map((ref) =>
+              ref.update({ [`vs.${uid}`]: FieldValue.delete() }),
+            ),
+          );
+        }),
       );
     }
   }
@@ -272,24 +352,57 @@ async function processDeleteChecklist(uid: string): Promise<void> {
   await tick('players_subs');
 
   // Step 4: membership + prediction docs (collection-group)
+  // Run one transaction per challenge so that, for resolved challenges, we can
+  // recompute rankedLeaderboard with the deleted user excluded. For unresolved
+  // challenges we fall back to a field-delete (no ranks exist yet).
   const memberDocs = await db
     .collectionGroup('players')
     .where('uid', '==', uid)
     .get();
   if (!memberDocs.empty) {
-    const chunks = chunk(memberDocs.docs, 500);
-    for (const c of chunks) {
-      const batch = db.batch();
-      for (const d of c) {
-        batch.delete(d.ref);
-        batch.update(d.ref.parent.parent!, {
-          joinedCount: FieldValue.increment(-1),
-          [`leaderboard.${uid}`]: FieldValue.delete(),
-          [`participants.${uid}`]: FieldValue.delete(),
+    await Promise.allSettled(
+      memberDocs.docs.map(async (memberDoc) => {
+        const challengeRef = memberDoc.ref.parent.parent!;
+        await db.runTransaction(async (tx) => {
+          const challengeSnap = await tx.get(challengeRef);
+          if (!challengeSnap.exists) return;
+          const data = challengeSnap.data()!;
+          const resultsPosted = data.resultsPostedAt != null;
+
+          if (resultsPosted) {
+            // Recompute leaderboard excluding the deleted user.
+            const bets: Bet[] = data.bets ?? [];
+            const results = (data.results ?? {}) as Record<string, PredictionPayload>;
+            const playersSnap = await tx.get(challengeRef.collection('players'));
+            const players = playersSnap.docs
+              .filter((d) => d.id !== uid)
+              .map((d) => ({
+                uid: (d.data().uid ?? d.id) as string,
+                predictions: (d.data().predictions ?? {}) as Record<string, PredictionPayload>,
+              }));
+            const leaderboard = computeLeaderboard(bets, players, results);
+            const ranked = competitionRanks(leaderboard);
+            const rankedLeaderboard: Record<string, number> = {};
+            for (const e of ranked) rankedLeaderboard[e.uid] = e.rank;
+
+            tx.delete(memberDoc.ref);
+            tx.update(challengeRef, {
+              joinedCount: FieldValue.increment(-1),
+              [`participants.${uid}`]: FieldValue.delete(),
+              leaderboard,
+              rankedLeaderboard,
+            });
+          } else {
+            tx.delete(memberDoc.ref);
+            tx.update(challengeRef, {
+              joinedCount: FieldValue.increment(-1),
+              [`leaderboard.${uid}`]: FieldValue.delete(),
+              [`participants.${uid}`]: FieldValue.delete(),
+            });
+          }
         });
-      }
-      await batch.commit();
-    }
+      }),
+    );
   }
   await tick('players_subcoll');
 

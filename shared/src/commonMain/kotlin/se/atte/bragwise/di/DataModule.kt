@@ -1,5 +1,6 @@
 package se.atte.bragwise.di
 
+import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import se.atte.bragwise.data.ActivityRegistrar
@@ -37,7 +38,7 @@ val dataModule = module {
     singleOf(::SocialLocalDataSource)
     single { LocalPredictionStore(get<BragwiseDatabase>()) }
     single { LocalDraftStore(get<BragwiseDatabase>()) }
-    single { ResultsSeenStore(get<BragwiseDatabase>()) }
+    single { ResultsSeenStore(get<BragwiseDatabase>(), Dispatchers.Default) }
     single { PushTokenRegistrar(push = get(), auth = get()) }
     single { ActivityRegistrar(auth = get(), profile = get()) }
     single { EnsureNamedAccount(auth = get(), profile = get(), onboardingPrefs = get()) }

@@ -53,6 +53,10 @@ class SocialRemoteDataSource(
         functions.httpsCallable("declineFriendRequest")(hashMapOf("requesterUid" to requesterUid))
     }
 
+    suspend fun withdrawFriendRequest(otherUid: String) {
+        functions.httpsCallable("withdrawFriendRequest")(hashMapOf("otherUid" to otherUid))
+    }
+
     suspend fun unfriend(otherUid: String) {
         functions.httpsCallable("unfriend")(hashMapOf("otherUid" to otherUid))
     }

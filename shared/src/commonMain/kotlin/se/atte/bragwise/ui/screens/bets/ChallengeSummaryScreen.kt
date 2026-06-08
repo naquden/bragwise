@@ -50,7 +50,6 @@ import se.atte.bragwise.ui.components.SectionCard
 fun ChallengeSummaryScreen(
     viewModel: BetListViewModel,
     onEdit: (challengeId: String) -> Unit,
-    onLeaderboard: (challengeId: String) -> Unit,
     onOpenParticipant: (uid: String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -64,7 +63,6 @@ fun ChallengeSummaryScreen(
         is UiState.Ready -> Content(
             detail = ui.data,
             onEdit = { onEdit(ui.data.challenge.id) },
-            onLeaderboard = { onLeaderboard(ui.data.challenge.id) },
             onOpenParticipant = onOpenParticipant,
         )
     }
@@ -74,7 +72,6 @@ fun ChallengeSummaryScreen(
 private fun Content(
     detail: ChallengeDetail,
     onEdit: () -> Unit,
-    onLeaderboard: () -> Unit,
     onOpenParticipant: (uid: String) -> Unit,
 ) {
     val showParticipants = detail.challenge.betsVisible && detail.challenge.participants.size > 1
@@ -131,13 +128,14 @@ private fun Content(
                 }
             }
         }
-        BottomActionBar {
-            val isOpen = detail.challenge.status == ChallengeStatus.OPEN
-            AppButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = if (isOpen) onEdit else onLeaderboard,
-            ) {
-                Text(if (isOpen) "Edit predictions" else "View leaderboard")
+        if (detail.challenge.status == ChallengeStatus.OPEN) {
+            BottomActionBar {
+                AppButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onEdit,
+                ) {
+                    Text("Edit predictions")
+                }
             }
         }
     }
@@ -180,7 +178,7 @@ private fun ParticipantPickerRow(
 @Composable
 private fun ChallengeSummary_Open_Preview() {
     ThemePreview {
-        Content(detail = sampleDetail(), onEdit = {}, onLeaderboard = {}, onOpenParticipant = {})
+        Content(detail = sampleDetail(), onEdit = {}, onOpenParticipant = {})
     }
 }
 
@@ -191,7 +189,6 @@ private fun ChallengeSummary_Participants_Preview() {
         Content(
             detail = sampleDetail(betsVisible = true),
             onEdit = {},
-            onLeaderboard = {},
             onOpenParticipant = {},
         )
     }
@@ -210,7 +207,6 @@ private fun ChallengeSummary_ResultsPosted_Preview() {
                 ),
             ),
             onEdit = {},
-            onLeaderboard = {},
             onOpenParticipant = {},
         )
     }

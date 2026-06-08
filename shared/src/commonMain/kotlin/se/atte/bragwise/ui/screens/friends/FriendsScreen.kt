@@ -84,7 +84,7 @@ private fun FriendsBody(
                 item {
                     PendingRequestsSection(
                         incoming = state.incoming,
-                        acting = state.acting,
+                        state = state,
                         onAccept = { onIntent(FriendsViewModel.Intent.Accept(it)) },
                         onDecline = { onIntent(FriendsViewModel.Intent.Decline(it)) },
                     )
@@ -171,7 +171,7 @@ private fun FriendsBody(
 @Composable
 private fun PendingRequestsSection(
     incoming: List<FriendsViewModel.RequestRow>,
-    acting: Set<String>,
+    state: FriendsViewModel.State,
     onAccept: (String) -> Unit,
     onDecline: (String) -> Unit,
 ) {
@@ -194,15 +194,14 @@ private fun PendingRequestsSection(
                         )
                     }
                 }
-                val isActing = row.uid in acting
                 Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
                     AppOutlinedButton(
                         onClick = { onDecline(row.uid) },
-                        enabled = !isActing,
+                        enabled = !state.isActing(row.uid, FriendsViewModel.FriendAction.Decline),
                     ) { Text("Decline") }
                     AppButton(
                         onClick = { onAccept(row.uid) },
-                        enabled = !isActing,
+                        enabled = !state.isActing(row.uid, FriendsViewModel.FriendAction.Accept),
                     ) { Text("Accept") }
                 }
             }
@@ -233,12 +232,16 @@ private fun EmptyState(hasPending: Boolean = false) {
     }
 }
 
+private val HANDLE_REGEX = Regex("^[a-z0-9_]{3,20}$")
+
 @Composable
 private fun AddFriendDialog(
     onDismiss: () -> Unit,
     onSend: (String) -> Unit,
 ) {
     var username by remember { mutableStateOf("") }
+    val trimmed = username.trim().removePrefix("@").lowercase()
+    val isValid = trimmed.matches(HANDLE_REGEX)
 
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
@@ -258,13 +261,17 @@ private fun AddFriendDialog(
                     placeholder = { Text("@username") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    isError = username.trim().isNotBlank() && !isValid,
+                    supportingText = if (username.trim().isNotBlank() && !isValid) {
+                        { Text("3–20 lowercase letters, numbers or underscores") }
+                    } else null,
                 )
             }
         },
         confirmButton = {
             AppButton(
-                onClick = { onSend(username) },
-                enabled = username.trim().isNotBlank(),
+                onClick = { onSend(trimmed) },
+                enabled = isValid,
             ) { Text("Send request") }
         },
         dismissButton = {

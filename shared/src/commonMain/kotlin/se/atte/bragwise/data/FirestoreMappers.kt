@@ -11,6 +11,7 @@ import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.FriendRequests
+import se.atte.bragwise.domain.GENERIC_DISPLAY_NAME
 import se.atte.bragwise.domain.HeadToHead
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.OptionType
@@ -206,7 +207,7 @@ internal fun DocumentSnapshot.toCloudFriends(): List<CloudFriend> = runCatching 
     data<SocialDocDto>().friends.map { (uid, ts) ->
         val since = ts.toInstant()
         CloudFriend(
-            player = Player(uid = uid, username = "", displayName = uid, avatarSeed = uid, createdAt = since),
+            player = Player(uid = uid, username = "", displayName = GENERIC_DISPLAY_NAME, avatarSeed = "", createdAt = since),
             since = since,
         )
     }

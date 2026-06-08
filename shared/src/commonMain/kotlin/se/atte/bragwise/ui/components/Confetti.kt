@@ -43,8 +43,8 @@ private data class Particle(
     val height: Float,
 )
 
-private fun generateParticles(count: Int): List<Particle> {
-    val random = Random(seed = 1337)
+private fun generateParticles(count: Int, seed: Int): List<Particle> {
+    val random = Random(seed = seed)
     return List(count) { index ->
         val angle = (index.toFloat() / count) * 360f
         val speed = 0.25f + random.nextFloat() * 0.45f
@@ -69,7 +69,8 @@ private fun generateParticles(count: Int): List<Particle> {
  */
 @Composable
 fun Confetti(modifier: Modifier = Modifier) {
-    val particles = remember { generateParticles(count = 80) }
+    val seed = remember { Random.nextInt() }
+    val particles = remember(seed) { generateParticles(count = 80, seed = seed) }
     var triggered by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { triggered = true }
 

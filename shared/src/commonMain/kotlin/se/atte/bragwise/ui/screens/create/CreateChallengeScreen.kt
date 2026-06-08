@@ -207,7 +207,7 @@ fun CreateChallengeScreen(
                         text = when (state.visibility) {
                             Visibility.FRIENDS -> "Any of your friends can join with the link."
                             Visibility.INVITE_ONLY -> "Only people you explicitly invite can join."
-                            Visibility.PROMOTED -> ""
+                            else -> "" // PROMOTED is server-only; unreachable in the creator form
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

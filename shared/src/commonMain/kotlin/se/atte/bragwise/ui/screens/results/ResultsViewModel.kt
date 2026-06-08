@@ -44,11 +44,13 @@ class ResultsViewModel(
         combine(
             challenges.observeFinished(),
             auth.authState.map { state -> (state as? AuthState.SignedIn)?.uid ?: "" },
-        ) { finished, myUid ->
-            val seenIds = seenStore.seenIds()
-            val unseen = finished.filter { it.id !in seenIds }
-            val history = finished.filter { it.id in seenIds }
-            Sections(unseen = unseen, history = history, myUid = myUid)
+            seenStore.seenIds,
+        ) { finished, myUid, seenIds ->
+            Sections(
+                unseen = finished.filter { it.id !in seenIds },
+                history = finished.filter { it.id in seenIds },
+                myUid = myUid,
+            )
         }
             .onEach { sections ->
                 val isEmpty = sections.unseen.isEmpty() && sections.history.isEmpty()

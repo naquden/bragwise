@@ -44,6 +44,7 @@ class CreateChallengeViewModel(
         val visibility: Visibility = Visibility.FRIENDS,
         val locksAt: Instant = Clock.System.now() + 7.days,
         val bets: List<Bet> = emptyList(),
+        val betSeq: Int = 0,
         val invitedUids: Set<String> = emptySet(),
         val betsVisible: Boolean = false,
         val submitting: Boolean = false,
@@ -90,6 +91,7 @@ class CreateChallengeViewModel(
             val draft = challenges.getDraft(draftId)
             if (draft != null) {
                 update {
+                    val maxSeq = draft.bets.maxOfOrNull { b -> b.id.removePrefix("b").toIntOrNull() ?: 0 } ?: 0
                     it.copy(
                         draftId = draftId,
                         title = draft.title,
@@ -97,6 +99,7 @@ class CreateChallengeViewModel(
                         visibility = draft.visibility,
                         locksAt = draft.locksAt ?: it.locksAt,
                         bets = draft.bets,
+                        betSeq = maxSeq,
                         betsVisible = draft.betsVisible,
                         invitedUids = draft.invitedUids,
                     )
@@ -112,33 +115,36 @@ class CreateChallengeViewModel(
             is Intent.SetVisibility -> update { it.copy(visibility = intent.visibility) }
             is Intent.SetLocksAt -> update { it.copy(locksAt = intent.locksAt) }
             is Intent.AddSinglePick -> update {
+                val seq = it.betSeq + 1
                 val opts = intent.options.mapIndexed { i, opt ->
                     opt.copy(id = "o$i")
                 }
                 val bet = Bet.SinglePick(
-                    id = "b${it.bets.size + 1}",
+                    id = "b$seq",
                     title = intent.title,
                     optionType = intent.optionType,
                     options = opts,
                 )
-                it.copy(bets = it.bets + bet)
+                it.copy(bets = it.bets + bet, betSeq = seq)
             }
             is Intent.AddRanking -> update {
+                val seq = it.betSeq + 1
                 val opts = intent.options.mapIndexed { i, opt ->
                     opt.copy(id = "o$i")
                 }
                 val bet = Bet.Ranking(
-                    id = "b${it.bets.size + 1}",
+                    id = "b$seq",
                     title = intent.title,
                     optionType = intent.optionType,
                     topN = intent.topN,
                     options = opts,
                 )
-                it.copy(bets = it.bets + bet)
+                it.copy(bets = it.bets + bet, betSeq = seq)
             }
             is Intent.AddBoolean -> update {
-                val bet = Bet.BooleanProp(id = "b${it.bets.size + 1}", title = intent.title)
-                it.copy(bets = it.bets + bet)
+                val seq = it.betSeq + 1
+                val bet = Bet.BooleanProp(id = "b$seq", title = intent.title)
+                it.copy(bets = it.bets + bet, betSeq = seq)
             }
             is Intent.RemoveBet -> update { it.copy(bets = it.bets.filterNot { b -> b.id == intent.betId }) }
             is Intent.UpdateBet -> update {
@@ -165,6 +171,10 @@ class CreateChallengeViewModel(
     private fun persistDraft() {
         if (state.value.submitting) return
         val s = state.value
+        if (s.title.isBlank() && s.bets.isEmpty()) {
+            emitEffect(Effect.Snackbar("Nothing to save yet"))
+            return
+        }
         update { it.copy(submitting = true) }
         viewModelScope.launch {
             val draft = buildChallenge(s)
@@ -202,15 +212,15 @@ class CreateChallengeViewModel(
             challenges.publish(draft).fold(
                 onSuccess = { saved ->
                     update { it.copy(submitting = false) }
-                    if (s.visibility == Visibility.INVITE_ONLY && s.invitedUids.isNotEmpty()) {
-                        challenges.inviteFriends(saved.id, s.invitedUids.toList())
-                            .onFailure { e -> errorReporter.report(e) }
-                    }
                     emitEffect(Effect.Published(saved.id))
                 },
                 onFailure = { e ->
                     update { it.copy(submitting = false) }
-                    errorReporter.report(e)
+                    if (e.message?.contains("invite-only-no-reachable-invitees") == true) {
+                        emitEffect(Effect.Snackbar("None of your invited friends are reachable — pick at least one"))
+                    } else {
+                        errorReporter.report(e)
+                    }
                 },
             )
         }

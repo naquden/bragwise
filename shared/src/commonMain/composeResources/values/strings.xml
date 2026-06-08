@@ -20,6 +20,10 @@
     <string name="error_no_access">You don't have access to this challenge. Ask the creator to invite you.</string>
     <string name="error_challenge_closed">This challenge is locked — predictions are closed.</string>
     <string name="error_not_found">This challenge no longer exists.</string>
+    <string name="error_already_friends">You\'re already friends with this person.</string>
+    <string name="error_request_already_sent">You\'ve already sent a friend request to this person.</string>
+    <string name="error_cannot_friend_self">You can\'t add yourself as a friend.</string>
+    <string name="error_handle_not_found">No user found with that username.</string>
     <string name="error_unknown">Something went wrong.</string>
     <string name="error_dialog_dismiss">OK</string>
 
@@ -61,6 +65,10 @@
     <string name="auth_google">Sign in with Google</string>
     <string name="auth_apple">Sign in with Apple</string>
 
+    <!-- Profile / identity. -->
+    <string name="profile_unknown_player">Unknown player</string>
+    <string name="profile_former_participant">Former participant</string>
+
     <!-- Me / Settings. -->
     <string name="me_logged_in">Logged in</string>
     <string name="me_section_account">Account</string>
@@ -95,4 +103,7 @@
     <string name="cc_deadline_hint">When predictions lock. No edits after this.</string>
     <string name="cc_save_draft">Save draft</string>
     <string name="cc_publish">Publish</string>
+
+    <!-- Guest migration (auto-merge on sign-in). `%1$d` is the number of failed predictions. -->
+    <string name="migration_failed_notice">%1$d guest prediction(s) couldn\'t be imported — their deadline had passed.</string>
 </resources>

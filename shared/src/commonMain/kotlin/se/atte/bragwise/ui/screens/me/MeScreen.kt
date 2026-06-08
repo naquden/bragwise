@@ -61,6 +61,7 @@ fun MeScreen(
     onNavigateToSignIn: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
     onNavigateToAbout: () -> Unit,
+    onSignedOut: () -> Unit,
     onDeleted: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -70,6 +71,7 @@ fun MeScreen(
             MeViewModel.Effect.GoToFriends -> onNavigateToFriends()
             MeViewModel.Effect.GoToEditProfile -> onNavigateToEditProfile()
             MeViewModel.Effect.GoToAbout -> onNavigateToAbout()
+            MeViewModel.Effect.SignedOut -> onSignedOut()
             MeViewModel.Effect.Deleted -> onDeleted()
             is MeViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
         }
@@ -154,7 +156,7 @@ private fun MeContent(
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    text = "Sign up to save your run, join friends, and appear on leaderboards.",
+                    text = "Sign up to keep your progress across devices, join friends, and appear on leaderboards.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),

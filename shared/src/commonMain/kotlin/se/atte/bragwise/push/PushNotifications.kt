@@ -13,6 +13,7 @@ expect class PushNotifications {
     suspend fun requestPermission(): Boolean
     val tokens: SharedFlow<PushToken>
     val incomingDeepLinks: SharedFlow<String>
+    fun markDeepLinkConsumed()
 }
 
 data class PushToken(val value: String, val platform: PushPlatform)

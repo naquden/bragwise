@@ -1,5 +1,6 @@
 package se.atte.bragwise.di
 
+import kotlinx.coroutines.Dispatchers
 import org.koin.dsl.module
 import se.atte.bragwise.data.ActivityRegistrar
 import se.atte.bragwise.data.AuthRepository
@@ -21,7 +22,7 @@ val mockDataModule = module {
     single<AuthRepository> { MockAuthRepository() }
     single<ChallengeRepository> { MockChallengeRepository(auth = get()) }
     single { LocalPredictionStore(get<BragwiseDatabase>()) }
-    single { ResultsSeenStore(get<BragwiseDatabase>()) }
+    single { ResultsSeenStore(get<BragwiseDatabase>(), Dispatchers.Default) }
     single { EnsureNamedAccount(auth = get(), profile = get(), onboardingPrefs = get()) }
     single<SocialRepository> { MockSocialRepository() }
     single<ProfileRepository> { MockProfileRepository() }
