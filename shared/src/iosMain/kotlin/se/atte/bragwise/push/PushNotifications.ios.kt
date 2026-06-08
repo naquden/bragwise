@@ -24,6 +24,11 @@ actual class PushNotifications {
 
     actual suspend fun requestPermission(): Boolean = true
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    actual fun markDeepLinkConsumed() {
+        _links.resetReplayCache()
+    }
+
     fun onNewToken(token: String) {
         _tokens.tryEmit(PushToken(value = token, platform = PushPlatform.APNS))
     }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import _avatarFixture from './fixtures/avatarSeeds.json';
 
 /**
  * Zod schemas per callable. Server-derived fields (createdBy, createdAt,
@@ -8,6 +9,21 @@ import { z } from 'zod';
  * Fixture-driven parity with the Kotlin client serializer is enforced by
  * `functions/test/fixtures/api/{callable}/{valid,invalid}/`.
  */
+
+// Avatar seed allowlist — imported from src/fixtures/avatarSeeds.json so the
+// data is bundled into the deployed function. The test fixture at
+// test/fixtures/avatar/seeds.json is a copy; keep them in sync.
+const _legacyRe = new RegExp(_avatarFixture.legacyRegex);
+const _flagSeeds = new Set(_avatarFixture.flagCodes.map((c) => `flag:${c}`));
+const _emojiSeeds = new Set(_avatarFixture.emoji);
+
+export const AvatarSeedSchema = z
+  .string()
+  .max(32)
+  .refine(
+    (v) => v === '' || _emojiSeeds.has(v) || _flagSeeds.has(v) || _legacyRe.test(v),
+    { message: 'invalid-avatarSeed' },
+  );
 
 export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('SINGLE_PICK'), optionId: z.string().min(1) }),
@@ -50,6 +66,19 @@ export const BetSchema = z.discriminatedUnion('kind', [
 ]);
 
 export const VisibilitySchema = z.enum(['FRIENDS', 'INVITE_ONLY']); // PROMOTED never accepted from client
+
+function validateInviteOnlyHasInvitees(
+  data: { visibility: z.infer<typeof VisibilitySchema>; invitedUids: string[] },
+  ctx: z.RefinementCtx,
+) {
+  if (data.visibility === 'INVITE_ONLY' && data.invitedUids.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'invite-only-needs-invitees',
+      path: ['invitedUids'],
+    });
+  }
+}
 
 // Validates that each RANKING bet has topN <= options.length.
 // Applied via superRefine so the base object shape remains extendable.
@@ -97,6 +126,7 @@ const CreateChallengeBaseSchema = z.object({
   ),
   bets: z.array(BetSchema).min(1),
   betsVisible: z.boolean().default(false),
+  invitedUids: z.array(z.string().min(1)).max(100).default([]),
   // Hard-rejected if present:
   promoted: z.never().optional(),
   trusted: z.never().optional(),
@@ -104,7 +134,8 @@ const CreateChallengeBaseSchema = z.object({
 
 export const CreateChallengeSchema = CreateChallengeBaseSchema
   .superRefine(validateRankingTopN)
-  .superRefine(validateNoDuplicateOptions);
+  .superRefine(validateNoDuplicateOptions)
+  .superRefine(validateInviteOnlyHasInvitees);
 
 export const SubmitPredictionsSchema = z.object({
   challengeId: z.string().min(1),
@@ -140,14 +171,18 @@ export const UnfriendSchema = z.object({
   otherUid: z.string().min(1),
 });
 
+export const WithdrawFriendRequestSchema = z.object({
+  otherUid: z.string().min(1),
+});
+
 export const UpdateProfileSchema = z.object({
-  displayName: z.string().min(1).max(40).optional(),
-  avatarSeed: z.string().optional(),
-  handle: z.string().regex(/^[a-z0-9_]{3,20}$/).optional(),
+  displayName: z.string().min(1, 'invalid-displayName').max(40, 'invalid-displayName').optional(),
+  avatarSeed: AvatarSeedSchema.optional(),
+  handle: z.string().regex(/^[a-z0-9_]{3,20}$/, 'invalid-handle').optional(),
 });
 
 export const ClaimHandleSchema = z.object({
-  handle: z.string().regex(/^[a-z0-9_]{3,20}$/),
+  handle: z.string().regex(/^[a-z0-9_]{3,20}$/, 'invalid-handle'),
 });
 
 export const RegisterPushTokenSchema = z.object({
@@ -160,6 +195,10 @@ export const SetNotificationPrefSchema = z.object({
 });
 
 export const DeleteChallengeSchema = z.object({
+  challengeId: z.string().min(1),
+});
+
+export const RecomputeLeaderboardSchema = z.object({
   challengeId: z.string().min(1),
 });
 

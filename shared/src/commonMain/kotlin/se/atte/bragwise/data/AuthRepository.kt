@@ -56,26 +56,15 @@ sealed interface AuthPayload {
     data class EmailLinkComplete(val email: String, val link: String) : AuthPayload
 }
 
-enum class MigrationMode { RESTORE, SYNC, SKIP }
-
 data class MigrationSummary(
     val migrated: Int,
-    val deferredKeptLocal: Int,
-    val droppedLocked: Int,
+    val skipped: Int,
+    val failed: Int,
 )
 
 interface AuthRepository {
     val authState: StateFlow<AuthState>
     val pendingSignInEmail: StateFlow<String?>
-
-    /**
-     * Whether the most recently completed sign-in created a brand-new account
-     * (`true`) or returned to an existing one (`false`). Drives OB-05 mode
-     * selection: a new account SYNCs guest predictions up; an existing account
-     * RESTOREs from the cloud, dropping local guest data. `null` until the
-     * first sign-in completes this process.
-     */
-    val lastSignInCreatedNewUser: Boolean?
 
     /** True iff this link looks like a Firebase email sign-in link. */
     fun isSignInLink(link: String): Boolean
@@ -103,7 +92,7 @@ interface AuthRepository {
 
     suspend fun signOut()
     suspend fun deleteAccount(): Result<Unit>
-    suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary>
+    suspend fun migrateLocalToCloud(): Result<MigrationSummary>
 }
 
 /**
@@ -125,9 +114,6 @@ class FirebaseAuthRepository(
 ) : AuthRepository {
     private val _pendingSignInEmail = MutableStateFlow(local.pendingSignInEmail)
     override val pendingSignInEmail: StateFlow<String?> = _pendingSignInEmail
-
-    override var lastSignInCreatedNewUser: Boolean? = null
-        private set
 
     /**
      * Emits `Loading` once then switches to `SignedOut` / `SignedIn` based
@@ -160,8 +146,7 @@ class FirebaseAuthRepository(
     override suspend fun completeSignInWithLink(link: String): Result<Unit> = runCatching {
         val email = local.pendingSignInEmail
             ?: error("no pending email — link may have been opened on a different device")
-        val result = remote.completeSignIn(email = email, link = link)
-        lastSignInCreatedNewUser = result.additionalUserInfo?.isNewUser
+        remote.completeSignIn(email = email, link = link)
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
     }
@@ -180,29 +165,20 @@ class FirebaseAuthRepository(
     }
 
     /**
-     * OB-05 Restore / Sync / Skip. RESTORE drops local guest predictions and
-     * loads the cloud account as-is; SYNC replays them through the
-     * `migrateGuestData` callable; SKIP is a no-op (caller aborts auth before
-     * this runs). On a successful SYNC the local store is cleared so the same
-     * predictions are never migrated twice.
+     * Always-merge: replays local guest predictions into the signed-in account via
+     * `migrateGuestData`. Account's existing predictions are never overwritten
+     * (skipIfExists server-side). Clears only the resolved (migrated + skipped)
+     * challenges locally; failed ones are also cleared after counting so the store
+     * doesn't accumulate permanently-unmigrateable rows.
      */
-    override suspend fun migrateLocalToCloud(mode: MigrationMode): Result<MigrationSummary> = runCatching {
-        when (mode) {
-            MigrationMode.SKIP -> MigrationSummary(migrated = 0, deferredKeptLocal = 0, droppedLocked = 0)
-            MigrationMode.RESTORE -> {
-                localPredictions.clear()
-                MigrationSummary(migrated = 0, deferredKeptLocal = 0, droppedLocked = 0)
-            }
-            MigrationMode.SYNC -> {
-                val pending = localPredictions.snapshot()
-                if (pending.isEmpty()) {
-                    MigrationSummary(migrated = 0, deferredKeptLocal = 0, droppedLocked = 0)
-                } else {
-                    val summary = challengeRemote.migrateGuestData(pending)
-                    localPredictions.clear()
-                    summary
-                }
-            }
+    override suspend fun migrateLocalToCloud(): Result<MigrationSummary> = runCatching {
+        val pending = localPredictions.snapshot()
+        if (pending.isEmpty()) {
+            MigrationSummary(migrated = 0, skipped = 0, failed = 0)
+        } else {
+            val summary = challengeRemote.migrateGuestData(pending)
+            localPredictions.clear()
+            summary
         }
     }
 }

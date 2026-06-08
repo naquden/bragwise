@@ -9,6 +9,7 @@ import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.functions.FirebaseFunctions
 import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
@@ -20,11 +21,13 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.GENERIC_DISPLAY_NAME
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
+import se.atte.bragwise.domain.scoring.competitionRanks
 
 class ChallengeRemoteDataSource(
     private val db: FirebaseFirestore = Firebase.firestore,
@@ -116,13 +119,8 @@ class ChallengeRemoteDataSource(
 
         emitAll(
             combine(challengeFlow, playerFlow) { challenge, myPredictions ->
-                val myPoints = challenge.leaderboard?.get(myUid)
                 val rank = challenge.leaderboard
-                    ?.entries
-                    ?.sortedByDescending { it.value }
-                    ?.indexOfFirst { it.key == myUid }
-                    ?.takeIf { it >= 0 }
-                    ?.let { it + 1 }
+                    ?.let { competitionRanks(it).firstOrNull { e -> e.uid == myUid }?.rank }
                 ChallengeDetail(
                     challenge = challenge,
                     myPredictions = myPredictions,
@@ -195,6 +193,7 @@ class ChallengeRemoteDataSource(
             "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to create a challenge" }.toString(),
             "bets" to challenge.bets.map { it.toMap() },
             "betsVisible" to challenge.betsVisible,
+            "invitedUids" to challenge.invitedUids.toList(),
         )
         val result = functions.httpsCallable("createChallenge")(data)
         val resultData = result.data(MapSerializer(String.serializer(), String.serializer().nullable))
@@ -238,11 +237,10 @@ class ChallengeRemoteDataSource(
     }
 
     /**
-     * Replay guest predictions into the cloud on authenticate (OB-05 Sync).
-     * Per-item eligibility/lock filtering happens server-side; the callable
-     * returns `{migrated, failed}`. Locked / ineligible items count as
-     * `failed` and are intentionally dropped (see `migrateGuestData` in
-     * `functions/src/index.ts`).
+     * Replay guest predictions into the cloud on authenticate.
+     * Server skips challenges the account already predicted (never clobbers).
+     * Returns per-challenge id arrays: migrated (new), skipped (already existed),
+     * failed (locked / ineligible / invalid).
      */
     suspend fun migrateGuestData(predictions: List<LocalPrediction>): MigrationSummary {
         val data = hashMapOf(
@@ -251,10 +249,11 @@ class ChallengeRemoteDataSource(
             },
         )
         val result = functions.httpsCallable("migrateGuestData")(data)
-        val counts = result.data(MapSerializer(String.serializer(), Int.serializer()))
-        val migrated = counts["migrated"] ?: 0
-        val failed = counts["failed"] ?: 0
-        return MigrationSummary(migrated = migrated, deferredKeptLocal = 0, droppedLocked = failed)
+        val lists = result.data(MapSerializer(String.serializer(), ListSerializer(String.serializer())))
+        val migrated = lists["migrated"]?.size ?: 0
+        val skipped = lists["skipped"]?.size ?: 0
+        val failed = lists["failed"]?.size ?: 0
+        return MigrationSummary(migrated = migrated, skipped = skipped, failed = failed)
     }
 }
 
@@ -262,30 +261,23 @@ private fun buildLeaderboardEntries(
     sortedEntries: List<Map.Entry<String, Int>>,
     profiles: List<PublicProfile?>,
 ): List<LeaderboardEntry> {
-    val result = mutableListOf<LeaderboardEntry>()
-    var rank = 1
-    var i = 0
-    while (i < sortedEntries.size) {
-        val points = sortedEntries[i].value
-        var j = i
-        while (j < sortedEntries.size && sortedEntries[j].value == points) j++
-        val isTied = j - i > 1
-        for (k in i until j) {
-            val uid = sortedEntries[k].key
-            val profile = profiles.getOrNull(k)
-            result += LeaderboardEntry(
-                uid = uid,
-                displayName = profile?.displayName?.takeIf { it.isNotBlank() } ?: uid,
-                avatarSeed = profile?.avatarSeed?.takeIf { it.isNotBlank() } ?: uid,
-                points = points,
-                rank = rank,
-                isTied = isTied,
-            )
-        }
-        rank += j - i
-        i = j
+    val profileByUid: Map<String, PublicProfile?> = sortedEntries
+        .mapIndexed { idx, entry -> entry.key to profiles.getOrNull(idx) }
+        .toMap()
+    val board = sortedEntries.associate { it.key to it.value }
+    val ranks = competitionRanks(board)
+    return ranks.map { entry ->
+        val profile = profileByUid[entry.uid]
+        val isTied = ranks.count { it.rank == entry.rank } > 1
+        LeaderboardEntry(
+            uid = entry.uid,
+            displayName = profile?.displayName?.takeIf { it.isNotBlank() } ?: GENERIC_DISPLAY_NAME,
+            avatarSeed = profile?.avatarSeed?.takeIf { it.isNotBlank() } ?: "",
+            points = entry.points,
+            rank = entry.rank,
+            isTied = isTied,
+        )
     }
-    return result
 }
 
 private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this) {

@@ -25,6 +25,8 @@ class MockSocialRepository : SocialRepository {
 
     override suspend fun declineFriendRequest(requesterUid: String): Result<Unit> = Result.success(Unit)
 
+    override suspend fun withdrawFriendRequest(otherUid: String): Result<Unit> = Result.success(Unit)
+
     override suspend fun unfriend(otherUid: String): Result<Unit> {
         _cloudFriends.value = _cloudFriends.value.filterNot { it.id == otherUid }
         return Result.success(Unit)

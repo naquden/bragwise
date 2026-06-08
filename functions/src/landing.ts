@@ -78,23 +78,6 @@ export const landing = onRequest(async (req, res) => {
     return;
   }
 
-  // ── /u/{handle} ─────────────────────────────────────────────────────────────
-  const handleMatch = path.match(/^\/u\/([a-z0-9_]{3,20})$/);
-  if (handleMatch) {
-    const handle = handleMatch[1];
-    const deepLink = `https://${req.hostname}/u/${handle}`;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=300');
-    res.status(200).send(renderDeepLinkPage({
-      title: `@${handle} on ${APP_NAME}`,
-      description: 'Follow this player on Bragwise.',
-      ogImage: '',
-      deepLink,
-      ctaLabel: `Open @${handle} in Bragwise`,
-    }));
-    return;
-  }
-
   // ── everything else ─────────────────────────────────────────────────────────
   // Fall through to Firebase Hosting (index.html serves the marketing stub).
   res.status(404).send('Not found');

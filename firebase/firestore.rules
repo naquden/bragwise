@@ -25,7 +25,7 @@ service cloud.firestore {
       match /private/{doc=**} {
         allow read, write: if false;  // self-only via callable; FCM/email never client-writable
       }
-      match /private/headToHead {
+      match /private/headToHead/byChallenge/{challengeId} {
         allow read: if isSelf(uid);
         allow write: if false;        // onResultsPosted trigger only
       }
@@ -77,6 +77,7 @@ service cloud.firestore {
         allow read: if isSelf(uid) ||
           (isSignedIn() &&
             get(/databases/$(database)/documents/challenges/$(challengeId)).data.betsVisible == true &&
+            get(/databases/$(database)/documents/challenges/$(challengeId)).data.locksAt < request.time &&
             exists(/databases/$(database)/documents/challenges/$(challengeId)/players/$(request.auth.uid)));
         allow write: if false;        // submitPredictions / createChallenge / onUserDeleted
       }
@@ -101,6 +102,12 @@ service cloud.firestore {
     // observeJoined queries collectionGroup("players") filtered by uid field.
     match /{path=**}/players/{uid} {
       allow read: if isSelf(uid) || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    match /friendships/{pairId} {
+      // Readable by either member; written solely by callables (admin SDK).
+      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow write: if false;          // friend callables + onFriendshipWritten trigger
     }
 
     match /deletionRequests/{uid} {

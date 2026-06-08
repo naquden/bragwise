@@ -22,6 +22,7 @@ import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.push.PushNotifications
+import se.atte.bragwise.ui.nav.parseDeepLink
 import se.atte.bragwise.verify.VerifyAutomation
 
 class MainActivity : ComponentActivity() {
@@ -134,14 +135,13 @@ class MainActivity : ComponentActivity() {
      * Forwards a notification tap deep-link into the shared push flow.
      * BragwiseFirebaseMessagingService sets intent.data = Uri.parse(deepLink)
      * on the tap PendingIntent; we pick it up here and let AppNav navigate.
-     * Only trusted hosts with a /c/{id} path are forwarded — all others ignored.
+     * Only trusted hosts are forwarded — the shared parser decides which paths are valid.
      */
     private fun handleDeepLink(intent: Intent?) {
         val uri = intent?.data ?: return
         if (uri.scheme != "https") return
         if (uri.host !in TRUSTED_HOSTS) return
-        val path = uri.path ?: return
-        if (CHALLENGE_PATH_RE.matches(path)) {
+        if (parseDeepLink(uri.toString()) != null) {
             push.onIncomingDeepLink(uri.toString())
         }
     }
@@ -152,6 +152,5 @@ class MainActivity : ComponentActivity() {
         const val VERIFY_EUROVISION_RANKING = "eurovision_ranking"
 
         private val TRUSTED_HOSTS = setOf("bragwise.firebaseapp.com", "bragwise.app")
-        private val CHALLENGE_PATH_RE = Regex("^/c/[a-zA-Z0-9_-]+$")
     }
 }

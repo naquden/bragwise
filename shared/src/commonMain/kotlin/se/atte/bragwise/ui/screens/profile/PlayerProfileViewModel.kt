@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.onEach
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.HeadToHead
+import se.atte.bragwise.domain.ProfileResolution
 import se.atte.bragwise.domain.PublicProfile
+import se.atte.bragwise.domain.resolve
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
@@ -31,8 +33,12 @@ class PlayerProfileViewModel(
 
     init {
         combine(profiles.observePublicProfile(uid), social.observeHeadToHead()) { p, h ->
-            val profile = p ?: PublicProfile(uid = uid, username = "", displayName = uid, avatarSeed = uid)
-            update { it.copy(ui = UiState.Ready(Data(profile = profile, head = h.vs[uid]))) }
+            when (val resolution = p.resolve()) {
+                is ProfileResolution.NotFound -> update { it.copy(ui = UiState.Empty()) }
+                is ProfileResolution.Loaded -> update {
+                    it.copy(ui = UiState.Ready(Data(profile = resolution.profile, head = h.vs[uid])))
+                }
+            }
         }
             .catch { e ->
                 update { it.copy(ui = UiState.Failed(e.toCause())) }

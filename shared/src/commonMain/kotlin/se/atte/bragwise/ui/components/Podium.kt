@@ -310,9 +310,9 @@ private fun PodiumSlot(
                     .background(plinthColor),
                 contentAlignment = Alignment.Center,
             ) {
-                val rankEmoji = when {
-                    isWinner -> "🥇"
-                    entry.rank == 2 -> "🥈"
+                val rankEmoji = when (entry.rank) {
+                    1 -> "🥇"
+                    2 -> "🥈"
                     else -> "🥉"
                 }
                 Text(text = rankEmoji, style = MaterialTheme.typography.titleMedium)

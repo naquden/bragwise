@@ -11,6 +11,10 @@ import bragwise.shared.generated.resources.error_no_access
 import bragwise.shared.generated.resources.error_not_found
 import bragwise.shared.generated.resources.error_rate_limited
 import bragwise.shared.generated.resources.error_unknown
+import bragwise.shared.generated.resources.error_already_friends
+import bragwise.shared.generated.resources.error_request_already_sent
+import bragwise.shared.generated.resources.error_cannot_friend_self
+import bragwise.shared.generated.resources.error_handle_not_found
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -35,6 +39,10 @@ sealed interface Cause {
     data object NoAccess : Cause
     data object ChallengeClosed : Cause
     data object NotFound : Cause
+    data object AlreadyFriends : Cause
+    data object RequestAlreadySent : Cause
+    data object CannotFriendSelf : Cause
+    data object HandleNotFound : Cause
     data class Unknown(val message: String? = null) : Cause
 
     @Composable
@@ -47,6 +55,10 @@ sealed interface Cause {
         NoAccess -> stringResource(Res.string.error_no_access)
         ChallengeClosed -> stringResource(Res.string.error_challenge_closed)
         NotFound -> stringResource(Res.string.error_not_found)
+        AlreadyFriends -> stringResource(Res.string.error_already_friends)
+        RequestAlreadySent -> stringResource(Res.string.error_request_already_sent)
+        CannotFriendSelf -> stringResource(Res.string.error_cannot_friend_self)
+        HandleNotFound -> stringResource(Res.string.error_handle_not_found)
         is Unknown -> stringResource(Res.string.error_unknown)
     }
 }
@@ -55,7 +67,7 @@ fun Throwable.toCause(): Cause = when {
     this is kotlin.coroutines.cancellation.CancellationException -> throw this
     // Server-thrown HttpsError detail strings (functions/src/index.ts) and the
     // Firestore rule-denial code both surface in `message`. Match the most
-    // specific first.
+    // specific first; friend-specific strings must come before the generic `not-found`.
     message?.contains("not-eligible", ignoreCase = true) == true -> Cause.NoAccess
     message?.contains("not-creator", ignoreCase = true) == true -> Cause.NoAccess
     // Firestore PERMISSION_DENIED is a rule-denial (e.g. INVITE_ONLY read gate),
@@ -64,11 +76,16 @@ fun Throwable.toCause(): Cause = when {
     message?.contains("UNAUTHENTICATED", ignoreCase = true) == true -> Cause.Auth
     message?.contains("challenge-locked", ignoreCase = true) == true ||
         message?.contains("challenge-not-open", ignoreCase = true) == true -> Cause.ChallengeClosed
-    message?.contains("challenge-not-found", ignoreCase = true) == true ||
-        message?.contains("not-found", ignoreCase = true) == true -> Cause.NotFound
+    message?.contains("challenge-not-found", ignoreCase = true) == true -> Cause.NotFound
     message?.contains("resource-exhausted", ignoreCase = true) == true ||
         message?.contains("challenge-cap-reached", ignoreCase = true) == true -> Cause.CapReached
     message?.contains("UNAVAILABLE", ignoreCase = true) == true ||
         message?.contains("network", ignoreCase = true) == true -> Cause.Network
+    // Friend-specific causes — must be checked before generic `not-found`.
+    message?.contains("already-friends", ignoreCase = true) == true -> Cause.AlreadyFriends
+    message?.contains("request-already-sent", ignoreCase = true) == true -> Cause.RequestAlreadySent
+    message?.contains("cannot-friend-self", ignoreCase = true) == true -> Cause.CannotFriendSelf
+    message?.contains("handle-not-found", ignoreCase = true) == true -> Cause.HandleNotFound
+    message?.contains("not-found", ignoreCase = true) == true -> Cause.NotFound
     else -> Cause.Unknown(message)
 }

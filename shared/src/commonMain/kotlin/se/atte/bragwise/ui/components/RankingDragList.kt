@@ -297,7 +297,7 @@ internal class RankingDragStateHolder(
      * Submit is gated on a full ranking (no gaps), so "" never reaches the
      * callable, scoring, or persistence.
      */
-    private fun currentOrderedIds(): List<String> {
+    internal fun currentOrderedIds(): List<String> {
         val ids = _slots.map { it?.id ?: "" }
         val lastFilled = ids.indexOfLast { it.isNotEmpty() }
         return if (lastFilled < 0) emptyList() else ids.subList(0, lastFilled + 1)
@@ -387,7 +387,7 @@ fun RankingDragList(
         undoJob?.cancel()
         val undo = holder.removeFromSlot(index)
         savedUndo = undo
-        onReorder(holder.slots.mapNotNull { it?.id })
+        onReorder(holder.currentOrderedIds())
         launchSnackbar()
     }
 

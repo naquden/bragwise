@@ -14,6 +14,7 @@ import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
+import se.atte.bragwise.ui.isCompleteFor
 
 class PostResultsViewModel(
     private val challengeId: String,
@@ -62,7 +63,7 @@ class PostResultsViewModel(
             it.copy(results = it.results + (intent.betId to PredictionPayload.BooleanProp(intent.value)))
         }
         is Intent.SetRanking -> update {
-            it.copy(results = it.results + (intent.betId to PredictionPayload.Ranking(intent.orderedIds)))
+            it.copy(results = it.results + (intent.betId to PredictionPayload.Ranking(intent.orderedIds.stripSlots())))
         }
         Intent.RequestConfirm -> update { it.copy(confirming = true) }
         Intent.Cancel -> update { it.copy(confirming = false) }
@@ -79,12 +80,5 @@ class PostResultsViewModel(
     }
 }
 
-internal fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
-    is Bet.Ranking -> {
-        // A ranking is complete only when every slot is filled — no gaps.
-        // Slot order may carry "" sentinels for empty slots while editing.
-        val ids = (this as? PredictionPayload.Ranking)?.orderedOptionIds.orEmpty()
-        ids.count { it.isNotEmpty() } == bet.topN
-    }
-    is Bet.SinglePick, is Bet.BooleanProp -> this != null
-}
+internal fun List<String>.stripSlots(): List<String> = filter { it.isNotEmpty() }
+

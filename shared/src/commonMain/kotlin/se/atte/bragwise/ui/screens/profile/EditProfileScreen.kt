@@ -97,6 +97,7 @@ private fun EditProfileContent(
                         onValueChange = onSetUsername,
                         label = { Text("Username") },
                         prefix = { Text("@") },
+                        enabled = !state.saving,
                         isError = state.usernameError != null,
                         supportingText = {
                             Text(state.usernameError ?: "Unique identifier used for friend requests and invitations. Lowercase letters, numbers and _, 3-20 characters.")
@@ -109,7 +110,11 @@ private fun EditProfileContent(
                         value = state.displayName,
                         onValueChange = onSetDisplayName,
                         label = { Text("Display name") },
-                        supportingText = { Text("Shown on challenges and the leaderboard.") },
+                        enabled = !state.saving,
+                        isError = state.displayNameError != null,
+                        supportingText = {
+                            Text(state.displayNameError ?: "Shown on challenges and the leaderboard.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.onEach
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.GENERIC_DISPLAY_NAME
 import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.mvi.ErrorReporter
@@ -41,7 +42,7 @@ class ParticipantBetsViewModel(
             challenges.observeParticipantPredictions(challengeId = challengeId, uid = uid),
         ) { detail: ChallengeDetail, predictions: Map<String, PredictionPayload> ->
             val participant = detail.challenge.participants.firstOrNull { it.uid == uid }
-                ?: ParticipantInfo(uid = uid, displayName = uid, avatarSeed = uid)
+                ?: ParticipantInfo(uid = uid, displayName = GENERIC_DISPLAY_NAME, avatarSeed = "")
             Data(
                 participant = participant,
                 bets = detail.challenge.bets,

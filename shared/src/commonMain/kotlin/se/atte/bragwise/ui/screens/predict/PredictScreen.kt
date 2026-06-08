@@ -56,6 +56,7 @@ import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.components.FlagImage
+import se.atte.bragwise.ui.isCompleteFor
 import se.atte.bragwise.verify.VerifyAutomation
 
 @Composable
@@ -338,15 +339,6 @@ private fun CountryOptionRow(
     }
 }
 
-internal fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
-    is Bet.Ranking -> {
-        // A ranking is complete only when every slot is filled — no gaps.
-        // Slot order may carry "" sentinels for empty slots while editing.
-        val ids = (this as? PredictionPayload.Ranking)?.orderedOptionIds.orEmpty()
-        ids.count { it.isNotEmpty() } == bet.topN
-    }
-    is Bet.SinglePick, is Bet.BooleanProp -> this != null
-}
 
 // region Previews
 

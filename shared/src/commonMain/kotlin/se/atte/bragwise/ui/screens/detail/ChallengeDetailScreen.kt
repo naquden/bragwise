@@ -99,11 +99,29 @@ fun ChallengeDetailScreen(
             Text("No challenge")
         }
         is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = ui.cause.toUserMessage(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (ui.cause == se.atte.bragwise.mvi.Cause.NoAccess) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(24.dp),
+                ) {
+                    Text(
+                        text = "This challenge is invite-only",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        text = "Ask the creator to invite you.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                Text(
+                    text = ui.cause.toUserMessage(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         is UiState.Ready -> {
             DetailContent(
@@ -230,7 +248,8 @@ private fun DetailContent(
                     ListGroup {
                         shown.forEachIndexed { index, participant ->
                             val points = challenge.leaderboard?.get(participant.uid)
-                            val canViewBets = challenge.betsVisible || participant.uid == myUid
+                            val canViewBets = participant.uid == myUid ||
+                                (challenge.betsVisible && challenge.status != ChallengeStatus.OPEN)
                             ParticipantRow(
                                 participant = participant,
                                 points = points,
@@ -268,8 +287,8 @@ private fun DetailContent(
             }
 
             if (isOwner) {
-                val canPost = challenge.status == ChallengeStatus.LOCKED ||
-                    challenge.status == ChallengeStatus.OPEN
+                val canPost = challenge.status == ChallengeStatus.OPEN ||
+                    challenge.status == ChallengeStatus.LOCKED
                 item {
                     AppOutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
@@ -299,11 +318,21 @@ private fun DetailContent(
             }
         }
 
+        val canPredict = challenge.status == ChallengeStatus.OPEN
         BottomActionBar {
             AppButton(
                 modifier = Modifier.fillMaxWidth().testTag("detail_make_predictions"),
                 onClick = onPredict,
-            ) { Text(if (joined) "Edit predictions" else "Make predictions") }
+                enabled = canPredict,
+            ) {
+                Text(
+                    when {
+                        canPredict && joined -> "Edit predictions"
+                        canPredict -> "Make predictions"
+                        else -> "View predictions"
+                    }
+                )
+            }
         }
     }
 }

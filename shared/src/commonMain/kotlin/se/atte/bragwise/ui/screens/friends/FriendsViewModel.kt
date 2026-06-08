@@ -13,8 +13,10 @@ import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.data.observeProfiles
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Friend
+import se.atte.bragwise.domain.GENERIC_DISPLAY_NAME
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
+import se.atte.bragwise.mvi.Cause
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
 
@@ -33,14 +35,18 @@ class FriendsViewModel(
         val username: String?,
     )
 
+    enum class FriendAction { Accept, Decline }
+
     data class State(
         val ui: UiState<List<Friend>>,
         val incoming: List<RequestRow> = emptyList(),
         val outgoingCount: Int = 0,
-        val acting: Set<String> = emptySet(),
+        val acting: Set<Pair<String, FriendAction>> = emptySet(),
         val addingFriend: Boolean = false,
         val sendingRequest: Boolean = false,
-    )
+    ) {
+        fun isActing(uid: String, action: FriendAction) = (uid to action) in acting
+    }
 
     sealed interface Intent {
         data object OpenAddFriend : Intent
@@ -66,7 +72,7 @@ class FriendsViewModel(
                         val profile = byUid[friend.player.uid]
                         friend.copy(
                             player = friend.player.copy(
-                                displayName = profile?.displayName?.ifBlank { null } ?: friend.player.uid,
+                                displayName = profile?.displayName?.ifBlank { null } ?: GENERIC_DISPLAY_NAME,
                                 username = profile?.username ?: "",
                             ),
                         )
@@ -91,7 +97,7 @@ class FriendsViewModel(
                         val profile = byUid[uid]
                         RequestRow(
                             uid = uid,
-                            displayName = profile?.displayName ?: uid,
+                            displayName = profile?.displayName ?: GENERIC_DISPLAY_NAME,
                             username = profile?.username?.ifBlank { null },
                         )
                     }
@@ -108,16 +114,25 @@ class FriendsViewModel(
             Intent.DismissAddFriend -> update { it.copy(addingFriend = false) }
             is Intent.SendFriendRequest -> sendFriendRequest(intent.username)
             is Intent.OpenCloud -> emitEffect(Effect.OpenCloudProfile(intent.uid))
-            is Intent.Accept -> act(intent.uid) { social.acceptFriendRequest(intent.uid) }
-            is Intent.Decline -> act(intent.uid) { social.declineFriendRequest(intent.uid) }
+            is Intent.Accept -> act(intent.uid, FriendAction.Accept) { social.acceptFriendRequest(intent.uid) }
+            is Intent.Decline -> act(intent.uid, FriendAction.Decline) { social.declineFriendRequest(intent.uid) }
         }
     }
 
-    private fun act(uid: String, op: suspend () -> Result<Unit>) {
+    private fun act(uid: String, action: FriendAction, op: suspend () -> Result<Unit>) {
+        val key = uid to action
         viewModelScope.launch {
-            update { it.copy(acting = it.acting + uid) }
-            op().onFailure { errorReporter.report(it) }
-            update { it.copy(acting = it.acting - uid) }
+            update { it.copy(acting = it.acting + key) }
+            op().onFailure { e ->
+                val cause = e.toCause()
+                val msg = when (cause) {
+                    Cause.NotFound -> "This request is no longer available"
+                    else -> null
+                }
+                if (msg != null) emitEffect(Effect.Snackbar(msg))
+                else errorReporter.report(e)
+            }
+            update { it.copy(acting = it.acting - key) }
         }
     }
 
@@ -134,7 +149,15 @@ class FriendsViewModel(
                 }
                 .onFailure { error ->
                     update { it.copy(sendingRequest = false) }
-                    errorReporter.report(error)
+                    val msg = when (error.toCause()) {
+                        Cause.AlreadyFriends -> "You're already friends with @$trimmed"
+                        Cause.RequestAlreadySent -> "You've already sent a request to @$trimmed"
+                        Cause.CannotFriendSelf -> "You can't add yourself"
+                        Cause.HandleNotFound -> "No user found with username @$trimmed"
+                        else -> null
+                    }
+                    if (msg != null) emitEffect(Effect.Snackbar(msg))
+                    else errorReporter.report(error)
                 }
         }
     }

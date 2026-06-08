@@ -62,6 +62,7 @@ class MeViewModel(
         data object GoToFriends : Effect
         data object GoToEditProfile : Effect
         data object GoToAbout : Effect
+        data object SignedOut : Effect
         data object Deleted : Effect
         data class Snackbar(val text: String) : Effect
     }
@@ -125,7 +126,10 @@ class MeViewModel(
             Intent.OpenFriends -> emitEffect(Effect.GoToFriends)
             Intent.OpenEditProfile -> emitEffect(Effect.GoToEditProfile)
             Intent.OpenAbout -> emitEffect(Effect.GoToAbout)
-            Intent.SignOut -> viewModelScope.launch { auth.signOut() }
+            Intent.SignOut -> viewModelScope.launch {
+                auth.signOut()
+                emitEffect(Effect.SignedOut)
+            }
             is Intent.SetTheme -> themePrefs.set(intent.mode)
             is Intent.SetNotifications -> viewModelScope.launch {
                 // Optimistic: reflect immediately; the observe flow corrects on

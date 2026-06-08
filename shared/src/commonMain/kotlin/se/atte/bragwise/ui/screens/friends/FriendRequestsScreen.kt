@@ -47,9 +47,10 @@ fun FriendRequestsScreen(
     FriendRequestsContent(
         incoming = state.incoming,
         outgoing = state.outgoing,
-        acting = state.acting,
+        state = state,
         onAccept = { viewModel.onIntent(FriendRequestsViewModel.Intent.Accept(it)) },
         onDecline = { viewModel.onIntent(FriendRequestsViewModel.Intent.Decline(it)) },
+        onWithdraw = { viewModel.onIntent(FriendRequestsViewModel.Intent.Withdraw(it)) },
     )
 }
 
@@ -57,9 +58,10 @@ fun FriendRequestsScreen(
 private fun FriendRequestsContent(
     incoming: List<FriendRequestsViewModel.RequestRow>,
     outgoing: List<FriendRequestsViewModel.RequestRow>,
-    acting: Set<String>,
+    state: FriendRequestsViewModel.State,
     onAccept: (String) -> Unit,
     onDecline: (String) -> Unit,
+    onWithdraw: (String) -> Unit,
 ) {
     if (incoming.isEmpty() && outgoing.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -79,7 +81,8 @@ private fun FriendRequestsContent(
                     incoming.forEachIndexed { index, row ->
                         RequestRow(
                             row = row,
-                            isActing = row.uid in acting,
+                            isAccepting = state.isActing(row.uid, FriendRequestsViewModel.FriendAction.Accept),
+                            isDeclining = state.isActing(row.uid, FriendRequestsViewModel.FriendAction.Decline),
                             onAccept = onAccept,
                             onDecline = onDecline,
                         )
@@ -92,7 +95,11 @@ private fun FriendRequestsContent(
             item {
                 SectionCard(title = "Sent (${outgoing.size})") {
                     outgoing.forEachIndexed { index, row ->
-                        SentRow(row = row)
+                        SentRow(
+                            row = row,
+                            isWithdrawing = state.isActing(row.uid, FriendRequestsViewModel.FriendAction.Withdraw),
+                            onWithdraw = onWithdraw,
+                        )
                         if (index < outgoing.size - 1) ListGroupDivider()
                     }
                 }
@@ -104,7 +111,8 @@ private fun FriendRequestsContent(
 @Composable
 private fun RequestRow(
     row: FriendRequestsViewModel.RequestRow,
-    isActing: Boolean,
+    isAccepting: Boolean,
+    isDeclining: Boolean,
     onAccept: (String) -> Unit,
     onDecline: (String) -> Unit,
 ) {
@@ -128,13 +136,13 @@ private fun RequestRow(
         Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
             AppOutlinedButton(
                 onClick = { onDecline(row.uid) },
-                enabled = !isActing,
+                enabled = !isDeclining && !isAccepting,
             ) { Text("Decline") }
             AppButton(
                 onClick = { onAccept(row.uid) },
-                enabled = !isActing,
+                enabled = !isAccepting && !isDeclining,
             ) {
-                if (isActing) {
+                if (isAccepting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
@@ -149,12 +157,17 @@ private fun RequestRow(
 }
 
 @Composable
-private fun SentRow(row: FriendRequestsViewModel.RequestRow) {
+private fun SentRow(
+    row: FriendRequestsViewModel.RequestRow,
+    isWithdrawing: Boolean,
+    onWithdraw: (String) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(Modifier.weight(1f)) {
             Text(text = row.displayName, style = MaterialTheme.typography.bodyLarge)
@@ -166,11 +179,20 @@ private fun SentRow(row: FriendRequestsViewModel.RequestRow) {
                 )
             }
         }
-        Text(
-            text = "Pending",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        AppOutlinedButton(
+            onClick = { onWithdraw(row.uid) },
+            enabled = !isWithdrawing,
+        ) {
+            if (isWithdrawing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = LocalContentColor.current,
+                )
+            } else {
+                Text("Cancel")
+            }
+        }
     }
 }
 
@@ -189,9 +211,10 @@ private fun FriendRequests_Preview() {
         FriendRequestsContent(
             incoming = listOf(previewRow(1), previewRow(2)),
             outgoing = listOf(previewRow(3)),
-            acting = emptySet(),
+            state = FriendRequestsViewModel.State(),
             onAccept = {},
             onDecline = {},
+            onWithdraw = {},
         )
     }
 }
@@ -203,9 +226,10 @@ private fun FriendRequests_Empty_Preview() {
         FriendRequestsContent(
             incoming = emptyList(),
             outgoing = emptyList(),
-            acting = emptySet(),
+            state = FriendRequestsViewModel.State(),
             onAccept = {},
             onDecline = {},
+            onWithdraw = {},
         )
     }
 }

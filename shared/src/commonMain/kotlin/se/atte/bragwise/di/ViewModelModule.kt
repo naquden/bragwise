@@ -15,16 +15,13 @@ import se.atte.bragwise.ui.screens.friends.FriendsViewModel
 import se.atte.bragwise.ui.screens.postresults.PostResultsViewModel
 import se.atte.bragwise.ui.screens.profile.EditProfileViewModel
 import se.atte.bragwise.ui.screens.profile.PlayerProfileViewModel
-import se.atte.bragwise.ui.screens.leaderboard.LeaderboardViewModel
 import se.atte.bragwise.ui.screens.me.MeViewModel
-import se.atte.bragwise.ui.screens.onboarding.MigrationViewModel
 import se.atte.bragwise.ui.screens.predict.PredictViewModel
 import se.atte.bragwise.ui.screens.results.ResultsRevealViewModel
 import se.atte.bragwise.ui.screens.results.ResultsViewModel
 
 val viewModelModule = module {
     // No route params — constructor references resolve all deps from the graph.
-    viewModelOf(::MigrationViewModel)
     viewModelOf(::ChallengesViewModel)
     viewModelOf(::MeViewModel)
     viewModel<CreateChallengeViewModel> { params ->
@@ -86,14 +83,6 @@ val viewModelModule = module {
     viewModel<PostResultsViewModel> { params ->
         PostResultsViewModel(
             challengeId = params.get<String>(),
-            challenges = get(),
-            errorReporter = get(),
-        )
-    }
-    viewModel<LeaderboardViewModel> { params ->
-        LeaderboardViewModel(
-            challengeId = params.get<String>(),
-            isPromoted = params.get<Boolean>(),
             challenges = get(),
             errorReporter = get(),
         )

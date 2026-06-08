@@ -18,7 +18,6 @@ class LocalPredictionStore(db: BragwiseDatabase) {
 
     fun put(challengeId: String, predictions: Map<String, PredictionPayload>) {
         queries.transaction {
-            queries.predictionDeleteForChallenge(challengeId)
             predictions.forEach { (betId, payload) ->
                 val (kind, optionId, orderedOptionIds, boolValue) = payload.toColumns()
                 queries.predictionUpsert(
@@ -31,6 +30,10 @@ class LocalPredictionStore(db: BragwiseDatabase) {
                 )
             }
         }
+    }
+
+    fun deleteForChallenge(challengeId: String) {
+        queries.predictionDeleteForChallenge(challengeId)
     }
 
     fun snapshot(): List<LocalPrediction> =
