@@ -49,8 +49,8 @@ android {
         applicationId = "se.atte.bragwise"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 4
-        versionName = "0.3.0"
+        versionCode = providers.gradleProperty("app.versionCode").get().toInt()
+        versionName = providers.gradleProperty("app.versionName").get()
 
         val useMock = (project.findProperty("useMockData") as String?) == "true"
         buildConfigField("boolean", "USE_MOCK_DATA", useMock.toString())
@@ -77,7 +77,6 @@ android {
             resValue(type = "string", name = "app_name", value = "Bragwise")
         }
         getByName("debug") {
-            applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             resValue(type = "string", name = "app_name", value = "Bragwise Dev")
         }

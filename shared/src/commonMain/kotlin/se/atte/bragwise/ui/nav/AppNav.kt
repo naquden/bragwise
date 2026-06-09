@@ -168,7 +168,12 @@ fun AppNav() {
         errorReporter.errors.collect { appError = it }
     }
 
-    val startDestination: Any = if (onboardingPrefs.hasSeenWelcome) RouteChallenges else RouteWelcome
+    // Computed once and remembered: NavHost rebuilds its graph (resetting the
+    // back stack to the start destination) whenever `startDestination` changes.
+    // `hasSeenWelcome` flips to true the moment the user taps Sign in, so an
+    // unremembered read would recompute to RouteChallenges on the next
+    // recomposition and bounce the user off the sign-in screen onto Challenges.
+    val startDestination: Any = remember { if (onboardingPrefs.hasSeenWelcome) RouteChallenges else RouteWelcome }
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
 

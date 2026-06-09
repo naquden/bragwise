@@ -52,3 +52,39 @@ before submitting:
 
 Guideline text: https://developer.apple.com/app-store/review/guidelines/#login-services
 
+## SQLDelight database migrations
+
+After first public release, any change to `Bragwise.sq` that adds/removes/alters tables or columns **requires a migration file** alongside it.
+
+How it works:
+1. Bump `schemaVersion` in `shared/build.gradle.kts` (sqldelight block) by 1.
+2. Create `shared/src/commonMain/sqldelight/se/atte/bragwise/db/<old_version>.sqm` with the SQL to upgrade from the previous version.
+3. SQLDelight will run that migration on existing installs; fresh installs get the full schema from `.sq` directly.
+
+Example: going from version 2 → 3, create `2.sqm`:
+```sql
+CREATE TABLE NewTable (id TEXT NOT NULL PRIMARY KEY);
+ALTER TABLE ExistingTable ADD COLUMN newCol TEXT;
+```
+
+**Pre-release note:** No migrations were written before first release. Schema versioning starts at the first public release version. Do not backfill migrations for changes made before that point — just ensure the version counter and migration files stay in sync going forward.
+
+## Firebase environments: prod vs dev
+
+The `bragwise` Firebase project is **prod**. A separate `bragwise-dev` project will be created later for the debug build only (no separate dev project for iOS — Android debug build is the sole dev target).
+
+**Current state:**
+- `androidApp/google-services.json` (gitignored, module root) is the prod config for the `bragwise` project. Module root = base config for all build variants — this is correct, do not move it.
+- Both release and debug builds use `applicationId` `se.atte.bragwise` (no `.dev` suffix — removed intentionally). Debug app name is "Bragwise Dev" via `resValue`.
+- Prod's `google-services.json` registers only `se.atte.bragwise`. Both build types hit the prod `bragwise` Firebase project for now.
+- **Side effect:** debug and release cannot be installed side-by-side on the same device (same package name).
+
+**To wire up a real dev environment later:**
+1. Add `applicationIdSuffix = ".dev"` back to the debug build type in `androidApp/build.gradle.kts`.
+2. Create a `bragwise-dev` Firebase project, register `se.atte.bragwise.dev` in it.
+3. Drop its config at `androidApp/src/debug/google-services.json`. The Google Services Gradle plugin auto-overrides the debug build; module-root file stays prod base for release.
+
+**No code changes needed for any of this.** Cloud Functions use `admin.initializeApp()` (`functions/src/lib/admin.ts`) which targets whatever project they're deployed to — deploy the same `functions/` to `bragwise-dev` later. Firestore rules/indexes deploy per project the same way.
+
+**Before launch:** purge any debug-origin test data (challenges, users) sitting in prod `bragwise` Firestore.
+
