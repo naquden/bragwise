@@ -29,3 +29,26 @@ others or share challenges.
 Bets are visible to other users when the challenge has the "show all bets"
 toggle enabled. Without that toggle, bets remain private to their owner.
 
+## Sign in with Apple not required (iOS)
+
+We do NOT need Sign in with Apple as long as passwordless email (Firebase
+email-link) stays our only auth method. App Store Review Guideline 4.8
+("Login Services") only forces Sign in with Apple when the app offers a
+third-party / social login (Google, Facebook, Apple, etc.) as the primary
+sign-in. Our own email-based account system falls under the explicit 4.8
+exception: "Your app exclusively uses your company's own account setup and
+sign-in systems."
+
+Trigger is the login TYPE, not the count. If we ever add a social login
+button (Google/Facebook/etc.) to iOS, guideline 4.8 activates and we'd then
+have to add Sign in with Apple alongside it. Pure email = safe.
+
+Two separate iOS submission blockers unrelated to this exception, verify
+before submitting:
+- In-app account deletion (Guideline 5.1.1(v)) is mandatory for any app with
+  account creation.
+- Universal Links / associated domains + `handleCodeInApp` + iOS bundle ID in
+  Firebase `ActionCodeSettings`, so the magic link reopens the app.
+
+Guideline text: https://developer.apple.com/app-store/review/guidelines/#login-services
+

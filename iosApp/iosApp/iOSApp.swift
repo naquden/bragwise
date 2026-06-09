@@ -53,9 +53,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        let useMock = true
+
         // App Check provider factory MUST be installed BEFORE
         // FirebaseApp.configure(), otherwise the first network calls Firebase
         // makes will go out without an App Check token.
+        // FirebaseApp.configure() is called even in mock mode because the shared
+        // Kotlin platformModule eagerly constructs AuthRemoteDataSource (Firebase.auth /
+        // Firebase.functions) regardless of the mock flag — skipping configure() causes
+        // a fatal crash. Auth/Analytics/FCM are still skipped in mock mode.
         #if DEBUG
         AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
         #else
@@ -64,18 +70,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
 
         FirebaseApp.configure()
 
-        // Touch Analytics so the SDK initialises (parity with Android's
-        // BragwiseApplication touching Firebase.analytics).
-        Analytics.setAnalyticsCollectionEnabled(true)
+        if !useMock {
+            // Touch Analytics so the SDK initialises (parity with Android's
+            // BragwiseApplication touching Firebase.analytics).
+            Analytics.setAnalyticsCollectionEnabled(true)
+
+            // Receive FCM registration tokens. Permission + APNs registration is
+            // requested lazily on first sign-in (see requestPushPermissionOnFirstSignInFromIos).
+            Messaging.messaging().delegate = self
+            UNUserNotificationCenter.current().delegate = self
+        }
 
         // Start Koin before any Composable is hosted. This makes the DI graph
         // available to IosAuthBridge / IosPushBridge and koinViewModel() calls.
-        KoinInitializerKt.doInitKoin(useMock: false)
-
-        // Receive FCM registration tokens. Permission + APNs registration is
-        // requested lazily on first sign-in (see requestPushPermissionOnFirstSignInFromIos).
-        Messaging.messaging().delegate = self
-        UNUserNotificationCenter.current().delegate = self
+        KoinInitializerKt.doInitKoin(useMock: useMock)
 
         return true
     }

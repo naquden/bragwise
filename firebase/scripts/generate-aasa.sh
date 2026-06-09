@@ -5,7 +5,7 @@
 #   TEAM_ID=ABCDE12345 ./firebase/scripts/generate-aasa.sh
 #
 # Bundle ID convention from iosApp/Configuration/Config.xcconfig:
-#   PRODUCT_BUNDLE_IDENTIFIER = se.atte.bragwise.Bragwise${TEAM_ID}
+#   PRODUCT_BUNDLE_IDENTIFIER = se.atte.bragwise.Bragwise
 set -euo pipefail
 
 if [[ -z "${TEAM_ID:-}" ]]; then
@@ -13,7 +13,7 @@ if [[ -z "${TEAM_ID:-}" ]]; then
   exit 1
 fi
 
-BUNDLE_ID="se.atte.bragwise.Bragwise${TEAM_ID}"
+BUNDLE_ID="se.atte.bragwise.Bragwise"
 APP_ID="${TEAM_ID}.${BUNDLE_ID}"
 OUT="$(dirname "$0")/../public/.well-known/apple-app-site-association"
 

@@ -5,6 +5,14 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<!--
+	  Export compliance: app uses only standard HTTPS/TLS (via Firebase) and
+	  OS-default keychain storage — no custom or non-exempt encryption. Set
+	  to false so App Store Connect skips the export-compliance prompt on
+	  every upload.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!--
 	  Disable Firebase's swizzling of UIApplicationDelegate. We're on the
 	  SwiftUI app lifecycle (no AppDelegate), and the proxy only added value
 	  when Dynamic Links handled the URL automatically. Dynamic Links is
