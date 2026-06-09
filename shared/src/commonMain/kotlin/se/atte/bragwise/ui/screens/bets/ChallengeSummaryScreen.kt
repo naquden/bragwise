@@ -29,6 +29,13 @@ import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.summary_bets_count
+import bragwise.shared.generated.resources.summary_edit_predictions
+import bragwise.shared.generated.resources.summary_no_predictions
+import bragwise.shared.generated.resources.summary_top_score
+import bragwise.shared.generated.resources.summary_your_rank
 import se.atte.bragwise.ui.betPoints
 import se.atte.bragwise.ui.fullPick
 import se.atte.bragwise.ui.preview.sampleDetail
@@ -58,7 +65,7 @@ fun ChallengeSummaryScreen(
             CircularProgressIndicator()
         }
         is UiState.Empty, is UiState.Failed -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text((ui as? UiState.Failed)?.cause?.toUserMessage() ?: "No predictions yet")
+            Text((ui as? UiState.Failed)?.cause?.toUserMessage() ?: stringResource(Res.string.summary_no_predictions))
         }
         is UiState.Ready -> Content(
             detail = ui.data,
@@ -85,18 +92,18 @@ private fun Content(
                 SectionCard(title = detail.challenge.title) {
                     val total = detail.challenge.leaderboard?.values?.maxOrNull() ?: 0
                     Text(
-                        text = "Bets: ${detail.challenge.bets.size}",
+                        text = stringResource(Res.string.summary_bets_count, detail.challenge.bets.size),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Your rank: ${detail.myRank?.toString() ?: "—"}",
+                        text = stringResource(Res.string.summary_your_rank, detail.myRank?.toString() ?: "—"),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (detail.challenge.status == ChallengeStatus.RESULTS_POSTED) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Top score: $total",
+                            text = stringResource(Res.string.summary_top_score, total),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
@@ -134,7 +141,7 @@ private fun Content(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onEdit,
                 ) {
-                    Text("Edit predictions")
+                    Text(stringResource(Res.string.summary_edit_predictions))
                 }
             }
         }

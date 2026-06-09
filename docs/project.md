@@ -21,5 +21,11 @@ and the client enables the button for both `OPEN` and `LOCKED` status
 ## Guests are restricted
 
 Guest accounts cannot create challenges and cannot have friends. These
-features require a non-guest (verified) account.
+features require a non-guest (verified) account. Guests also cannot invite
+others or share challenges.
+
+## Bet visibility
+
+Bets are visible to other users when the challenge has the "show all bets"
+toggle enabled. Without that toggle, bets remain private to their owner.
 

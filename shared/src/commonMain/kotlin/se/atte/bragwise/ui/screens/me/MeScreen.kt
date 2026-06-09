@@ -30,8 +30,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.me_cancel
+import bragwise.shared.generated.resources.me_delete
+import bragwise.shared.generated.resources.me_delete_account
+import bragwise.shared.generated.resources.me_delete_account_body
+import bragwise.shared.generated.resources.me_delete_account_title
+import bragwise.shared.generated.resources.me_edit_profile
+import bragwise.shared.generated.resources.me_friends
+import bragwise.shared.generated.resources.me_guest_body
+import bragwise.shared.generated.resources.me_guest_label
 import bragwise.shared.generated.resources.me_logged_in
 import bragwise.shared.generated.resources.me_section_account
+import bragwise.shared.generated.resources.me_sign_in_or_sign_up
+import bragwise.shared.generated.resources.me_sign_out
 import bragwise.shared.generated.resources.settings_about_title
 import bragwise.shared.generated.resources.settings_notifications_title
 import bragwise.shared.generated.resources.settings_section_title
@@ -108,22 +119,22 @@ fun MeScreen(
     if (state.confirmingDelete) {
         AlertDialog(
             onDismissRequest = { viewModel.onIntent(MeViewModel.Intent.CancelDelete) },
-            title = { Text("Delete account?") },
+            title = { Text(stringResource(Res.string.me_delete_account_title)) },
             text = {
                 Text(
-                    "This permanently removes your account, predictions, and friends. This cannot be undone.",
+                    stringResource(Res.string.me_delete_account_body),
                     color = MaterialTheme.colorScheme.error,
                 )
             },
             confirmButton = {
                 AppButton(onClick = { viewModel.onIntent(MeViewModel.Intent.ConfirmDelete) }) {
-                    Text("Delete")
+                    Text(stringResource(Res.string.me_delete))
                 }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(
                     onClick = { viewModel.onIntent(MeViewModel.Intent.CancelDelete) },
-                ) { Text("Cancel") }
+                ) { Text(stringResource(Res.string.me_cancel)) }
             },
         )
     }
@@ -155,11 +166,11 @@ private fun MeContent(
         SectionCard {
             if (!isSignedIn) {
                 Text(
-                    text = player?.displayName?.takeIf { it.isNotBlank() } ?: "Guest",
+                    text = player?.displayName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.me_guest_label),
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    text = "Sign up to keep your progress across devices, join friends, and appear on leaderboards.",
+                    text = stringResource(Res.string.me_guest_body),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
@@ -169,7 +180,7 @@ private fun MeContent(
                         .fillMaxWidth()
                         .padding(top = standardPadding),
                     onClick = onSignIn,
-                ) { Text("Sign in or sign up") }
+                ) { Text(stringResource(Res.string.me_sign_in_or_sign_up)) }
             } else if (player != null) {
                 Text(text = player.displayName, style = MaterialTheme.typography.headlineLarge)
                 Text(
@@ -197,13 +208,13 @@ private fun MeContent(
         SectionHeader(stringResource(Res.string.me_section_account))
         ListGroup {
             ListRow(
-                title = "Friends",
+                title = stringResource(Res.string.me_friends),
                 leadingIcon = { Icon(imageVector = Lucide.UsersRound, contentDescription = null) },
                 onClick = onFriends,
             )
             if (isSignedIn) {
                 ListGroupDivider()
-                ListRow(title = "Edit profile", onClick = onEditProfile)
+                ListRow(title = stringResource(Res.string.me_edit_profile), onClick = onEditProfile)
             }
         }
 
@@ -224,14 +235,14 @@ private fun MeContent(
             SectionGap()
             ListGroup {
                 ListRow(
-                    title = "Sign out",
+                    title = stringResource(Res.string.me_sign_out),
                     titleColor = MaterialTheme.colorScheme.error,
                     trailing = null,
                     onClick = onSignOut,
                 )
                 ListGroupDivider()
                 ListRow(
-                    title = "Delete account",
+                    title = stringResource(Res.string.me_delete_account),
                     titleColor = MaterialTheme.colorScheme.error,
                     trailing = null,
                     onClick = onRequestDelete,

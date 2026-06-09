@@ -10,6 +10,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.namegate_cancel
+import bragwise.shared.generated.resources.namegate_confirm
+import bragwise.shared.generated.resources.namegate_label
+import bragwise.shared.generated.resources.namegate_placeholder
+import bragwise.shared.generated.resources.namegate_title
 
 private const val MAX_DISPLAY_NAME = 40
 
@@ -30,13 +37,13 @@ fun NameGateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Choose a name") },
+        title = { Text(stringResource(Res.string.namegate_title)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { if (it.length <= MAX_DISPLAY_NAME) name = it },
-                label = { Text("Your name") },
-                placeholder = { Text("How friends see you") },
+                label = { Text(stringResource(Res.string.namegate_label)) },
+                placeholder = { Text(stringResource(Res.string.namegate_placeholder)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -46,12 +53,12 @@ fun NameGateDialog(
                 onClick = { onConfirm(trimmed) },
                 enabled = trimmed.isNotBlank(),
             ) {
-                Text("Continue")
+                Text(stringResource(Res.string.namegate_confirm))
             }
         },
         dismissButton = {
             AppTextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.namegate_cancel))
             }
         },
     )

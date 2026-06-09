@@ -15,6 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.app_name
+import bragwise.shared.generated.resources.auth_continue_guest
+import bragwise.shared.generated.resources.welcome_sign_in
+import bragwise.shared.generated.resources.welcome_tagline
 import se.atte.bragwise.theme.BragwiseTheme
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppTextButton
@@ -37,12 +43,12 @@ fun WelcomeScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Bragwise",
+            text = stringResource(Res.string.app_name),
             style = MaterialTheme.typography.displayMedium,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Predict. Compete. Brag.",
+            text = stringResource(Res.string.welcome_tagline),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -52,11 +58,11 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxWidth(),
             onClick = onSignIn,
         ) {
-            Text("Sign in")
+            Text(stringResource(Res.string.welcome_sign_in))
         }
         Spacer(Modifier.height(12.dp))
         AppTextButton(onClick = onContinueAsGuest) {
-            Text("Continue as guest")
+            Text(stringResource(Res.string.auth_continue_guest))
         }
     }
 }

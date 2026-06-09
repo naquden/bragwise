@@ -32,6 +32,9 @@ import com.composables.icons.lucide.X
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.searchCountries
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.country_clear_a11y
 
 /**
  * A text field that offers country autocomplete (top-3 matches) when the
@@ -85,7 +88,7 @@ fun CountryAutocompleteField(
                     }) {
                         Icon(
                             imageVector = Lucide.X,
-                            contentDescription = "Clear country",
+                            contentDescription = stringResource(Res.string.country_clear_a11y),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }

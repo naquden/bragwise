@@ -25,6 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.theme.ThemePreview
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.invite_button
+import bragwise.shared.generated.resources.invite_no_friends
+import bragwise.shared.generated.resources.invite_pick_friends
+import bragwise.shared.generated.resources.invite_selected
+import bragwise.shared.generated.resources.invite_sending
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.SectionCard
@@ -70,7 +77,7 @@ private fun InviteFriendsContent(
     Column(Modifier.fillMaxSize()) {
         if (friends.isEmpty()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("No friends yet — add some first.")
+                Text(stringResource(Res.string.invite_no_friends))
             }
         } else {
             LazyColumn(
@@ -79,9 +86,9 @@ private fun InviteFriendsContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
-                    SectionCard(title = "Pick friends to invite") {
+                    SectionCard(title = stringResource(Res.string.invite_pick_friends)) {
                         Text(
-                            "${selected.size} selected",
+                            stringResource(Res.string.invite_selected, selected.size),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -102,7 +109,7 @@ private fun InviteFriendsContent(
                 onClick = onSend,
                 enabled = !sending && selected.isNotEmpty(),
             ) {
-                Text(if (sending) "Sending…" else "Invite ${selected.size}")
+                Text(if (sending) stringResource(Res.string.invite_sending) else stringResource(Res.string.invite_button, selected.size))
             }
         }
     }

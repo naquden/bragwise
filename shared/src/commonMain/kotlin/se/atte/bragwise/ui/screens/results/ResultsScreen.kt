@@ -30,6 +30,14 @@ import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.domain.scoring.competitionRanks
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.results_are_in
+import bragwise.shared.generated.resources.results_empty_body
+import bragwise.shared.generated.resources.results_empty_title
+import bragwise.shared.generated.resources.results_finished_count
+import bragwise.shared.generated.resources.results_history
+import bragwise.shared.generated.resources.results_new_count
 import se.atte.bragwise.theme.LocalSectionColors
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.standardPadding
@@ -69,12 +77,12 @@ private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> 
                 Text(text = "🏆", style = MaterialTheme.typography.headlineLarge)
                 Spacer(Modifier.height(standardPadding))
                 Text(
-                    text = "No results yet",
+                    text = stringResource(Res.string.results_empty_title),
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Spacer(Modifier.height(standardPaddingSmall))
                 Text(
-                    text = "Finished challenges will appear here.",
+                    text = stringResource(Res.string.results_empty_body),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -105,10 +113,10 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
         if (sections.unseen.isNotEmpty()) {
             ColoredSection(
                 bg = sc.mineBg,
-                title = "Results are in!",
+                title = stringResource(Res.string.results_are_in),
                 icon = "🏆",
                 onTitleColor = sc.onMine,
-                trailing = "${sections.unseen.size} new",
+                trailing = stringResource(Res.string.results_new_count, sections.unseen.size),
                 topInset = true,
             ) {
                 sections.unseen.forEach { challenge ->
@@ -125,10 +133,10 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
         if (sections.history.isNotEmpty()) {
             ColoredSection(
                 bg = sc.historyBg,
-                title = "History",
+                title = stringResource(Res.string.results_history),
                 icon = "🕐",
                 onTitleColor = sc.onHistory,
-                trailing = "${sections.history.size} finished",
+                trailing = stringResource(Res.string.results_finished_count, sections.history.size),
                 topInset = sections.unseen.isEmpty(),
             ) {
                 sections.history.forEach { challenge ->

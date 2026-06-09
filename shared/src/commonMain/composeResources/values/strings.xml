@@ -106,4 +106,222 @@
 
     <!-- Guest migration (auto-merge on sign-in). `%1$d` is the number of failed predictions. -->
     <string name="migration_failed_notice">%1$d guest prediction(s) couldn\'t be imported — their deadline had passed.</string>
+
+    <!-- Welcome / onboarding. -->
+    <string name="welcome_tagline">Predict. Compete. Brag.</string>
+    <string name="welcome_sign_in">Sign in</string>
+
+    <!-- Auth — extra strings. -->
+    <string name="auth_sign_in_with_email">Sign in with email</string>
+    <string name="auth_send_link">Send sign-in link</string>
+    <string name="auth_sending">Sending…</string>
+    <string name="auth_email_hint">We\'ll email you a link. Tap it on this device to finish signing in.</string>
+    <string name="auth_check_inbox">Check your inbox</string>
+    <string name="auth_sent_link_to">We sent a sign-in link to:</string>
+    <string name="auth_tap_link_hint">Tap the link on this device to finish signing in.</string>
+    <string name="auth_use_different_email">Use a different email</string>
+    <string name="auth_resend">Resend</string>
+
+    <!-- Challenge detail (cd_). -->
+    <string name="cd_no_challenge">No challenge</string>
+    <string name="cd_invite_only">This challenge is invite-only</string>
+    <string name="cd_invite_only_hint">Ask the creator to invite you.</string>
+    <string name="cd_your_rank">Your rank</string>
+    <string name="cd_predicted">Predicted</string>
+    <string name="cd_not_predicted">Not predicted</string>
+    <string name="cd_participants">Participants</string>
+    <string name="cd_bets_hidden">Bets hidden</string>
+    <string name="cd_show_more">Show more (%1$d)</string>
+    <string name="cd_invite_friends">Invite friends</string>
+    <string name="cd_results_posted">Results posted</string>
+    <string name="cd_post_results">Post results</string>
+    <string name="cd_delete_challenge">Delete challenge</string>
+    <string name="cd_delete_challenge_title">Delete challenge?</string>
+    <string name="cd_delete_challenge_body">This permanently removes the challenge, all predictions, and invitations. This cannot be undone.</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_cancel">Cancel</string>
+    <string name="cd_edit_predictions">Edit predictions</string>
+    <string name="cd_make_predictions">Make predictions</string>
+    <string name="cd_view_predictions">View predictions</string>
+    <string name="cd_snackbar_share_failed">Couldn\'t share challenge</string>
+    <string name="cd_snackbar_delete_failed">Delete failed: %1$s</string>
+
+    <!-- Challenges screen (cl_) — empty state. -->
+    <string name="cl_empty_create_first">Create your first challenge</string>
+    <string name="cl_empty_body">Create one to start predicting with friends.</string>
+    <string name="cl_section_mine_title">My Challenges</string>
+    <string name="cl_active_count_one">1 active</string>
+    <string name="cl_active_count">%1$d active</string>
+
+    <!-- Results screen. -->
+    <string name="results_are_in">Results are in!</string>
+    <string name="results_history">History</string>
+    <string name="results_new_count">%1$d new</string>
+    <string name="results_finished_count">%1$d finished</string>
+    <string name="results_empty_title">No results yet</string>
+    <string name="results_empty_body">Finished challenges will appear here.</string>
+
+    <!-- Predict screen. -->
+    <string name="predict_no_bets">No bets</string>
+    <string name="predict_yes">Yes</string>
+    <string name="predict_no">No</string>
+    <string name="predict_submitting">Submitting…</string>
+    <string name="predict_progress">Predict %1$d/%2$d</string>
+    <string name="predict_saving">Saving predictions…</string>
+    <string name="predict_snackbar_save_failed">Couldn\'t save predictions — try again</string>
+
+    <!-- Post results screen. -->
+    <string name="postresults_yes">Yes</string>
+    <string name="postresults_no">No</string>
+    <string name="postresults_posting">Posting…</string>
+    <string name="postresults_post_results">Post results</string>
+    <string name="postresults_post_results_title">Post results?</string>
+    <string name="postresults_post_results_body">This is final. Scores will be calculated and shared with all participants.</string>
+    <string name="postresults_post">Post</string>
+    <string name="postresults_cancel">Cancel</string>
+    <string name="postresults_posting_dialog">Posting results…</string>
+
+    <!-- Challenge summary screen. -->
+    <string name="summary_no_predictions">No predictions yet</string>
+    <string name="summary_bets_count">Bets: %1$d</string>
+    <string name="summary_your_rank">Your rank: %1$s</string>
+    <string name="summary_top_score">Top score: %1$d</string>
+    <string name="summary_edit_predictions">Edit predictions</string>
+
+    <!-- Friends screen. -->
+    <string name="friends_add_by_username">Add by username</string>
+    <string name="friends_sending_request">Sending request…</string>
+    <string name="friends_no_friends_title">No friends yet</string>
+    <string name="friends_empty_with_pending">Accept a pending request above, or add friends by their @username.</string>
+    <string name="friends_empty_no_pending">Add friends by their @username to compete on shared challenges.</string>
+    <string name="friends_section_title">Friends (%1$d)</string>
+    <string name="friends_pending_section">Pending requests (%1$d)</string>
+    <string name="friends_requests_nav">Friend requests</string>
+    <string name="friends_add_dialog_title">Add friend</string>
+    <string name="friends_add_dialog_body">Enter the @username of the person you want to add.</string>
+    <string name="friends_username_label">Username</string>
+    <string name="friends_username_placeholder">@username</string>
+    <string name="friends_username_format_error">3–20 lowercase letters, numbers or underscores</string>
+    <string name="friends_send_request">Send request</string>
+    <string name="friends_cancel">Cancel</string>
+    <string name="friends_decline">Decline</string>
+    <string name="friends_accept">Accept</string>
+    <string name="friends_snackbar_request_sent">Friend request sent to @%1$s</string>
+    <string name="friends_snackbar_already_friends">You\'re already friends with @%1$s</string>
+    <string name="friends_snackbar_request_already_sent">You\'ve already sent a request to @%1$s</string>
+    <string name="friends_snackbar_cannot_friend_self">You can\'t add yourself</string>
+    <string name="friends_snackbar_handle_not_found">No user found with username @%1$s</string>
+    <string name="friends_snackbar_request_unavailable">This request is no longer available</string>
+
+    <!-- Friend requests screen. -->
+    <string name="freq_no_pending">No pending requests</string>
+    <string name="freq_incoming">Incoming (%1$d)</string>
+    <string name="freq_sent">Sent (%1$d)</string>
+    <string name="freq_cancel">Cancel</string>
+
+    <!-- Edit profile screen. -->
+    <string name="edit_section_identity">Identity</string>
+    <string name="edit_username_label">Username</string>
+    <string name="edit_username_hint">Unique identifier used for friend requests and invitations. Lowercase letters, numbers and _, 3-20 characters.</string>
+    <string name="edit_display_name_label">Display name</string>
+    <string name="edit_display_name_hint">Shown on challenges and the leaderboard.</string>
+    <string name="edit_email_label">Email</string>
+    <string name="edit_email_hint">Used to sign in. Not shown to others.</string>
+    <string name="edit_section_avatar">Avatar</string>
+    <string name="edit_avatar_emoji">Emoji</string>
+    <string name="edit_avatar_flags">Flags</string>
+    <string name="edit_show_less">Show less</string>
+    <string name="edit_show_all_flags">Show all %1$d flags</string>
+    <string name="edit_saving">Saving…</string>
+    <string name="edit_save">Save</string>
+    <string name="edit_saving_dialog">Saving…</string>
+    <string name="edit_snackbar_avatar_error">That avatar can\'t be used. Pick another.</string>
+    <string name="edit_error_username_taken">That username is already taken</string>
+    <string name="edit_error_username_format">3–20 characters: lowercase letters, numbers and _ only</string>
+    <string name="edit_error_display_name_format">Display name must be 40 characters or fewer</string>
+
+    <!-- Player profile screen. -->
+    <string name="player_not_found">Player not found</string>
+    <string name="player_head_to_head">Head to head</string>
+    <string name="player_no_shared_challenges">No shared challenges yet.</string>
+    <string name="player_head_to_head_record">You: %1$d · Them: %2$d · Ties: %3$d</string>
+
+    <!-- Me screen — extra strings. -->
+    <string name="me_guest_label">Guest</string>
+    <string name="me_guest_body">Sign up to keep your progress across devices, join friends, and appear on leaderboards.</string>
+    <string name="me_sign_in_or_sign_up">Sign in or sign up</string>
+    <string name="me_friends">Friends</string>
+    <string name="me_edit_profile">Edit profile</string>
+    <string name="me_sign_out">Sign out</string>
+    <string name="me_delete_account">Delete account</string>
+    <string name="me_delete_account_title">Delete account?</string>
+    <string name="me_delete_account_body">This permanently removes your account, predictions, and friends. This cannot be undone.</string>
+    <string name="me_delete">Delete</string>
+    <string name="me_cancel">Cancel</string>
+
+    <!-- Invite friends screen. -->
+    <string name="invite_pick_friends">Pick friends to invite</string>
+    <string name="invite_selected">%1$d selected</string>
+    <string name="invite_sending">Sending…</string>
+    <string name="invite_button">Invite %1$d</string>
+    <string name="invite_no_friends">No friends yet — add some first.</string>
+
+    <!-- About screen. -->
+    <string name="about_section_title" translatable="false">Bragwise</string>
+    <string name="about_tagline">Predict. Compete. Brag.</string>
+    <string name="about_version">Version: %1$s</string>
+    <string name="about_open_source">Open source</string>
+    <string name="about_open_source_body">Built with Kotlin Multiplatform, Compose Multiplatform, Firebase, and Koin.</string>
+
+    <!-- NameGate dialog (component). -->
+    <string name="namegate_title">Choose a name</string>
+    <string name="namegate_label">Your name</string>
+    <string name="namegate_placeholder">How friends see you</string>
+    <string name="namegate_confirm">Continue</string>
+    <string name="namegate_cancel">Cancel</string>
+
+    <!-- DeadlinePicker component. -->
+    <string name="deadline_pick_time_title">Pick time (UTC)</string>
+    <string name="deadline_next">Next</string>
+    <string name="deadline_cancel">Cancel</string>
+    <string name="deadline_done">Done</string>
+    <string name="deadline_locks_prefix">Locks: %1$s</string>
+    <string name="deadline_hint">When predictions lock. No edits after this.</string>
+
+    <!-- CountryAutocomplete component. -->
+    <string name="country_clear_a11y">Clear country</string>
+
+    <!-- Create challenge screen — extra strings. -->
+    <string name="cc_title_field">Title</string>
+    <string name="cc_deadline_section">Deadline</string>
+    <string name="cc_who_can_join_section">Who can join</string>
+    <string name="cc_bets_visible_label">Bets visible to others</string>
+    <string name="cc_bets_visible_hint">Participants can see each other\'s predictions</string>
+    <string name="cc_edit_bet_title">Edit bet</string>
+    <string name="cc_add_bet_title">Add bet</string>
+    <string name="cc_bet_cancel_a11y">Cancel</string>
+    <string name="cc_custom_options">Custom options</string>
+    <string name="cc_countries">Countries</string>
+    <string name="cc_question_label">Question</string>
+    <string name="cc_option_label">Option %1$d</string>
+    <string name="cc_country_placeholder">Country %1$d</string>
+    <string name="cc_remove_bet_a11y">Remove bet</string>
+    <string name="cc_remove_option_a11y">Remove option</string>
+    <string name="cc_add_option">+ Add option</string>
+    <string name="cc_add_country">+ Add country</string>
+    <string name="cc_top_n_ranked">Top N ranked</string>
+    <string name="cc_decrease_top_n_a11y">Decrease top N</string>
+    <string name="cc_increase_top_n_a11y">Increase top N</string>
+    <string name="cc_save_bet">Save bet</string>
+    <string name="cc_show_less">Show less</string>
+    <string name="cc_show_more_options">… %1$d more · Tap to expand</string>
+    <string name="cc_saving_dialog">Saving challenge…</string>
+    <string name="cc_duplicate_options_error">Remove duplicate options before saving</string>
+    <string name="cc_snackbar_nothing_to_save">Nothing to save yet</string>
+    <string name="cc_snackbar_title_and_bet_required">Title and at least one bet required</string>
+    <string name="cc_snackbar_deadline_future">Deadline must be in the future</string>
+    <string name="cc_snackbar_no_reachable_invitees">None of your invited friends are reachable — pick at least one</string>
+
+    <!-- AppNav. -->
+    <string name="nav_create_challenge_a11y">Create challenge</string>
 </resources>

@@ -16,6 +16,15 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.freq_cancel
+import bragwise.shared.generated.resources.freq_incoming
+import bragwise.shared.generated.resources.freq_no_pending
+import bragwise.shared.generated.resources.freq_sent
+import bragwise.shared.generated.resources.friends_accept
+import bragwise.shared.generated.resources.friends_decline
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +49,7 @@ fun FriendRequestsScreen(
     ObserveEffects(viewModel.effects) { e ->
         when (e) {
             is FriendRequestsViewModel.Effect.Snackbar ->
-                snackbarHostState.showSnackbar(e.text)
+                snackbarHostState.showSnackbar(getString(e.message.res, *e.message.args.toTypedArray()))
         }
     }
 
@@ -65,7 +74,7 @@ private fun FriendRequestsContent(
 ) {
     if (incoming.isEmpty() && outgoing.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No pending requests")
+            Text(stringResource(Res.string.freq_no_pending))
         }
         return
     }
@@ -77,7 +86,7 @@ private fun FriendRequestsContent(
     ) {
         if (incoming.isNotEmpty()) {
             item {
-                SectionCard(title = "Incoming (${incoming.size})") {
+                SectionCard(title = stringResource(Res.string.freq_incoming, incoming.size)) {
                     incoming.forEachIndexed { index, row ->
                         RequestRow(
                             row = row,
@@ -93,7 +102,7 @@ private fun FriendRequestsContent(
         }
         if (outgoing.isNotEmpty()) {
             item {
-                SectionCard(title = "Sent (${outgoing.size})") {
+                SectionCard(title = stringResource(Res.string.freq_sent, outgoing.size)) {
                     outgoing.forEachIndexed { index, row ->
                         SentRow(
                             row = row,
@@ -137,7 +146,7 @@ private fun RequestRow(
             AppOutlinedButton(
                 onClick = { onDecline(row.uid) },
                 enabled = !isDeclining && !isAccepting,
-            ) { Text("Decline") }
+            ) { Text(stringResource(Res.string.friends_decline)) }
             AppButton(
                 onClick = { onAccept(row.uid) },
                 enabled = !isAccepting && !isDeclining,
@@ -149,7 +158,7 @@ private fun RequestRow(
                         color = LocalContentColor.current,
                     )
                 } else {
-                    Text("Accept")
+                    Text(stringResource(Res.string.friends_accept))
                 }
             }
         }
@@ -190,7 +199,7 @@ private fun SentRow(
                     color = LocalContentColor.current,
                 )
             } else {
-                Text("Cancel")
+                Text(stringResource(Res.string.freq_cancel))
             }
         }
     }

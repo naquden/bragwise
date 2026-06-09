@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import org.jetbrains.compose.resources.getString
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,21 @@ import se.atte.bragwise.theme.BragwiseTheme
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.SectionCard
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.app_name
+import bragwise.shared.generated.resources.auth_check_inbox
+import bragwise.shared.generated.resources.auth_continue_guest
+import bragwise.shared.generated.resources.auth_email_hint
+import bragwise.shared.generated.resources.auth_email_label
+import bragwise.shared.generated.resources.auth_resend
+import bragwise.shared.generated.resources.auth_send_link
+import bragwise.shared.generated.resources.auth_sending
+import bragwise.shared.generated.resources.auth_sent_link_to
+import bragwise.shared.generated.resources.auth_sign_in_with_email
+import bragwise.shared.generated.resources.auth_tap_link_hint
+import bragwise.shared.generated.resources.auth_use_different_email
+import bragwise.shared.generated.resources.welcome_tagline
 import se.atte.bragwise.ui.components.SectionGap
 
 @Composable
@@ -52,7 +68,9 @@ fun SignInScreen(
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             SignInViewModel.Effect.ContinuedAsGuest -> onGuest()
-            is SignInViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
+            is SignInViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(
+                getString(effect.message.res, *effect.message.args.toTypedArray())
+            )
         }
     }
 
@@ -87,11 +105,11 @@ private fun SignInContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "Bragwise",
+                    stringResource(Res.string.app_name),
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    "Predict. Compete. Brag.",
+                    stringResource(Res.string.welcome_tagline),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -122,7 +140,7 @@ private fun SignInContent(
                 onClick = onGuest,
                 modifier = Modifier.testTag("sign_in_guest"),
             ) {
-                Text("Continue as guest")
+                Text(stringResource(Res.string.auth_continue_guest))
             }
         }
     }
@@ -136,14 +154,14 @@ private fun EnterEmail(
 ) {
     SectionCard {
         Text(
-            "Sign in with email",
+            stringResource(Res.string.auth_sign_in_with_email),
             style = MaterialTheme.typography.titleMedium,
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmail,
-            label = { Text("Email") },
+            label = { Text(stringResource(Res.string.auth_email_label)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(
@@ -157,11 +175,11 @@ private fun EnterEmail(
             enabled = !state.submitting && state.email.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (state.submitting) "Sending…" else "Send sign-in link")
+            Text(if (state.submitting) stringResource(Res.string.auth_sending) else stringResource(Res.string.auth_send_link))
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "We'll email you a link. Tap it on this device to finish signing in.",
+            stringResource(Res.string.auth_email_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -174,9 +192,9 @@ private fun CheckYourInbox(
     onResend: () -> Unit,
     onEditEmail: () -> Unit,
 ) {
-    SectionCard(title = "Check your inbox") {
+    SectionCard(title = stringResource(Res.string.auth_check_inbox)) {
         Text(
-            "We sent a sign-in link to:",
+            stringResource(Res.string.auth_sent_link_to),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -187,7 +205,7 @@ private fun CheckYourInbox(
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Tap the link on this device to finish signing in.",
+            stringResource(Res.string.auth_tap_link_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -196,8 +214,8 @@ private fun CheckYourInbox(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            AppTextButton(onClick = onEditEmail) { Text("Use a different email") }
-            AppTextButton(onClick = onResend) { Text("Resend") }
+            AppTextButton(onClick = onEditEmail) { Text(stringResource(Res.string.auth_use_different_email)) }
+            AppTextButton(onClick = onResend) { Text(stringResource(Res.string.auth_resend)) }
         }
     }
 }

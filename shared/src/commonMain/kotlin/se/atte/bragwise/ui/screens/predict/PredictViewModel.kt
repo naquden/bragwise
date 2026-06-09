@@ -1,5 +1,7 @@
 package se.atte.bragwise.ui.screens.predict
 
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.predict_snackbar_save_failed
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -18,6 +20,7 @@ import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.mvi.UiText
 import se.atte.bragwise.mvi.toCause
 
 /** MC-03 Predict — SinglePick, BooleanProp, and Ranking (via [RankingDragList]). */
@@ -60,7 +63,7 @@ class PredictViewModel(
 
     sealed interface Effect {
         data object Submitted : Effect
-        data class Snackbar(val text: String) : Effect
+        data class Snackbar(val message: UiText) : Effect
     }
 
     init {
@@ -151,7 +154,7 @@ class PredictViewModel(
             onFailure = { e ->
                 println("$PRED_DBG submit.failure class=${e::class.simpleName} message=${e.message}")
                 println("$PRED_DBG submit.failure.stack ${e.stackTraceToString()}")
-                emitEffect(Effect.Snackbar("Couldn't save predictions — try again"))
+                emitEffect(Effect.Snackbar(UiText(Res.string.predict_snackbar_save_failed)))
                 errorReporter.report(e)
             },
         )

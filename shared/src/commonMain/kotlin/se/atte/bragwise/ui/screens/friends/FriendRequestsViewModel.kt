@@ -1,5 +1,7 @@
 package se.atte.bragwise.ui.screens.friends
 
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.friends_snackbar_request_unavailable
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
@@ -15,6 +17,7 @@ import se.atte.bragwise.domain.GENERIC_DISPLAY_NAME
 import se.atte.bragwise.mvi.Cause
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
+import se.atte.bragwise.mvi.UiText
 import se.atte.bragwise.mvi.toCause
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,7 +51,7 @@ class FriendRequestsViewModel(
     }
 
     sealed interface Effect {
-        data class Snackbar(val text: String) : Effect
+        data class Snackbar(val message: UiText) : Effect
     }
 
     init {
@@ -87,7 +90,7 @@ class FriendRequestsViewModel(
             op().onFailure { e ->
                 val cause = e.toCause()
                 val msg = when (cause) {
-                    Cause.NotFound -> "This request is no longer available"
+                    Cause.NotFound -> UiText(Res.string.friends_snackbar_request_unavailable)
                     else -> null
                 }
                 if (msg != null) emitEffect(Effect.Snackbar(msg))

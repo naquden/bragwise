@@ -12,5 +12,12 @@
 	<array>
 		<string>applinks:bragwise.firebaseapp.com</string>
 	</array>
+	<!--
+	  APNs environment for push notifications. Xcode's automatic signing maps
+	  `development` for Debug builds; the App Store / TestFlight pipeline rewrites
+	  it to `production` on export. Required for `registerForRemoteNotifications`.
+	-->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

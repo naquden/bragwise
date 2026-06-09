@@ -9,6 +9,7 @@ import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
+import se.atte.bragwise.mvi.UiText
 
 /**
  * OB-02 — unified Sign In / Sign Up via email-link passwordless. There is
@@ -50,7 +51,7 @@ class SignInViewModel(
 
     sealed interface Effect {
         data object ContinuedAsGuest : Effect
-        data class Snackbar(val text: String) : Effect
+        data class Snackbar(val message: UiText) : Effect
     }
 
     init {

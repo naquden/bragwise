@@ -38,6 +38,17 @@ import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.Visibility
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.cl_active_count
+import bragwise.shared.generated.resources.cl_active_count_one
+import bragwise.shared.generated.resources.cl_empty
+import bragwise.shared.generated.resources.cl_empty_body
+import bragwise.shared.generated.resources.cl_empty_create_first
+import bragwise.shared.generated.resources.cl_section_from_friends
+import bragwise.shared.generated.resources.cl_section_invites
+import bragwise.shared.generated.resources.cl_section_mine
+import bragwise.shared.generated.resources.cl_section_promoted
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.Elevation
 import se.atte.bragwise.theme.LocalSectionColors
@@ -124,13 +135,13 @@ private fun EmptyState(onCreate: () -> Unit) {
         Text(text = "🎯", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(standardPadding))
         Text(
-            text = "No challenges yet",
+            text = stringResource(Res.string.cl_empty),
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.height(standardPaddingSmall))
         Text(
-            text = "Create one to start predicting with friends.",
+            text = stringResource(Res.string.cl_empty_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -138,7 +149,7 @@ private fun EmptyState(onCreate: () -> Unit) {
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onCreate,
-        ) { Text("Create your first challenge") }
+        ) { Text(stringResource(Res.string.cl_empty_create_first)) }
     }
 }
 
@@ -155,10 +166,10 @@ private fun ChallengesContent(
         if (sections.mine.isNotEmpty()) add(SectionEntry(sc.mineBg) { topInset ->
             ColoredSection(
                 bg = sc.mineBg,
-                title = "My Challenges",
+                title = stringResource(Res.string.cl_section_mine),
                 icon = "🎯",
                 onTitleColor = sc.onMine,
-                trailing = if (sections.mine.size == 1) "1 active" else "${sections.mine.size} active",
+                trailing = if (sections.mine.size == 1) stringResource(Res.string.cl_active_count_one) else stringResource(Res.string.cl_active_count, sections.mine.size),
                 topInset = topInset,
             ) {
                 sections.mine.forEach { c ->
@@ -172,21 +183,21 @@ private fun ChallengesContent(
             }
         })
         if (sections.promoted.isNotEmpty()) add(SectionEntry(sc.promotedBg) { topInset ->
-            ColoredSection(bg = sc.promotedBg, title = "Promoted", icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
+            ColoredSection(bg = sc.promotedBg, title = stringResource(Res.string.cl_section_promoted), icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
                 sections.promoted.forEach { c ->
                     ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, accent = true, surfaceColor = sc.promotedCard)
                 }
             }
         })
         if (sections.fromFriends.isNotEmpty()) add(SectionEntry(sc.friendsBg) { topInset ->
-            ColoredSection(bg = sc.friendsBg, title = "From friends", icon = "👥", onTitleColor = sc.onFriends, topInset = topInset) {
+            ColoredSection(bg = sc.friendsBg, title = stringResource(Res.string.cl_section_from_friends), icon = "👥", onTitleColor = sc.onFriends, topInset = topInset) {
                 sections.fromFriends.forEach { c ->
                     ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, surfaceColor = sc.friendsCard)
                 }
             }
         })
         if (sections.invites.isNotEmpty()) add(SectionEntry(sc.invitesBg) { topInset ->
-            ColoredSection(bg = sc.invitesBg, title = "Invites", icon = "✉️", onTitleColor = sc.onInvites, topInset = topInset) {
+            ColoredSection(bg = sc.invitesBg, title = stringResource(Res.string.cl_section_invites), icon = "✉️", onTitleColor = sc.onInvites, topInset = topInset) {
                 sections.invites.forEach { inv ->
                     InvitationRow(invitation = inv, onClick = onChallenge, surfaceColor = sc.invitesCard)
                 }

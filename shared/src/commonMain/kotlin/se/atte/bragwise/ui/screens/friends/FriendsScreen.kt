@@ -20,6 +20,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.friends_accept
+import bragwise.shared.generated.resources.friends_add_by_username
+import bragwise.shared.generated.resources.friends_add_dialog_body
+import bragwise.shared.generated.resources.friends_add_dialog_title
+import bragwise.shared.generated.resources.friends_cancel
+import bragwise.shared.generated.resources.friends_decline
+import bragwise.shared.generated.resources.friends_empty_no_pending
+import bragwise.shared.generated.resources.friends_empty_with_pending
+import bragwise.shared.generated.resources.friends_no_friends_title
+import bragwise.shared.generated.resources.friends_pending_section
+import bragwise.shared.generated.resources.friends_requests_nav
+import bragwise.shared.generated.resources.friends_section_title
+import bragwise.shared.generated.resources.friends_send_request
+import bragwise.shared.generated.resources.friends_sending_request
+import bragwise.shared.generated.resources.friends_username_format_error
+import bragwise.shared.generated.resources.friends_username_label
+import bragwise.shared.generated.resources.friends_username_placeholder
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +75,9 @@ fun FriendsScreen(
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             is FriendsViewModel.Effect.OpenCloudProfile -> onOpenCloudProfile(effect.uid)
-            is FriendsViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
+            is FriendsViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(
+                getString(effect.message.res, *effect.message.args.toTypedArray())
+            )
         }
     }
 
@@ -98,7 +120,7 @@ private fun FriendsBody(
             item {
                 ListGroup {
                     ListRow(
-                        title = "Friend requests",
+                        title = stringResource(Res.string.friends_requests_nav),
                         subtitle = requestSubtitle,
                         onClick = onOpenFriendRequests,
                     )
@@ -127,7 +149,7 @@ private fun FriendsBody(
                     val cloud = ui.data.filterIsInstance<CloudFriend>()
                     if (cloud.isNotEmpty()) {
                         item {
-                            SectionCard(title = "Friends (${cloud.size})") {
+                            SectionCard(title = stringResource(Res.string.friends_section_title, cloud.size)) {
                                 ListGroup {
                                     cloud.forEachIndexed { index, friend ->
                                         ListRow(
@@ -151,13 +173,13 @@ private fun FriendsBody(
                 modifier = Modifier.weight(1f),
                 onClick = { onIntent(FriendsViewModel.Intent.OpenAddFriend) },
             ) {
-                Text(text = "Add by username")
+                Text(text = stringResource(Res.string.friends_add_by_username))
             }
         }
     }
 
     if (state.sendingRequest) {
-        LoadingDialog(message = "Sending request…")
+        LoadingDialog(message = stringResource(Res.string.friends_sending_request))
     }
 
     if (state.addingFriend) {
@@ -175,7 +197,7 @@ private fun PendingRequestsSection(
     onAccept: (String) -> Unit,
     onDecline: (String) -> Unit,
 ) {
-    SectionCard(title = "Pending requests (${incoming.size})") {
+    SectionCard(title = stringResource(Res.string.friends_pending_section, incoming.size)) {
         incoming.forEachIndexed { index, row ->
             Row(
                 modifier = Modifier
@@ -198,11 +220,11 @@ private fun PendingRequestsSection(
                     AppOutlinedButton(
                         onClick = { onDecline(row.uid) },
                         enabled = !state.isActing(row.uid, FriendsViewModel.FriendAction.Decline),
-                    ) { Text("Decline") }
+                    ) { Text(stringResource(Res.string.friends_decline)) }
                     AppButton(
                         onClick = { onAccept(row.uid) },
                         enabled = !state.isActing(row.uid, FriendsViewModel.FriendAction.Accept),
-                    ) { Text("Accept") }
+                    ) { Text(stringResource(Res.string.friends_accept)) }
                 }
             }
             if (index < incoming.size - 1) ListGroupDivider()
@@ -221,11 +243,11 @@ private fun EmptyState(hasPending: Boolean = false) {
     ) {
         Text(text = "👥", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(standardPadding))
-        Text(text = "No friends yet", style = MaterialTheme.typography.headlineLarge)
+        Text(text = stringResource(Res.string.friends_no_friends_title), style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(standardPaddingSmall))
         Text(
-            text = if (hasPending) "Accept a pending request above, or add friends by their @username."
-            else "Add friends by their @username to compete on shared challenges.",
+            text = if (hasPending) stringResource(Res.string.friends_empty_with_pending)
+            else stringResource(Res.string.friends_empty_no_pending),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -245,11 +267,11 @@ private fun AddFriendDialog(
 
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add friend") },
+        title = { Text(stringResource(Res.string.friends_add_dialog_title)) },
         text = {
             Column {
                 Text(
-                    text = "Enter the @username of the person you want to add.",
+                    text = stringResource(Res.string.friends_add_dialog_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -257,13 +279,13 @@ private fun AddFriendDialog(
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Username") },
-                    placeholder = { Text("@username") },
+                    label = { Text(stringResource(Res.string.friends_username_label)) },
+                    placeholder = { Text(stringResource(Res.string.friends_username_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     isError = username.trim().isNotBlank() && !isValid,
                     supportingText = if (username.trim().isNotBlank() && !isValid) {
-                        { Text("3–20 lowercase letters, numbers or underscores") }
+                        { Text(stringResource(Res.string.friends_username_format_error)) }
                     } else null,
                 )
             }
@@ -272,10 +294,10 @@ private fun AddFriendDialog(
             AppButton(
                 onClick = { onSend(trimmed) },
                 enabled = isValid,
-            ) { Text("Send request") }
+            ) { Text(stringResource(Res.string.friends_send_request)) }
         },
         dismissButton = {
-            AppOutlinedButton(onClick = onDismiss) { Text("Cancel") }
+            AppOutlinedButton(onClick = onDismiss) { Text(stringResource(Res.string.friends_cancel)) }
         },
     )
 }

@@ -1,5 +1,12 @@
 package se.atte.bragwise.ui.screens.friends
 
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.friends_snackbar_already_friends
+import bragwise.shared.generated.resources.friends_snackbar_cannot_friend_self
+import bragwise.shared.generated.resources.friends_snackbar_handle_not_found
+import bragwise.shared.generated.resources.friends_snackbar_request_already_sent
+import bragwise.shared.generated.resources.friends_snackbar_request_sent
+import bragwise.shared.generated.resources.friends_snackbar_request_unavailable
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
@@ -18,6 +25,7 @@ import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.Cause
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.mvi.UiText
 import se.atte.bragwise.mvi.toCause
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -59,7 +67,7 @@ class FriendsViewModel(
 
     sealed interface Effect {
         data class OpenCloudProfile(val uid: String) : Effect
-        data class Snackbar(val text: String) : Effect
+        data class Snackbar(val message: UiText) : Effect
     }
 
     init {
@@ -126,7 +134,7 @@ class FriendsViewModel(
             op().onFailure { e ->
                 val cause = e.toCause()
                 val msg = when (cause) {
-                    Cause.NotFound -> "This request is no longer available"
+                    Cause.NotFound -> UiText(Res.string.friends_snackbar_request_unavailable)
                     else -> null
                 }
                 if (msg != null) emitEffect(Effect.Snackbar(msg))
@@ -145,15 +153,15 @@ class FriendsViewModel(
             social.sendFriendRequest(trimmed)
                 .onSuccess {
                     update { it.copy(addingFriend = false, sendingRequest = false) }
-                    emitEffect(Effect.Snackbar("Friend request sent to @$trimmed"))
+                    emitEffect(Effect.Snackbar(UiText(Res.string.friends_snackbar_request_sent, listOf(trimmed))))
                 }
                 .onFailure { error ->
                     update { it.copy(sendingRequest = false) }
                     val msg = when (error.toCause()) {
-                        Cause.AlreadyFriends -> "You're already friends with @$trimmed"
-                        Cause.RequestAlreadySent -> "You've already sent a request to @$trimmed"
-                        Cause.CannotFriendSelf -> "You can't add yourself"
-                        Cause.HandleNotFound -> "No user found with username @$trimmed"
+                        Cause.AlreadyFriends -> UiText(Res.string.friends_snackbar_already_friends, listOf(trimmed))
+                        Cause.RequestAlreadySent -> UiText(Res.string.friends_snackbar_request_already_sent, listOf(trimmed))
+                        Cause.CannotFriendSelf -> UiText(Res.string.friends_snackbar_cannot_friend_self)
+                        Cause.HandleNotFound -> UiText(Res.string.friends_snackbar_handle_not_found, listOf(trimmed))
                         else -> null
                     }
                     if (msg != null) emitEffect(Effect.Snackbar(msg))

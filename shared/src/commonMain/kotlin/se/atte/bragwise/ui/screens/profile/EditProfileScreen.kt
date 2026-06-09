@@ -25,7 +25,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.edit_error_username_taken
+import bragwise.shared.generated.resources.edit_avatar_emoji
+import bragwise.shared.generated.resources.edit_avatar_flags
+import bragwise.shared.generated.resources.edit_display_name_hint
+import bragwise.shared.generated.resources.edit_display_name_label
+import bragwise.shared.generated.resources.edit_email_hint
+import bragwise.shared.generated.resources.edit_email_label
+import bragwise.shared.generated.resources.edit_save
+import bragwise.shared.generated.resources.edit_saving
+import bragwise.shared.generated.resources.edit_saving_dialog
+import bragwise.shared.generated.resources.edit_section_avatar
+import bragwise.shared.generated.resources.edit_section_identity
+import bragwise.shared.generated.resources.edit_show_all_flags
+import bragwise.shared.generated.resources.edit_show_less
+import bragwise.shared.generated.resources.edit_username_hint
+import bragwise.shared.generated.resources.edit_username_label
 import se.atte.bragwise.mvi.ObserveEffects
+import se.atte.bragwise.mvi.UiText
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,12 +74,14 @@ fun EditProfileScreen(
     ObserveEffects(viewModel.effects) { e ->
         when (e) {
             EditProfileViewModel.Effect.Saved -> onSaved()
-            is EditProfileViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(e.text)
+            is EditProfileViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(
+                getString(e.message.res, *e.message.args.toTypedArray())
+            )
         }
     }
 
     if (state.saving) {
-        LoadingDialog(message = "Saving…")
+        LoadingDialog(message = stringResource(Res.string.edit_saving_dialog))
     }
 
     EditProfileContent(
@@ -91,16 +113,17 @@ private fun EditProfileContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                SectionCard(title = "Identity") {
+                SectionCard(title = stringResource(Res.string.edit_section_identity)) {
                     OutlinedTextField(
                         value = state.username,
                         onValueChange = onSetUsername,
-                        label = { Text("Username") },
+                        label = { Text(stringResource(Res.string.edit_username_label)) },
                         prefix = { Text("@") },
                         enabled = !state.saving,
                         isError = state.usernameError != null,
                         supportingText = {
-                            Text(state.usernameError ?: "Unique identifier used for friend requests and invitations. Lowercase letters, numbers and _, 3-20 characters.")
+                            Text(state.usernameError?.let { stringResource(it.res, *it.args.toTypedArray()) }
+                                ?: stringResource(Res.string.edit_username_hint))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -109,11 +132,12 @@ private fun EditProfileContent(
                     OutlinedTextField(
                         value = state.displayName,
                         onValueChange = onSetDisplayName,
-                        label = { Text("Display name") },
+                        label = { Text(stringResource(Res.string.edit_display_name_label)) },
                         enabled = !state.saving,
                         isError = state.displayNameError != null,
                         supportingText = {
-                            Text(state.displayNameError ?: "Shown on challenges and the leaderboard.")
+                            Text(state.displayNameError?.let { stringResource(it.res, *it.args.toTypedArray()) }
+                                ?: stringResource(Res.string.edit_display_name_hint))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -125,8 +149,8 @@ private fun EditProfileContent(
                             onValueChange = {},
                             readOnly = true,
                             enabled = false,
-                            label = { Text("Email") },
-                            supportingText = { Text("Used to sign in. Not shown to others.") },
+                            label = { Text(stringResource(Res.string.edit_email_label)) },
+                            supportingText = { Text(stringResource(Res.string.edit_email_hint)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
@@ -134,7 +158,7 @@ private fun EditProfileContent(
                 }
             }
             item {
-                SectionCard(title = "Avatar") {
+                SectionCard(title = stringResource(Res.string.edit_section_avatar)) {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center,
@@ -147,7 +171,7 @@ private fun EditProfileContent(
                     }
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "Emoji",
+                        text = stringResource(Res.string.edit_avatar_emoji),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -167,7 +191,7 @@ private fun EditProfileContent(
                     }
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "Flags",
+                        text = stringResource(Res.string.edit_avatar_flags),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -191,8 +215,8 @@ private fun EditProfileContent(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            if (showAllFlags) "Show less"
-                            else "Show all ${allFlagCodes.size} flags",
+                            if (showAllFlags) stringResource(Res.string.edit_show_less)
+                            else stringResource(Res.string.edit_show_all_flags, allFlagCodes.size),
                         )
                     }
                 }
@@ -204,7 +228,7 @@ private fun EditProfileContent(
                 onClick = onSave,
                 enabled = !state.saving && state.initialised,
             ) {
-                Text(if (state.saving) "Saving…" else "Save")
+                Text(if (state.saving) stringResource(Res.string.edit_saving) else stringResource(Res.string.edit_save))
             }
         }
     }
@@ -266,7 +290,7 @@ private fun EditProfile_HandleError_Preview() {
                 username = "taken",
                 displayName = "Atte Lindqvist",
                 avatarSeed = "flag:SE",
-                usernameError = "That username is already taken",
+                usernameError = UiText(Res.string.edit_error_username_taken),
                 email = "atte@gmail.com",
             ),
             onSetUsername = {},

@@ -1,5 +1,10 @@
 package se.atte.bragwise.ui.screens.profile
 
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.edit_error_display_name_format
+import bragwise.shared.generated.resources.edit_error_username_format
+import bragwise.shared.generated.resources.edit_error_username_taken
+import bragwise.shared.generated.resources.edit_snackbar_avatar_error
 import androidx.lifecycle.viewModelScope
 import dev.gitlive.firebase.functions.FirebaseFunctionsException
 import dev.gitlive.firebase.functions.FunctionsExceptionCode
@@ -11,6 +16,7 @@ import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
+import se.atte.bragwise.mvi.UiText
 
 class EditProfileViewModel(
     private val profiles: ProfileRepository,
@@ -28,8 +34,8 @@ class EditProfileViewModel(
         val avatarSeed: String = "",
         val originalUsername: String = "",
         val saving: Boolean = false,
-        val usernameError: String? = null,
-        val displayNameError: String? = null,
+        val usernameError: UiText? = null,
+        val displayNameError: UiText? = null,
         val email: String? = null,
     )
 
@@ -42,7 +48,7 @@ class EditProfileViewModel(
 
     sealed interface Effect {
         data object Saved : Effect
-        data class Snackbar(val text: String) : Effect
+        data class Snackbar(val message: UiText) : Effect
     }
 
     init {
@@ -100,13 +106,13 @@ class EditProfileViewModel(
                             when {
                                 code == FunctionsExceptionCode.ALREADY_EXISTS
                                     || msg.contains("handle-taken", ignoreCase = true) ->
-                                    update { it.copy(usernameError = "That username is already taken") }
+                                    update { it.copy(usernameError = UiText(Res.string.edit_error_username_taken)) }
 
                                 msg.contains("invalid-displayName", ignoreCase = true) ->
                                     update { it.copy(displayNameError = DISPLAY_NAME_FORMAT_MESSAGE) }
 
                                 msg.contains("invalid-avatarSeed", ignoreCase = true) ->
-                                    emitEffect(Effect.Snackbar("That avatar can't be used. Pick another."))
+                                    emitEffect(Effect.Snackbar(UiText(Res.string.edit_snackbar_avatar_error)))
 
                                 msg.contains("invalid-handle", ignoreCase = true)
                                     || code == FunctionsExceptionCode.INVALID_ARGUMENT ->
@@ -122,22 +128,21 @@ class EditProfileViewModel(
         }
     }
 
-    private fun usernameFormatError(value: String): String? = when {
+    private fun usernameFormatError(value: String): UiText? = when {
         value.isEmpty() -> null
         !USERNAME_REGEX.matches(value) -> USERNAME_FORMAT_MESSAGE
         else -> null
     }
 
-    private fun displayNameError(value: String): String? = when {
+    private fun displayNameError(value: String): UiText? = when {
         value.length > DISPLAY_NAME_MAX -> DISPLAY_NAME_FORMAT_MESSAGE
         else -> null
     }
 
     companion object {
         private val USERNAME_REGEX = Regex("^[a-z0-9_]{3,20}$")
-        private const val USERNAME_FORMAT_MESSAGE =
-            "3–20 characters: lowercase letters, numbers and _ only"
+        private val USERNAME_FORMAT_MESSAGE = UiText(Res.string.edit_error_username_format)
         const val DISPLAY_NAME_MAX = 40
-        private const val DISPLAY_NAME_FORMAT_MESSAGE = "Display name must be 40 characters or fewer"
+        private val DISPLAY_NAME_FORMAT_MESSAGE = UiText(Res.string.edit_error_display_name_format)
     }
 }

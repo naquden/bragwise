@@ -26,6 +26,17 @@ import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.postresults_cancel
+import bragwise.shared.generated.resources.postresults_no
+import bragwise.shared.generated.resources.postresults_post
+import bragwise.shared.generated.resources.postresults_post_results
+import bragwise.shared.generated.resources.postresults_post_results_body
+import bragwise.shared.generated.resources.postresults_post_results_title
+import bragwise.shared.generated.resources.postresults_posting
+import bragwise.shared.generated.resources.postresults_posting_dialog
+import bragwise.shared.generated.resources.postresults_yes
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppTextButton
@@ -95,7 +106,7 @@ fun PostResultsScreen(
                         onClick = { viewModel.onIntent(PostResultsViewModel.Intent.RequestConfirm) },
                         enabled = !state.submitting && complete,
                     ) {
-                        Text(if (state.submitting) "Posting…" else "Post results")
+                        Text(if (state.submitting) stringResource(Res.string.postresults_posting) else stringResource(Res.string.postresults_post_results))
                     }
                 }
             }
@@ -103,22 +114,22 @@ fun PostResultsScreen(
     }
 
     if (state.submitting) {
-        LoadingDialog(message = "Posting results…")
+        LoadingDialog(message = stringResource(Res.string.postresults_posting_dialog))
     }
 
     if (state.confirming) {
         AlertDialog(
             onDismissRequest = { viewModel.onIntent(PostResultsViewModel.Intent.Cancel) },
-            title = { Text("Post results?") },
-            text = { Text("This is final. Scores will be calculated and shared with all participants.") },
+            title = { Text(stringResource(Res.string.postresults_post_results_title)) },
+            text = { Text(stringResource(Res.string.postresults_post_results_body)) },
             confirmButton = {
                 AppButton(onClick = { viewModel.onIntent(PostResultsViewModel.Intent.Submit) }) {
-                    Text("Post")
+                    Text(stringResource(Res.string.postresults_post))
                 }
             },
             dismissButton = {
                 AppTextButton(onClick = { viewModel.onIntent(PostResultsViewModel.Intent.Cancel) }) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.postresults_cancel))
                 }
             },
         )
@@ -147,8 +158,8 @@ private fun BetRow(
             }
             is Bet.BooleanProp -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val v = (current as? PredictionPayload.BooleanProp)?.value
-                AppFilterChip(selected = v == true, onClick = { onBoolean(true) }, label = { Text("Yes") })
-                AppFilterChip(selected = v == false, onClick = { onBoolean(false) }, label = { Text("No") })
+                AppFilterChip(selected = v == true, onClick = { onBoolean(true) }, label = { Text(stringResource(Res.string.postresults_yes)) })
+                AppFilterChip(selected = v == false, onClick = { onBoolean(false) }, label = { Text(stringResource(Res.string.postresults_no)) })
             }
             is Bet.Ranking -> RankingDragList(
                 options = bet.options,

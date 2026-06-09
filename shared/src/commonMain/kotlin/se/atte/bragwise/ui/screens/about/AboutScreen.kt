@@ -16,6 +16,13 @@ import androidx.compose.ui.unit.dp
 import se.atte.bragwise.platform.AppInfo
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.SectionCard
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.about_open_source
+import bragwise.shared.generated.resources.about_open_source_body
+import bragwise.shared.generated.resources.about_section_title
+import bragwise.shared.generated.resources.about_tagline
+import bragwise.shared.generated.resources.about_version
 
 @Composable
 fun AboutScreen() {
@@ -30,16 +37,16 @@ private fun AboutContent(version: String) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            SectionCard(title = "Bragwise") {
-                Text("Predict. Compete. Brag.", style = MaterialTheme.typography.bodyLarge)
+            SectionCard(title = stringResource(Res.string.about_section_title)) {
+                Text(stringResource(Res.string.about_tagline), style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
-                Text("Version: $version", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(Res.string.about_version, version), style = MaterialTheme.typography.bodyMedium)
             }
         }
         item {
-            SectionCard(title = "Open source") {
+            SectionCard(title = stringResource(Res.string.about_open_source)) {
                 Text(
-                    "Built with Kotlin Multiplatform, Compose Multiplatform, Firebase, and Koin.",
+                    stringResource(Res.string.about_open_source_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

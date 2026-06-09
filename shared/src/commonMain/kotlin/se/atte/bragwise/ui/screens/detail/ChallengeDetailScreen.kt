@@ -51,6 +51,32 @@ import se.atte.bragwise.ui.components.ListGroupDivider
 import se.atte.bragwise.ui.components.PointsPill
 import se.atte.bragwise.ui.components.RankChip
 import se.atte.bragwise.ui.components.SectionCard
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.cd_bets_hidden
+import bragwise.shared.generated.resources.cd_cancel
+import bragwise.shared.generated.resources.cd_delete
+import bragwise.shared.generated.resources.cd_delete_challenge
+import bragwise.shared.generated.resources.cd_delete_challenge_body
+import bragwise.shared.generated.resources.cd_delete_challenge_title
+import bragwise.shared.generated.resources.cd_edit_predictions
+import bragwise.shared.generated.resources.cd_invite_friends
+import bragwise.shared.generated.resources.cd_invite_only
+import bragwise.shared.generated.resources.cd_invite_only_hint
+import bragwise.shared.generated.resources.cd_make_predictions
+import bragwise.shared.generated.resources.cd_no_challenge
+import bragwise.shared.generated.resources.cd_not_predicted
+import bragwise.shared.generated.resources.cd_participants
+import bragwise.shared.generated.resources.cd_post_results
+import bragwise.shared.generated.resources.cd_predicted
+import bragwise.shared.generated.resources.cd_results_posted
+import bragwise.shared.generated.resources.cd_show_more
+import bragwise.shared.generated.resources.cd_snackbar_delete_failed
+import bragwise.shared.generated.resources.cd_snackbar_share_failed
+import bragwise.shared.generated.resources.cd_view_predictions
+import bragwise.shared.generated.resources.cd_your_rank
+import bragwise.shared.generated.resources.cta_share
 import se.atte.bragwise.ui.preview.sampleDetail
 
 @Composable
@@ -83,8 +109,10 @@ fun ChallengeDetailScreen(
             }
             is ChallengeDetailViewModel.Effect.Snackbar -> {
                 val text = when (val msg = effect.message) {
-                    ChallengeDetailViewModel.SnackbarMessage.ShareFailed -> "Couldn't share challenge"
-                    is ChallengeDetailViewModel.SnackbarMessage.DeleteFailed -> "Delete failed: ${msg.message}"
+                    ChallengeDetailViewModel.SnackbarMessage.ShareFailed ->
+                        getString(Res.string.cd_snackbar_share_failed)
+                    is ChallengeDetailViewModel.SnackbarMessage.DeleteFailed ->
+                        getString(Res.string.cd_snackbar_delete_failed, msg.message)
                 }
                 snackbarHostState.showSnackbar(text)
             }
@@ -96,7 +124,7 @@ fun ChallengeDetailScreen(
             CircularProgressIndicator()
         }
         is UiState.Empty -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No challenge")
+            Text(stringResource(Res.string.cd_no_challenge))
         }
         is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (ui.cause == se.atte.bragwise.mvi.Cause.NoAccess) {
@@ -106,11 +134,11 @@ fun ChallengeDetailScreen(
                     modifier = Modifier.padding(24.dp),
                 ) {
                     Text(
-                        text = "This challenge is invite-only",
+                        text = stringResource(Res.string.cd_invite_only),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = "Ask the creator to invite you.",
+                        text = stringResource(Res.string.cd_invite_only_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -165,18 +193,18 @@ private fun DetailContent(
     if (confirmingDelete) {
         AlertDialog(
             onDismissRequest = onCancelDelete,
-            title = { Text("Delete challenge?") },
+            title = { Text(stringResource(Res.string.cd_delete_challenge_title)) },
             text = {
                 Text(
-                    "This permanently removes the challenge, all predictions, and invitations. This cannot be undone.",
+                    stringResource(Res.string.cd_delete_challenge_body),
                     color = MaterialTheme.colorScheme.error,
                 )
             },
             confirmButton = {
-                AppButton(onClick = onConfirmDelete) { Text("Delete") }
+                AppButton(onClick = onConfirmDelete) { Text(stringResource(Res.string.cd_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = onCancelDelete) { Text("Cancel") }
+                TextButton(onClick = onCancelDelete) { Text(stringResource(Res.string.cd_cancel)) }
             },
         )
     }
@@ -198,7 +226,7 @@ private fun DetailContent(
                     ) {
                         Column {
                             Text(
-                                text = "Your rank",
+                                text = stringResource(Res.string.cd_your_rank),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -225,7 +253,7 @@ private fun DetailContent(
                                 tint = if (hasPredicted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = if (hasPredicted) "Predicted" else "Not predicted",
+                                text = if (hasPredicted) stringResource(Res.string.cd_predicted) else stringResource(Res.string.cd_not_predicted),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = if (hasPredicted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -237,7 +265,7 @@ private fun DetailContent(
             if (challenge.participants.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Participants",
+                        text = stringResource(Res.string.cd_participants),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -262,6 +290,7 @@ private fun DetailContent(
                             ShowMoreRow(
                                 remaining = challenge.participants.size - shown.size,
                                 onClick = onSummary,
+                                label = stringResource(Res.string.cd_show_more, challenge.participants.size - shown.size),
                             )
                         }
                     }
@@ -277,11 +306,11 @@ private fun DetailContent(
                         AppOutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = onInvite,
-                        ) { Text("Invite friends") }
+                        ) { Text(stringResource(Res.string.cd_invite_friends)) }
                         AppOutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = onShare,
-                        ) { Text("Share") }
+                        ) { Text(stringResource(Res.string.cta_share)) }
                     }
                 }
             }
@@ -296,8 +325,8 @@ private fun DetailContent(
                         enabled = canPost,
                     ) {
                         Text(
-                            if (challenge.status == ChallengeStatus.RESULTS_POSTED) "Results posted"
-                            else "Post results",
+                            if (challenge.status == ChallengeStatus.RESULTS_POSTED) stringResource(Res.string.cd_results_posted)
+                            else stringResource(Res.string.cd_post_results),
                         )
                     }
                 }
@@ -309,7 +338,7 @@ private fun DetailContent(
                             onClick = onRequestDelete,
                         ) {
                             Text(
-                                "Delete challenge",
+                                stringResource(Res.string.cd_delete_challenge),
                                 color = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -327,9 +356,9 @@ private fun DetailContent(
             ) {
                 Text(
                     when {
-                        canPredict && joined -> "Edit predictions"
-                        canPredict -> "Make predictions"
-                        else -> "View predictions"
+                        canPredict && joined -> stringResource(Res.string.cd_edit_predictions)
+                        canPredict -> stringResource(Res.string.cd_make_predictions)
+                        else -> stringResource(Res.string.cd_view_predictions)
                     }
                 )
             }
@@ -364,7 +393,7 @@ private fun ParticipantRow(
             )
             if (!canViewBets) {
                 Text(
-                    text = "Bets hidden",
+                    text = stringResource(Res.string.cd_bets_hidden),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -384,7 +413,7 @@ private fun ParticipantRow(
 }
 
 @Composable
-private fun ShowMoreRow(remaining: Int, onClick: () -> Unit) {
+private fun ShowMoreRow(remaining: Int, onClick: () -> Unit, label: String = "Show more ($remaining)") {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -394,7 +423,7 @@ private fun ShowMoreRow(remaining: Int, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = "Show more ($remaining)",
+            text = label,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
         )

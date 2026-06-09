@@ -29,7 +29,17 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.predict_no_bets
+import bragwise.shared.generated.resources.predict_yes
+import bragwise.shared.generated.resources.predict_no
+import bragwise.shared.generated.resources.predict_submitting
+import bragwise.shared.generated.resources.predict_progress
+import bragwise.shared.generated.resources.predict_saving
+import bragwise.shared.generated.resources.cta_save_predictions
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.ui.components.LoadingDialog
@@ -71,12 +81,14 @@ fun PredictScreen(
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             PredictViewModel.Effect.Submitted -> onSubmitted()
-            is PredictViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
+            is PredictViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(
+                getString(effect.message.res, *effect.message.args.toTypedArray())
+            )
         }
     }
 
     if (state.submitting) {
-        LoadingDialog(message = "Saving predictions…")
+        LoadingDialog(message = stringResource(Res.string.predict_saving))
     }
 
     if (state.needsName) {
@@ -99,7 +111,7 @@ fun PredictScreen(
             )
         }
         is UiState.Empty -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No bets")
+            Text(stringResource(Res.string.predict_no_bets))
         }
         is UiState.Ready -> PredictContent(
             bets = ui.data.bets,
@@ -186,9 +198,9 @@ private fun PredictContent(
             ) {
                 Text(
                     text = when {
-                        submitting -> "Submitting…"
-                        completed < bets.size -> "Predict $completed/${bets.size}"
-                        else -> "Save predictions"
+                        submitting -> stringResource(Res.string.predict_submitting)
+                        completed < bets.size -> stringResource(Res.string.predict_progress, completed, bets.size)
+                        else -> stringResource(Res.string.cta_save_predictions)
                     },
                 )
             }
@@ -239,12 +251,12 @@ private fun BetCard(
                 AppFilterChip(
                     selected = current == true,
                     onClick = { onBoolean(bet.id, true) },
-                    label = { Text("Yes") },
+                    label = { Text(stringResource(Res.string.predict_yes)) },
                 )
                 AppFilterChip(
                     selected = current == false,
                     onClick = { onBoolean(bet.id, false) },
-                    label = { Text("No") },
+                    label = { Text(stringResource(Res.string.predict_no)) },
                 )
             }
             is Bet.Ranking -> RankingDragList(

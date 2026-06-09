@@ -28,6 +28,50 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import org.koin.compose.koinInject
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.cc_add_bet
+import bragwise.shared.generated.resources.cc_add_bet_title
+import bragwise.shared.generated.resources.cc_add_country
+import bragwise.shared.generated.resources.cc_add_option
+import bragwise.shared.generated.resources.cc_bet_cancel_a11y
+import bragwise.shared.generated.resources.cc_bet_remove
+import bragwise.shared.generated.resources.cc_bet_type_ranking
+import bragwise.shared.generated.resources.cc_bet_type_single_pick
+import bragwise.shared.generated.resources.cc_bet_type_yes_no
+import bragwise.shared.generated.resources.cc_bets_visible_hint
+import bragwise.shared.generated.resources.cc_bets_visible_label
+import bragwise.shared.generated.resources.cc_cancel
+import bragwise.shared.generated.resources.cc_countries
+import bragwise.shared.generated.resources.cc_country_placeholder
+import bragwise.shared.generated.resources.cc_custom_options
+import bragwise.shared.generated.resources.cc_deadline_label
+import bragwise.shared.generated.resources.cc_decrease_top_n_a11y
+import bragwise.shared.generated.resources.cc_done
+import bragwise.shared.generated.resources.cc_duplicate_options_error
+import bragwise.shared.generated.resources.cc_edit_bet_title
+import bragwise.shared.generated.resources.cc_increase_top_n_a11y
+import bragwise.shared.generated.resources.cc_invite_dialog_title
+import bragwise.shared.generated.resources.cc_invited_summary
+import bragwise.shared.generated.resources.cc_no_friends_yet
+import bragwise.shared.generated.resources.cc_option_label
+import bragwise.shared.generated.resources.cc_pick_friends
+import bragwise.shared.generated.resources.cc_publish
+import bragwise.shared.generated.resources.cc_question_label
+import bragwise.shared.generated.resources.cc_remove_option_a11y
+import bragwise.shared.generated.resources.cc_save_bet
+import bragwise.shared.generated.resources.cc_save_draft
+import bragwise.shared.generated.resources.cc_saving_dialog
+import bragwise.shared.generated.resources.cc_show_less
+import bragwise.shared.generated.resources.cc_show_more_options
+import bragwise.shared.generated.resources.cc_title_field
+import bragwise.shared.generated.resources.cc_top_n_ranked
+import bragwise.shared.generated.resources.cc_visibility_friends
+import bragwise.shared.generated.resources.cc_visibility_friends_hint
+import bragwise.shared.generated.resources.cc_visibility_invite_only
+import bragwise.shared.generated.resources.cc_visibility_invite_only_hint
+import bragwise.shared.generated.resources.cc_who_can_join
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.ui.components.LoadingDialog
@@ -76,12 +120,14 @@ fun CreateChallengeScreen(
         when (effect) {
             is CreateChallengeViewModel.Effect.Published -> onPublished(effect.challengeId)
             is CreateChallengeViewModel.Effect.DraftSaved -> onDraftSaved(effect.challengeId)
-            is CreateChallengeViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(effect.text)
+            is CreateChallengeViewModel.Effect.Snackbar -> snackbarHostState.showSnackbar(
+                getString(effect.message.res, *effect.message.args.toTypedArray())
+            )
         }
     }
 
     if (state.submitting) {
-        LoadingDialog(message = "Saving challenge…")
+        LoadingDialog(message = stringResource(Res.string.cc_saving_dialog))
     }
 
     if (state.needsName) {
@@ -145,8 +191,6 @@ fun CreateChallengeScreen(
     val hasDuplicateOptions = resolvedOptions
         .map { option -> option.countryCode ?: option.label.trim().lowercase() }
         .let { keys -> keys.size != keys.toSet().size }
-    val duplicateOptionError = if (hasDuplicateOptions) "Remove duplicate options before saving" else null
-
     if (showFriendPicker) {
         FriendPickerDialog(
             friends = friends,
@@ -170,7 +214,7 @@ fun CreateChallengeScreen(
                     OutlinedTextField(
                         value = state.title,
                         onValueChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetTitle(it)) },
-                        label = { Text("Title") },
+                        label = { Text(stringResource(Res.string.cc_title_field)) },
                         modifier = Modifier.fillMaxWidth().testTag("create_title"),
                         singleLine = true,
                     )
@@ -178,7 +222,7 @@ fun CreateChallengeScreen(
             }
 
             item {
-                SectionCard(title = "Deadline") {
+                SectionCard(title = stringResource(Res.string.cc_deadline_label)) {
                     DeadlinePickerField(
                         locksAt = state.locksAt,
                         onLocksAtChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetLocksAt(it)) },
@@ -187,12 +231,12 @@ fun CreateChallengeScreen(
             }
 
             item {
-                SectionCard(title = "Who can join") {
+                SectionCard(title = stringResource(Res.string.cc_who_can_join)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
                         AppFilterChip(
                             selected = state.visibility == Visibility.FRIENDS,
                             onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetVisibility(Visibility.FRIENDS)) },
-                            label = { Text("Friends") },
+                            label = { Text(stringResource(Res.string.cc_visibility_friends)) },
                         )
                         AppFilterChip(
                             selected = state.visibility == Visibility.INVITE_ONLY,
@@ -200,14 +244,14 @@ fun CreateChallengeScreen(
                                 viewModel.onIntent(CreateChallengeViewModel.Intent.SetVisibility(Visibility.INVITE_ONLY))
                                 showFriendPicker = true
                             },
-                            label = { Text("Invite only") },
+                            label = { Text(stringResource(Res.string.cc_visibility_invite_only)) },
                         )
                     }
                     Text(
                         text = when (state.visibility) {
-                            Visibility.FRIENDS -> "Any of your friends can join with the link."
-                            Visibility.INVITE_ONLY -> "Only people you explicitly invite can join."
-                            else -> "" // PROMOTED is server-only; unreachable in the creator form
+                            Visibility.FRIENDS -> stringResource(Res.string.cc_visibility_friends_hint)
+                            Visibility.INVITE_ONLY -> stringResource(Res.string.cc_visibility_invite_only_hint)
+                            else -> ""
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -215,9 +259,9 @@ fun CreateChallengeScreen(
                     )
                     if (state.visibility == Visibility.INVITE_ONLY) {
                         val inviteLabel = if (state.invitedUids.isNotEmpty()) {
-                            "${state.invitedUids.size} friends invited — Edit"
+                            stringResource(Res.string.cc_invited_summary, state.invitedUids.size)
                         } else {
-                            "Pick friends"
+                            stringResource(Res.string.cc_pick_friends)
                         }
                         Text(
                             text = inviteLabel,
@@ -238,11 +282,11 @@ fun CreateChallengeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Bets visible to others",
+                                text = stringResource(Res.string.cc_bets_visible_label),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
-                                text = "Participants can see each other's predictions",
+                                text = stringResource(Res.string.cc_bets_visible_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -258,7 +302,7 @@ fun CreateChallengeScreen(
             items(items = state.bets, key = { it.id }) { bet ->
                 if (editingBetId == bet.id) {
                     BetEditor(
-                        title = "Edit bet",
+                        title = stringResource(Res.string.cc_edit_bet_title),
                         betType = betType,
                         onBetTypeChange = { newType ->
                             betType = newType
@@ -282,8 +326,8 @@ fun CreateChallengeScreen(
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
                         },
-                        saveLabel = "Save bet",
-                        duplicateOptionError = duplicateOptionError,
+                        saveLabel = stringResource(Res.string.cc_save_bet),
+                        duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
                         onCancel = {
                             editingBetId = null
                             resetEditor()
@@ -325,7 +369,7 @@ fun CreateChallengeScreen(
             item {
                 if (editingBetId == "") {
                     BetEditor(
-                        title = "Add bet",
+                        title = stringResource(Res.string.cc_add_bet_title),
                         betType = betType,
                         onBetTypeChange = { newType ->
                             betType = newType
@@ -349,8 +393,8 @@ fun CreateChallengeScreen(
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
                         },
-                        saveLabel = "Save bet",
-                        duplicateOptionError = duplicateOptionError,
+                        saveLabel = stringResource(Res.string.cc_save_bet),
+                        duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
                         onCancel = {
                             editingBetId = null
                             resetEditor()
@@ -384,7 +428,7 @@ fun CreateChallengeScreen(
                     AppOutlinedButton(
                         modifier = Modifier.fillMaxWidth().testTag("create_add_bet"),
                         onClick = { editingBetId = "" },
-                    ) { Text("+ Add bet") }
+                    ) { Text(stringResource(Res.string.cc_add_bet)) }
                 }
             }
         }
@@ -394,12 +438,12 @@ fun CreateChallengeScreen(
                 modifier = Modifier.weight(1f),
                 onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.SaveDraft) },
                 enabled = !state.submitting,
-            ) { Text("Save draft") }
+            ) { Text(stringResource(Res.string.cc_save_draft)) }
             AppButton(
                 modifier = Modifier.weight(1f).testTag("create_publish"),
                 onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.Publish) },
                 enabled = !state.submitting && state.bets.isNotEmpty() && state.title.isNotBlank(),
-            ) { Text("Publish") }
+            ) { Text(stringResource(Res.string.cc_publish)) }
         }
     }
 }
@@ -437,7 +481,7 @@ private fun BetEditor(
             IconButton(onClick = onCancel) {
                 Icon(
                     imageVector = Lucide.X,
-                    contentDescription = "Cancel",
+                    contentDescription = stringResource(Res.string.cc_bet_cancel_a11y),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -449,17 +493,17 @@ private fun BetEditor(
             AppFilterChip(
                 selected = betType == BetType.YesNo,
                 onClick = { onBetTypeChange(BetType.YesNo) },
-                label = { Text("Yes / No") },
+                label = { Text(stringResource(Res.string.cc_bet_type_yes_no)) },
             )
             AppFilterChip(
                 selected = betType == BetType.SinglePick,
                 onClick = { onBetTypeChange(BetType.SinglePick) },
-                label = { Text("Single pick") },
+                label = { Text(stringResource(Res.string.cc_bet_type_single_pick)) },
             )
             AppFilterChip(
                 selected = betType == BetType.Ranking,
                 onClick = { onBetTypeChange(BetType.Ranking) },
-                label = { Text("Ranking") },
+                label = { Text(stringResource(Res.string.cc_bet_type_ranking)) },
                 modifier = Modifier.testTag("create_bet_ranking"),
             )
         }
@@ -471,7 +515,7 @@ private fun BetEditor(
                 AppFilterChip(
                     selected = optionType == OptionType.NONE,
                     onClick = { onOptionTypeChange(OptionType.NONE) },
-                    label = { Text("Custom options") },
+                    label = { Text(stringResource(Res.string.cc_custom_options)) },
                 )
                 AppFilterChip(
                     selected = optionType == OptionType.COUNTRY,
@@ -479,7 +523,7 @@ private fun BetEditor(
                         onOptionTypeChange(OptionType.COUNTRY)
                         if (countryOptions.size < 2) onCountryOptionsChange(defaultCountryOptions())
                     },
-                    label = { Text("Countries") },
+                    label = { Text(stringResource(Res.string.cc_countries)) },
                     modifier = Modifier.testTag("create_bet_countries"),
                 )
             }
@@ -487,7 +531,7 @@ private fun BetEditor(
         OutlinedTextField(
             value = question,
             onValueChange = onQuestionChange,
-            label = { Text("Question") },
+            label = { Text(stringResource(Res.string.cc_question_label)) },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_bet_question"),
             singleLine = true,
         )
@@ -554,7 +598,7 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
             IconButton(onClick = onRemove) {
                 Icon(
                     imageVector = Lucide.X,
-                    contentDescription = "Remove bet",
+                    contentDescription = stringResource(Res.string.cc_bet_remove),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -582,7 +626,7 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
             if (showExpand) {
                 val remaining = options.size - 4
                 AppTextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Show less" else "… $remaining more · Tap to expand")
+                    Text(if (expanded) stringResource(Res.string.cc_show_less) else stringResource(Res.string.cc_show_more_options, remaining))
                 }
             }
         }
@@ -600,10 +644,10 @@ private fun FriendPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Invite friends") },
+        title = { Text(stringResource(Res.string.cc_invite_dialog_title)) },
         text = {
             if (friends.isEmpty()) {
-                Text("No friends yet — add some first.")
+                Text(stringResource(Res.string.cc_no_friends_yet))
             } else {
                 LazyColumn {
                     items(items = friends, key = { it.id }) { friend ->
@@ -630,10 +674,10 @@ private fun FriendPickerDialog(
             }
         },
         confirmButton = {
-            AppTextButton(onClick = { onConfirm(selected) }) { Text("Done") }
+            AppTextButton(onClick = { onConfirm(selected) }) { Text(stringResource(Res.string.cc_done)) }
         },
         dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text("Cancel") }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(Res.string.cc_cancel)) }
         },
     )
 }
@@ -658,7 +702,7 @@ private fun OptionsEditor(
                     onValueChange = { updated ->
                         onOptionsChange(options.toMutableList().also { it[index] = updated })
                     },
-                    label = { Text("Option ${index + 1}") },
+                    label = { Text(stringResource(Res.string.cc_option_label, index + 1)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                 )
@@ -668,7 +712,7 @@ private fun OptionsEditor(
                 ) {
                     Icon(
                         imageVector = Lucide.X,
-                        contentDescription = "Remove option",
+                        contentDescription = stringResource(Res.string.cc_remove_option_a11y),
                         tint = if (options.size > 2)
                             MaterialTheme.colorScheme.onSurfaceVariant
                         else
@@ -677,7 +721,7 @@ private fun OptionsEditor(
                 }
             }
         }
-        AppTextButton(onClick = { onOptionsChange(options + "") }) { Text("+ Add option") }
+        AppTextButton(onClick = { onOptionsChange(options + "") }) { Text(stringResource(Res.string.cc_add_option)) }
     }
 }
 
@@ -702,7 +746,7 @@ private fun CountryOptionsEditor(
                         onOptionsChange(options.toMutableList().also { it[index] = updated.copy(id = option.id) })
                     },
                     modifier = Modifier.weight(1f).testTag("create_country_field_$index"),
-                    placeholder = "Country ${index + 1}",
+                    placeholder = stringResource(Res.string.cc_country_placeholder, index + 1),
                 )
                 IconButton(
                     onClick = { onOptionsChange(options.toMutableList().also { it.removeAt(index) }) },
@@ -710,7 +754,7 @@ private fun CountryOptionsEditor(
                 ) {
                     Icon(
                         imageVector = Lucide.X,
-                        contentDescription = "Remove option",
+                        contentDescription = stringResource(Res.string.cc_remove_option_a11y),
                         tint = if (options.size > 2)
                             MaterialTheme.colorScheme.onSurfaceVariant
                         else
@@ -721,7 +765,7 @@ private fun CountryOptionsEditor(
         }
         AppTextButton(onClick = {
             onOptionsChange(options + BetOption(id = "o${options.size}", label = ""))
-        }) { Text("+ Add country") }
+        }) { Text(stringResource(Res.string.cc_add_country)) }
     }
 }
 
@@ -740,7 +784,7 @@ private fun TopNStepper(
         horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
     ) {
         Text(
-            text = "Top N ranked",
+            text = stringResource(Res.string.cc_top_n_ranked),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
@@ -748,7 +792,7 @@ private fun TopNStepper(
             onClick = { if (value > 2) onValueChange(value - 1) },
             enabled = value > 2,
         ) {
-            Icon(imageVector = Lucide.Minus, contentDescription = "Decrease top N")
+            Icon(imageVector = Lucide.Minus, contentDescription = stringResource(Res.string.cc_decrease_top_n_a11y))
         }
         Text(
             text = "$value",
@@ -759,7 +803,7 @@ private fun TopNStepper(
             onClick = { if (value < 10) onValueChange(value + 1) },
             enabled = value < 10,
         ) {
-            Icon(imageVector = Lucide.Plus, contentDescription = "Increase top N")
+            Icon(imageVector = Lucide.Plus, contentDescription = stringResource(Res.string.cc_increase_top_n_a11y))
         }
     }
 }

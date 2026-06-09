@@ -22,6 +22,12 @@ import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.SectionCard
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.player_head_to_head
+import bragwise.shared.generated.resources.player_head_to_head_record
+import bragwise.shared.generated.resources.player_no_shared_challenges
+import bragwise.shared.generated.resources.player_not_found
 
 /**
  * LB-04 Player profile — public view of another user. Identity card +
@@ -35,7 +41,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel) {
             CircularProgressIndicator()
         }
         is UiState.Empty -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Player not found")
+            Text(stringResource(Res.string.player_not_found))
         }
         is UiState.Failed -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(ui.cause.toUserMessage())
@@ -57,17 +63,17 @@ private fun PlayerProfileContent(data: PlayerProfileViewModel.Data) {
             }
         }
         item {
-            SectionCard(title = "Head to head") {
+            SectionCard(title = stringResource(Res.string.player_head_to_head)) {
                 val rec = data.head
                 if (rec == null) {
                     Text(
-                        "No shared challenges yet.",
+                        stringResource(Res.string.player_no_shared_challenges),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
                     Text(
-                        "You: ${rec.wins} · Them: ${rec.losses} · Ties: ${rec.ties}",
+                        stringResource(Res.string.player_head_to_head_record, rec.wins, rec.losses, rec.ties),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }

@@ -13,5 +13,14 @@
 	-->
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
+	<!--
+	  Allow APNs to wake the app for background data pushes so FCM can deliver
+	  silent / data-only messages. Foreground + tap handling is done in the
+	  UNUserNotificationCenterDelegate (iOSApp.swift).
+	-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

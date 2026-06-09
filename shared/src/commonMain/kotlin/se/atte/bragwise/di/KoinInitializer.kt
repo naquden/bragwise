@@ -12,5 +12,9 @@ fun initKoin(useMock: Boolean = false, appDeclaration: KoinAppDeclaration = {}) 
     }
 }
 
-/** Exposed to Swift as `KoinInitializerKt.doInitKoin()`. */
-fun doInitKoin() = initKoin()
+/**
+ * Exposed to Swift as `KoinInitializerKt.doInitKoin(useMock:)`. Mirrors Android's
+ * `BuildConfig.USE_MOCK_DATA` gate (BragwiseApplication.kt) so an iOS dev/UI-test
+ * build can run the mock data graph without live Firebase.
+ */
+fun doInitKoin(useMock: Boolean = false) = initKoin(useMock = useMock)

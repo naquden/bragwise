@@ -85,7 +85,10 @@ class AuthRemoteDataSource(
                 installIfNotAvailable = true,
                 minimumVersion = null,
             ),
-            iOSBundleId = null,
+            // Must match iOS PRODUCT_BUNDLE_IDENTIFIER (Config.xcconfig:
+            // se.atte.bragwise.Bragwise$(TEAM_ID), TEAM_ID empty in dev). Required so
+            // the Firebase email sign-in link opens the iOS app via Universal Link.
+            iOSBundleId = "se.atte.bragwise.Bragwise",
         )
     }
 }

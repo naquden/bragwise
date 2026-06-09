@@ -24,6 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
 import kotlin.time.Instant
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.deadline_cancel
+import bragwise.shared.generated.resources.deadline_done
+import bragwise.shared.generated.resources.deadline_hint
+import bragwise.shared.generated.resources.deadline_locks_prefix
+import bragwise.shared.generated.resources.deadline_next
+import bragwise.shared.generated.resources.deadline_pick_time_title
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,10 +66,10 @@ fun DeadlinePickerField(
                     pendingDateMillis = selected
                     showDatePicker = false
                     showTimePicker = true
-                }) { Text("Next") }
+                }) { Text(stringResource(Res.string.deadline_next)) }
             },
             dismissButton = {
-                AppTextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                AppTextButton(onClick = { showDatePicker = false }) { Text(stringResource(Res.string.deadline_cancel)) }
             },
         ) {
             DatePicker(state = dateState)
@@ -78,17 +86,17 @@ fun DeadlinePickerField(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            title = { Text("Pick time (UTC)") },
+            title = { Text(stringResource(Res.string.deadline_pick_time_title)) },
             text = { TimePicker(state = timeState) },
             confirmButton = {
                 AppTextButton(onClick = {
                     val offsetMs = (timeState.hour * 3600L + timeState.minute * 60L) * 1000L
                     onLocksAtChange(Instant.fromEpochMilliseconds(pendingDateMillis + offsetMs))
                     showTimePicker = false
-                }) { Text("Done") }
+                }) { Text(stringResource(Res.string.deadline_done)) }
             },
             dismissButton = {
-                AppTextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                AppTextButton(onClick = { showTimePicker = false }) { Text(stringResource(Res.string.deadline_cancel)) }
             },
         )
     }
@@ -101,13 +109,13 @@ fun DeadlinePickerField(
     ) {
         Row {
             Text(
-                text = "Locks: ${formatDeadline(locksAt)}",
+                text = stringResource(Res.string.deadline_locks_prefix, formatDeadline(locksAt)),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
         }
         Text(
-            text = "When predictions lock. No edits after this.",
+            text = stringResource(Res.string.deadline_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp),

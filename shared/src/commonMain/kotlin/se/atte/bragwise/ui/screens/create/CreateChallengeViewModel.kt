@@ -1,5 +1,10 @@
 package se.atte.bragwise.ui.screens.create
 
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.cc_snackbar_deadline_future
+import bragwise.shared.generated.resources.cc_snackbar_no_reachable_invitees
+import bragwise.shared.generated.resources.cc_snackbar_nothing_to_save
+import bragwise.shared.generated.resources.cc_snackbar_title_and_bet_required
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -10,6 +15,7 @@ import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.mvi.ErrorReporter
+import se.atte.bragwise.mvi.UiText
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
@@ -83,7 +89,7 @@ class CreateChallengeViewModel(
     sealed interface Effect {
         data class Published(val challengeId: String) : Effect
         data class DraftSaved(val challengeId: String) : Effect
-        data class Snackbar(val text: String) : Effect
+        data class Snackbar(val message: UiText) : Effect
     }
 
     init {
@@ -172,7 +178,7 @@ class CreateChallengeViewModel(
         if (state.value.submitting) return
         val s = state.value
         if (s.title.isBlank() && s.bets.isEmpty()) {
-            emitEffect(Effect.Snackbar("Nothing to save yet"))
+            emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_nothing_to_save)))
             return
         }
         update { it.copy(submitting = true) }
@@ -195,11 +201,11 @@ class CreateChallengeViewModel(
         if (state.value.submitting) return
         val s = state.value
         if (s.title.isBlank() || s.bets.isEmpty()) {
-            emitEffect(Effect.Snackbar("Title and at least one bet required"))
+            emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_title_and_bet_required)))
             return
         }
         if (s.locksAt <= Clock.System.now()) {
-            emitEffect(Effect.Snackbar("Deadline must be in the future"))
+            emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_deadline_future)))
             return
         }
         if (ensureNamedAccount.name.value.isNullOrBlank()) {
@@ -217,7 +223,7 @@ class CreateChallengeViewModel(
                 onFailure = { e ->
                     update { it.copy(submitting = false) }
                     if (e.message?.contains("invite-only-no-reachable-invitees") == true) {
-                        emitEffect(Effect.Snackbar("None of your invited friends are reachable — pick at least one"))
+                        emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_no_reachable_invitees)))
                     } else {
                         errorReporter.report(e)
                     }

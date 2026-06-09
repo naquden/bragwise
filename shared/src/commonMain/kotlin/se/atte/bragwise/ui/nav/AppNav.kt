@@ -47,6 +47,7 @@ import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.nav_back
 import bragwise.shared.generated.resources.nav_tab_challenges
 import bragwise.shared.generated.resources.nav_tab_me
+import bragwise.shared.generated.resources.nav_create_challenge_a11y
 import bragwise.shared.generated.resources.nav_tab_results
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Lucide
@@ -280,7 +281,7 @@ fun AppNav() {
                     shape = MaterialTheme.shapes.extraLarge,
                     modifier = Modifier.testTag("fab_create"),
                 ) {
-                    Icon(imageVector = Lucide.Plus, contentDescription = "Create challenge")
+                    Icon(imageVector = Lucide.Plus, contentDescription = stringResource(Res.string.nav_create_challenge_a11y))
                 }
             }
         },
