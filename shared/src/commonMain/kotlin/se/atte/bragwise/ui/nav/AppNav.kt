@@ -396,6 +396,7 @@ fun AppNav() {
                         onSignedIn = {
                             navController.navigate(RouteMe) {
                                 popUpTo(navController.currentBackStackEntry!!.destination.id) { inclusive = true }
+                                launchSingleTop = true
                             }
                             val pending = localPredictions.snapshot()
                             if (pending.isNotEmpty()) {

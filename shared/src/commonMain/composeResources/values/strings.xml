@@ -100,7 +100,7 @@
     <string name="cc_bet_type_ranking">Ranking</string>
     <string name="cc_bet_remove">Remove bet</string>
     <string name="cc_deadline_label">Deadline</string>
-    <string name="cc_deadline_hint">When predictions lock. No edits after this.</string>
+    <string name="cc_deadline_hint">Predictions lock at this time</string>
     <string name="cc_save_draft">Save draft</string>
     <string name="cc_publish">Publish</string>
 
@@ -286,7 +286,7 @@
     <string name="deadline_cancel">Cancel</string>
     <string name="deadline_done">Done</string>
     <string name="deadline_locks_prefix">Locks: %1$s</string>
-    <string name="deadline_hint">When predictions lock. No edits after this.</string>
+    <string name="deadline_hint">Predictions lock at this time</string>
 
     <!-- CountryAutocomplete component. -->
     <string name="country_clear_a11y">Clear country</string>

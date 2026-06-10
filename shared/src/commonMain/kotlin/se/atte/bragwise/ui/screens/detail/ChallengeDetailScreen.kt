@@ -77,6 +77,8 @@ import bragwise.shared.generated.resources.cd_snackbar_share_failed
 import bragwise.shared.generated.resources.cd_view_predictions
 import bragwise.shared.generated.resources.cd_your_rank
 import bragwise.shared.generated.resources.cta_share
+import bragwise.shared.generated.resources.deadline_locks_prefix
+import se.atte.bragwise.ui.components.formatDeadline
 import se.atte.bragwise.ui.preview.sampleDetail
 
 @Composable
@@ -258,6 +260,14 @@ private fun DetailContent(
                                 color = if (hasPredicted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+                    }
+                    if (challenge.locksAt != null) {
+                        Spacer(Modifier.height(standardPaddingSmall))
+                        Text(
+                            text = stringResource(Res.string.deadline_locks_prefix, formatDeadline(challenge.locksAt)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }

@@ -74,6 +74,9 @@ GoogleService-Info.plist
 Pods/
 Podfile.lock
 
+# Xcode DerivedData
+iosApp/DerivedData/
+
 # Personal work-in-progress notes
 plan.md
 

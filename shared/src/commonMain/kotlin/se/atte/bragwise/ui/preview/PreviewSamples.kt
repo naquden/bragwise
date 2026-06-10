@@ -57,7 +57,7 @@ internal fun sampleChallenge(
     visibility = Visibility.FRIENDS,
     createdBy = "u1",
     createdAt = Instant.fromEpochSeconds(0),
-    locksAt = null,
+    locksAt = Instant.fromEpochMilliseconds(1_750_096_200_000L),
     resultsPostedAt = if (status == ChallengeStatus.RESULTS_POSTED) Instant.fromEpochSeconds(0) else null,
     status = status,
     joinedCount = 12,

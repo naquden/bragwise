@@ -1,14 +1,18 @@
 package se.atte.bragwise.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
@@ -20,8 +24,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.CalendarClock
+import com.composables.icons.lucide.Lucide
 import kotlin.time.Clock
 import kotlin.time.Instant
 import org.jetbrains.compose.resources.stringResource
@@ -32,6 +40,7 @@ import bragwise.shared.generated.resources.deadline_hint
 import bragwise.shared.generated.resources.deadline_locks_prefix
 import bragwise.shared.generated.resources.deadline_next
 import bragwise.shared.generated.resources.deadline_pick_time_title
+import se.atte.bragwise.theme.ThemePreview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,11 +116,22 @@ fun DeadlinePickerField(
             .clickable { showDatePicker = true }
             .padding(vertical = 4.dp),
     ) {
-        Row {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
             Text(
                 text = stringResource(Res.string.deadline_locks_prefix, formatDeadline(locksAt)),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.size(8.dp))
+            Icon(
+                imageVector = Lucide.CalendarClock,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Text(
@@ -123,36 +143,19 @@ fun DeadlinePickerField(
     }
 }
 
-private fun formatDeadline(instant: Instant): String {
-    val ms = instant.toEpochMilliseconds()
-    val totalSec = ms / 1000L
-    val days = totalSec / 86_400L
-    // Days since 1970-01-01 (UTC). Use a minimal algorithm to avoid kotlinx-datetime.
-    val year: Int
-    val month: Int
-    val day: Int
-    run {
-        var n = days.toInt()
-        var y = 1970
-        while (true) {
-            val diy = if (isLeap(y)) 366 else 365
-            if (n < diy) break
-            n -= diy
-            y++
+// region Previews
+
+@Preview
+@Composable
+private fun DeadlinePickerField_Preview() {
+    ThemePreview {
+        SectionCard(title = "Deadline") {
+            DeadlinePickerField(
+                locksAt = Instant.fromEpochMilliseconds(1_750_096_200_000L),
+                onLocksAtChange = {},
+            )
         }
-        year = y
-        val leapYear = isLeap(year)
-        val monthDays = intArrayOf(31, if (leapYear) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-        var m = 0
-        while (m < 12 && n >= monthDays[m]) { n -= monthDays[m]; m++ }
-        month = m + 1
-        day = n + 1
     }
-    val remSec = totalSec % 86_400L
-    val hour = (remSec / 3600L).toInt()
-    val minute = ((remSec % 3600L) / 60L).toInt()
-    val monthName = arrayOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")[month - 1]
-    return "$day $monthName $year, ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} UTC"
 }
 
-private fun isLeap(y: Int) = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)
+// endregion
