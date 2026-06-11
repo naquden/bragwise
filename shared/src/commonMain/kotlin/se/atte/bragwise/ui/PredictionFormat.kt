@@ -88,3 +88,9 @@ fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
 
 /** Number of bets the user has a valid complete prediction for. */
 fun ChallengeDetail.predictedCount(): Int = challenge.bets.count { myPredictions[it.id].isCompleteFor(it) }
+
+/** Strips empty-slot ("") sentinels from a Ranking payload before persistence. Identity for other kinds. */
+fun PredictionPayload.withoutEmptySlots(): PredictionPayload = when (this) {
+    is PredictionPayload.Ranking -> PredictionPayload.Ranking(orderedOptionIds.filter { it.isNotEmpty() })
+    else -> this
+}

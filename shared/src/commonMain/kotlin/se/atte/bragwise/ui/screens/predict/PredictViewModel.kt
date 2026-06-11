@@ -22,6 +22,7 @@ import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.UiText
 import se.atte.bragwise.mvi.toCause
+import se.atte.bragwise.ui.withoutEmptySlots
 
 /** MC-03 Predict — SinglePick, BooleanProp, and Ranking (via [RankingDragList]). */
 class PredictViewModel(
@@ -104,7 +105,7 @@ class PredictViewModel(
                 it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.BooleanProp(intent.value)))
             }
             is Intent.SetRanking -> update {
-                it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.Ranking(intent.orderedOptionIds.filter { id -> id.isNotEmpty() })))
+                it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.Ranking(intent.orderedOptionIds)))
             }
             Intent.Submit -> submit()
             is Intent.ConfirmName -> viewModelScope.launch {
@@ -141,7 +142,7 @@ class PredictViewModel(
             errorReporter.report(se.atte.bragwise.mvi.Cause.NoAccess)
             return
         }
-        val predictions = drafts.map { (betId, payload) -> Prediction(betId, payload) }
+        val predictions = drafts.map { (betId, payload) -> Prediction(betId, payload.withoutEmptySlots()) }
         println("$PRED_DBG submit.start challengeId=$challengeId drafts=${predictions.size} payloads=$drafts")
         val result = challenges.submitPredictions(challengeId, predictions)
         update { it.copy(submitting = false) }
@@ -161,7 +162,7 @@ class PredictViewModel(
     }
 
     private suspend fun saveLocally() {
-        val drafts = state.value.drafts
+        val drafts = state.value.drafts.mapValues { (_, payload) -> payload.withoutEmptySlots() }
         val saved = runCatching { localPredictions.put(challengeId, drafts) }
         update { it.copy(submitting = false) }
         saved.fold(

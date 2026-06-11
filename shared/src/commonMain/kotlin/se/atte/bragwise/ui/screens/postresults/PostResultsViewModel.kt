@@ -15,6 +15,7 @@ import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
 import se.atte.bragwise.ui.isCompleteFor
+import se.atte.bragwise.ui.withoutEmptySlots
 
 class PostResultsViewModel(
     private val challengeId: String,
@@ -63,14 +64,14 @@ class PostResultsViewModel(
             it.copy(results = it.results + (intent.betId to PredictionPayload.BooleanProp(intent.value)))
         }
         is Intent.SetRanking -> update {
-            it.copy(results = it.results + (intent.betId to PredictionPayload.Ranking(intent.orderedIds.stripSlots())))
+            it.copy(results = it.results + (intent.betId to PredictionPayload.Ranking(intent.orderedIds)))
         }
         Intent.RequestConfirm -> update { it.copy(confirming = true) }
         Intent.Cancel -> update { it.copy(confirming = false) }
         Intent.Submit -> {
             viewModelScope.launch {
                 update { it.copy(submitting = true, confirming = false) }
-                challenges.postResults(challengeId, state.value.results)
+                challenges.postResults(challengeId, state.value.results.mapValues { (_, v) -> v.withoutEmptySlots() })
                     .onSuccess { emitEffect(Effect.Posted) }
                     .onFailure { errorReporter.report(it) }
                 update { it.copy(submitting = false) }
@@ -79,6 +80,4 @@ class PostResultsViewModel(
         }
     }
 }
-
-internal fun List<String>.stripSlots(): List<String> = filter { it.isNotEmpty() }
 
