@@ -27,7 +27,21 @@ others or share challenges.
 ## Bet visibility
 
 Bets are visible to other users when the challenge has the "show all bets"
-toggle enabled. Without that toggle, bets remain private to their owner.
+toggle enabled (`betsVisible`). Without that toggle, bets remain private to
+their owner.
+
+**Pre-lock visibility is intended and is NOT cheating.** When `betsVisible` is
+enabled, other participants' bets are visible to *anyone who can reach the
+challenge* — promoted feed, friend invite, or share link — regardless of whether
+they are signed in, a member, or the creator. Bragwise challenges are not only
+sports bets — they're also game-night fun and quizzes. Users want to laugh at
+and with each other about their guesses before results are posted. No one knows
+what's correct yet; it's all guessing, so seeing others' bets early is not
+cheating. The unguessable 20-char doc ID and App Check (enforced SDK/callable
+side, not Firestore rules) are the abuse guards.
+
+**Implemented:** `ChallengeDetailScreen.kt` uses `canViewBets = participant.uid == myUid || challenge.betsVisible`.
+Firestore `players/{uid}` read rule: `isSelf(uid) || challenge.betsVisible == true` — no sign-in or membership gate.
 
 ## Sign in with Apple not required (iOS)
 

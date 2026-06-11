@@ -69,16 +69,14 @@ service cloud.firestore {
 
       match /players/{uid} {
         // Composite per-user doc: membership + this user's predictions.
-        // Readable by the owner, or by a fellow participant when the challenge
-        // creator has enabled betsVisible (creator opts in to spark discussion).
-        // exists() confirms the reader has their own player doc (i.e. is a
-        // member); prevents non-participants from enumerating predictions even
-        // when they hold the share link.
+        // Readable by the owner, or by ANYONE when the challenge has betsVisible.
+        // No sign-in / membership gate — reaching the challenge (promoted feed,
+        // friend invite, or unguessable share-link ID) is the capability. App
+        // Check (SDK + callable side, not rules) and the 20-char doc ID are the
+        // abuse guards. Visible even while OPEN — pre-lock visibility is
+        // intentional (social fun, not cheating).
         allow read: if isSelf(uid) ||
-          (isSignedIn() &&
-            get(/databases/$(database)/documents/challenges/$(challengeId)).data.betsVisible == true &&
-            get(/databases/$(database)/documents/challenges/$(challengeId)).data.locksAt < request.time &&
-            exists(/databases/$(database)/documents/challenges/$(challengeId)/players/$(request.auth.uid)));
+          get(/databases/$(database)/documents/challenges/$(challengeId)).data.betsVisible == true;
         allow write: if false;        // submitPredictions / createChallenge / onUserDeleted
       }
 

@@ -200,7 +200,7 @@ fun AppNav() {
 
     fun navigateToTab(route: Any) {
         navController.navigate(route) {
-            popUpTo(startDestination) {
+            popUpTo(navController.graph.id) {
                 saveState = true
             }
             launchSingleTop = true
@@ -395,7 +395,7 @@ fun AppNav() {
                         snackbarHostState = snackbarHostState,
                         onSignedIn = {
                             navController.navigate(RouteMe) {
-                                popUpTo(navController.currentBackStackEntry!!.destination.id) { inclusive = true }
+                                popUpTo(navController.graph.id) { inclusive = false }
                                 launchSingleTop = true
                             }
                             val pending = localPredictions.snapshot()

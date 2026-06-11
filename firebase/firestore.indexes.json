@@ -4,7 +4,7 @@
       "collectionGroup": "challenges",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "promoted", "order": "ASCENDING" },
+        { "fieldPath": "visibility", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "locksAt", "order": "ASCENDING" }
       ]

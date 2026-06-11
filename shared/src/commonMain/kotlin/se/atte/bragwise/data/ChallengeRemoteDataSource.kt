@@ -38,7 +38,7 @@ class ChallengeRemoteDataSource(
     fun observePromoted(): Flow<List<Challenge>> = flow {
         emitAll(
             db.collection("challenges")
-                .where { "promoted" equalTo true }
+                .where { "visibility" equalTo "PROMOTED" }
                 .where { "status" equalTo "OPEN" }
                 .orderBy("locksAt", Direction.ASCENDING)
                 .snapshots

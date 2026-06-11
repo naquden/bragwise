@@ -286,8 +286,7 @@ private fun DetailContent(
                     ListGroup {
                         shown.forEachIndexed { index, participant ->
                             val points = challenge.leaderboard?.get(participant.uid)
-                            val canViewBets = participant.uid == myUid ||
-                                (challenge.betsVisible && challenge.status != ChallengeStatus.OPEN)
+                            val canViewBets = participant.uid == myUid || challenge.betsVisible
                             ParticipantRow(
                                 participant = participant,
                                 points = points,
