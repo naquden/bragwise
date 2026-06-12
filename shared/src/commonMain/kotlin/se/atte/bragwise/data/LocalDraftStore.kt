@@ -135,7 +135,6 @@ class LocalDraftStore(db: BragwiseDatabase) {
         status = ChallengeStatus.DRAFT,
         joinedCount = 0,
         promoted = false,
-        trusted = false,
         bets = bets.map { it.toDomain() },
         results = null,
         leaderboard = null,

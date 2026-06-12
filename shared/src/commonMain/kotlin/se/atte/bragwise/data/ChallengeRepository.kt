@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -22,6 +23,8 @@ interface ChallengeRepository {
     fun observePromoted(): Flow<List<Challenge>>
     fun observeFromFriends(): Flow<List<Challenge>>
     fun observePendingInvites(): Flow<List<Invitation>>
+    /** Ids of challenges the current user has predicted on. Empty when signed out. */
+    fun observeJoinedIds(): Flow<Set<String>>
     fun observeChallengeDetail(id: String): Flow<ChallengeDetail>
     fun observeLeaderboard(challengeId: String, friendsOnly: Boolean = false): Flow<List<LeaderboardEntry>>
     fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>>
@@ -113,6 +116,16 @@ class FirebaseChallengeRepository(
                 is AuthState.SignedIn -> remote.observePendingInvites(state.uid)
                     .catch { emit(emptyList()) }
                 else -> localDrafts.observeDrafts().map { emptyList() }
+            }
+        }
+
+    override fun observeJoinedIds(): Flow<Set<String>> =
+        auth.authState.flatMapLatest { state ->
+            when (state) {
+                is AuthState.SignedIn ->
+                    remote.observeJoined(state.uid).map { it.map { c -> c.id }.toSet() }
+                        .catch { emit(emptySet()) }
+                else -> flowOf(emptySet())
             }
         }
 

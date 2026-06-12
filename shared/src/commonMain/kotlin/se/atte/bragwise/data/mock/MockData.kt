@@ -51,7 +51,6 @@ internal val mockChallenges = listOf(
         status = ChallengeStatus.RESULTS_POSTED,
         joinedCount = 5,
         promoted = false,
-        trusted = false,
         bets = listOf(
             Bet.SinglePick(
                 id = "bet-005-a",
@@ -100,7 +99,6 @@ internal val mockChallenges = listOf(
         status = ChallengeStatus.OPEN,
         joinedCount = 5,
         promoted = false,
-        trusted = false,
         bets = listOf(
             Bet.SinglePick(
                 id = "bet-006-a",
@@ -164,7 +162,6 @@ internal val mockChallenges = listOf(
         status = ChallengeStatus.OPEN,
         joinedCount = 512,
         promoted = true,
-        trusted = true,
         bets = listOf(
             Bet.Ranking(
                 id = "bet-004-a",
@@ -213,7 +210,6 @@ internal val mockChallenges = listOf(
         status = ChallengeStatus.OPEN,
         joinedCount = 8,
         promoted = false,
-        trusted = false,
         bets = listOf(
             Bet.SinglePick(
                 id = "bet-001-a",
@@ -253,7 +249,6 @@ internal val mockChallenges = listOf(
         status = ChallengeStatus.OPEN,
         joinedCount = 3,
         promoted = false,
-        trusted = false,
         bets = listOf(
             Bet.Ranking(
                 id = "bet-002-a",
@@ -285,7 +280,6 @@ internal val mockChallenges = listOf(
         status = ChallengeStatus.OPEN,
         joinedCount = 142,
         promoted = true,
-        trusted = true,
         bets = listOf(
             Bet.SinglePick(
                 id = "bet-003-a",

@@ -245,7 +245,6 @@ class CreateChallengeViewModel(
         status = ChallengeStatus.DRAFT,
         joinedCount = 0,
         promoted = false,
-        trusted = false,
         bets = s.bets,
         results = null,
         leaderboard = null,

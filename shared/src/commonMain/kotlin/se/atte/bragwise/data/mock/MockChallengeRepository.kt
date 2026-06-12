@@ -51,6 +51,9 @@ class MockChallengeRepository(
 
     override fun observePendingInvites(): Flow<List<Invitation>> = flowOf(emptyList())
 
+    override fun observeJoinedIds(): Flow<Set<String>> =
+        _predictions.map { it.keys }
+
     override fun observeChallengeDetail(id: String): Flow<ChallengeDetail> =
         combine(_challenges, _predictions) { challenges, predictions ->
             val challenge = challenges.first { it.id == id }

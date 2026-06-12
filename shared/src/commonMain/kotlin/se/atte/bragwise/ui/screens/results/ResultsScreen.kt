@@ -176,7 +176,6 @@ private fun previewChallenge(id: String, title: String) = Challenge(
     status = ChallengeStatus.RESULTS_POSTED,
     joinedCount = 4,
     promoted = false,
-    trusted = false,
     bets = emptyList(),
     results = mapOf("b1" to se.atte.bragwise.domain.PredictionPayload.BooleanProp(value = true)),
     leaderboard = mapOf("u1" to 3, "u2" to 2, "u3" to 1),

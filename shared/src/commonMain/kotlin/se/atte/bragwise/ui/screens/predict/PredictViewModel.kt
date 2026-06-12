@@ -41,6 +41,9 @@ class PredictViewModel(
     private val isLocalOnly: Boolean
         get() = auth.authState.value.signedInUid == null
 
+    private val isFullyAuthed: Boolean
+        get() = auth.authState.value.isFullyAuthed
+
     data class State(
         val ui: UiState<Bets>,
         val drafts: Map<String, PredictionPayload> = emptyMap(),
@@ -149,7 +152,16 @@ class PredictViewModel(
         result.fold(
             onSuccess = {
                 println("$PRED_DBG submit.success challengeId=$challengeId")
-                localPredictions.deleteForChallenge(challengeId)
+                if (isFullyAuthed) {
+                    localPredictions.deleteForChallenge(challengeId)
+                } else {
+                    // Anonymous guest: mirror to local store so migrateGuestData can
+                    // replay into the target account if the guest later signs into a
+                    // different (already-existing) account.
+                    runCatching {
+                        localPredictions.put(challengeId, drafts.mapValues { (_, p) -> p.withoutEmptySlots() })
+                    }
+                }
                 emitEffect(Effect.Submitted)
             },
             onFailure = { e ->

@@ -62,7 +62,6 @@ internal fun sampleChallenge(
     status = status,
     joinedCount = 12,
     promoted = false,
-    trusted = false,
     bets = bets,
     results = results,
     leaderboard = null,

@@ -31,13 +31,15 @@ import se.atte.bragwise.theme.appShadow
 
 /**
  * Plan §4 list-row card. Shows a rank chip when the viewer has joined; shows
- * a `🔒 LOCKED` marker when (now > locksAt && results not posted); shows the
- * verified ✓ when `trusted = true`. Real shadow per plan §4 elevation rules.
+ * a `🔒 LOCKED` marker when (now > locksAt && results not posted); shows a ✓
+ * when `predicted = true` (current user has submitted predictions). Real shadow
+ * per plan §4 elevation rules.
  */
 @Composable
 fun ChallengeCard(
     challenge: Challenge,
     rank: Int? = null,
+    predicted: Boolean = false,
     onClick: () -> Unit = {},
     accent: Boolean = false,
     surfaceColor: Color = Unspecified,
@@ -80,7 +82,7 @@ fun ChallengeCard(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                if (challenge.trusted) {
+                if (predicted) {
                     Text(text = "✓", color = MaterialTheme.colorScheme.tertiary)
                 }
             }
@@ -126,5 +128,5 @@ fun ChallengeCard(
 private fun Challenge.visibilityLabel(): String = when (visibility) {
     Visibility.FRIENDS -> "Friends"
     Visibility.INVITE_ONLY -> "Invite only"
-    Visibility.PROMOTED -> if (trusted) "Promoted · Verified" else "Promoted"
+    Visibility.PROMOTED -> "Promoted"
 }

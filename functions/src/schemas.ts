@@ -3,7 +3,7 @@ import _avatarFixture from './fixtures/avatarSeeds.json';
 
 /**
  * Zod schemas per callable. Server-derived fields (createdBy, createdAt,
- * status, joinedCount, promoted, trusted, score, leaderboard, etc.) are
+ * status, joinedCount, promoted, score, leaderboard, etc.) are
  * NEVER accepted from the client — see plan §5 "Server-derived fields".
  *
  * Fixture-driven parity with the Kotlin client serializer is enforced by
@@ -129,7 +129,6 @@ const CreateChallengeBaseSchema = z.object({
   invitedUids: z.array(z.string().min(1)).max(100).default([]),
   // Hard-rejected if present:
   promoted: z.never().optional(),
-  trusted: z.never().optional(),
 });
 
 export const CreateChallengeSchema = CreateChallengeBaseSchema

@@ -72,7 +72,6 @@ object VerifyAutomation {
             status = ChallengeStatus.DRAFT,
             joinedCount = 0,
             promoted = false,
-            trusted = false,
             bets = listOf(rankingBet),
             results = null,
             leaderboard = null,

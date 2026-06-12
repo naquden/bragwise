@@ -133,7 +133,6 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
         },
         joinedCount = longOrNull("joinedCount")?.toInt() ?: 0,
         promoted = boolOrNull("promoted") ?: false,
-        trusted = boolOrNull("trusted") ?: false,
         bets = bets,
         results = results,
         leaderboard = leaderboard,

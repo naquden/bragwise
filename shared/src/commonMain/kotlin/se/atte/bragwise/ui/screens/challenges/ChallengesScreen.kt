@@ -161,6 +161,7 @@ private fun ChallengesContent(
     onChallenge: (String) -> Unit,
     onDraft: (String) -> Unit,
 ) {
+    val joinedIds = sections.joinedIds
     val sc = LocalSectionColors.current
     val entries = buildList {
         if (sections.mine.isNotEmpty()) add(SectionEntry(sc.mineBg) { topInset ->
@@ -178,21 +179,21 @@ private fun ChallengesContent(
                     } else {
                         { onChallenge(c.id) }
                     }
-                    ChallengeCard(challenge = c, onClick = onClick, surfaceColor = sc.mineCard)
+                    ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = onClick, surfaceColor = sc.mineCard)
                 }
             }
         })
         if (sections.promoted.isNotEmpty()) add(SectionEntry(sc.promotedBg) { topInset ->
             ColoredSection(bg = sc.promotedBg, title = stringResource(Res.string.cl_section_promoted), icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
                 sections.promoted.forEach { c ->
-                    ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, accent = true, surfaceColor = sc.promotedCard)
+                    ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = { onChallenge(c.id) }, accent = true, surfaceColor = sc.promotedCard)
                 }
             }
         })
         if (sections.fromFriends.isNotEmpty()) add(SectionEntry(sc.friendsBg) { topInset ->
             ColoredSection(bg = sc.friendsBg, title = stringResource(Res.string.cl_section_from_friends), icon = "👥", onTitleColor = sc.onFriends, topInset = topInset) {
                 sections.fromFriends.forEach { c ->
-                    ChallengeCard(challenge = c, onClick = { onChallenge(c.id) }, surfaceColor = sc.friendsCard)
+                    ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = { onChallenge(c.id) }, surfaceColor = sc.friendsCard)
                 }
             }
         })
@@ -276,7 +277,6 @@ private fun previewChallenge(id: String, title: String, promoted: Boolean = fals
     status = ChallengeStatus.OPEN,
     joinedCount = 4,
     promoted = promoted,
-    trusted = false,
     bets = listOf(
         Bet.BooleanProp(id = "b1", title = "Will team A win?"),
         Bet.SinglePick(id = "b2", title = "Top scorer", options = listOf(
@@ -300,6 +300,7 @@ private fun Challenges_Ready_Preview() {
         mine = listOf(previewChallenge("c1", "My Challenge")),
         promoted = listOf(previewChallenge("c2", "Promoted Challenge", promoted = true)),
         fromFriends = listOf(previewChallenge("c3", "Friend's Challenge")),
+        joinedIds = setOf("c1"),
         invites = listOf(
             Invitation(
                 challengeId = "c4",

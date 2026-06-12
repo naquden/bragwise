@@ -15,7 +15,6 @@ data class Challenge(
     val status: ChallengeStatus,
     val joinedCount: Int,
     val promoted: Boolean,
-    val trusted: Boolean,
     val bets: List<Bet>,
     val results: Map<String, PredictionPayload>?,
     val leaderboard: Map<String, Int>?,

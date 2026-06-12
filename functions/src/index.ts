@@ -196,7 +196,6 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
       status: 'OPEN',
       joinedCount: 0,
       promoted: false,
-      trusted: false,
       leaderboard: null,
       resultsPostedAt: null,
     });

@@ -50,6 +50,7 @@ class ChallengesViewModel(
         val promoted: List<Challenge>,
         val fromFriends: List<Challenge>,
         val invites: List<Invitation>,
+        val joinedIds: Set<String> = emptySet(),
     )
 
     data class State(val ui: UiState<Sections>)
@@ -74,7 +75,8 @@ class ChallengesViewModel(
             challenges.observePromoted().tag("promoted"),
             challenges.observeFromFriends().tag("fromFriends"),
             challenges.observePendingInvites().tag("invites"),
-        ) { allMine, promoted, fromFriends, invites ->
+            challenges.observeJoinedIds().tag("joinedIds"),
+        ) { allMine, promoted, fromFriends, invites, joinedIds ->
             fun List<Challenge>.byLockAsc() = sortedWith(compareBy(nullsLast()) { it.locksAt })
             val mine = allMine.filter { it.status != ChallengeStatus.RESULTS_POSTED }
             Sections(
@@ -82,6 +84,7 @@ class ChallengesViewModel(
                 promoted = promoted.byLockAsc(),
                 fromFriends = fromFriends.byLockAsc(),
                 invites = invites,
+                joinedIds = joinedIds,
             )
         }
             .onEach { sections ->
