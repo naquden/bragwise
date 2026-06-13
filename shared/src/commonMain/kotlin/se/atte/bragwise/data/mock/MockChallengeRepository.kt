@@ -68,7 +68,7 @@ class MockChallengeRepository(
             ChallengeDetail(challenge = challenge, myPredictions = myPredictions, myRank = rank)
         }
 
-    override fun observeLeaderboard(challengeId: String, friendsOnly: Boolean): Flow<List<LeaderboardEntry>> =
+    override fun observeLeaderboard(challengeId: String): Flow<List<LeaderboardEntry>> =
         _challenges.map { challenges ->
             val challenge = challenges.firstOrNull { it.id == challengeId }
             val board = challenge?.leaderboard ?: return@map emptyList()

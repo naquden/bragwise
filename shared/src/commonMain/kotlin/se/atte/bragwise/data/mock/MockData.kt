@@ -228,12 +228,14 @@ internal val mockChallenges = listOf(
             ),
         ),
         results = null,
-        leaderboard = mapOf(MOCK_UID to 120, "uid-alice" to 80, "uid-bob" to 60),
+        leaderboard = mapOf(MOCK_UID to 120, "uid-carol" to 80, "uid-bob" to 60, "uid-alice" to 50, "uid-dave" to 40),
         betsVisible = true,
         participants = listOf(
             ParticipantInfo(uid = MOCK_UID, displayName = "Demo Player", avatarSeed = "demo"),
-            ParticipantInfo(uid = "uid-alice", displayName = "Alice", avatarSeed = "alice-seed"),
+            ParticipantInfo(uid = "uid-carol", displayName = "Carol", avatarSeed = "carol-seed"),
             ParticipantInfo(uid = "uid-bob", displayName = "Bob", avatarSeed = "bob-seed"),
+            ParticipantInfo(uid = "uid-alice", displayName = "Alice", avatarSeed = "alice-seed"),
+            ParticipantInfo(uid = "uid-dave", displayName = "Dave", avatarSeed = "dave-seed"),
         ),
     ),
     Challenge(
@@ -305,10 +307,10 @@ internal val mockChallenges = listOf(
 internal val mockCloudFriends = listOf(
     CloudFriend(
         player = Player(
-            uid = "uid-alice",
-            username = "alice",
-            displayName = "Alice",
-            avatarSeed = "alice-seed",
+            uid = "uid-carol",
+            username = "carol",
+            displayName = "Carol",
+            avatarSeed = "carol-seed",
             createdAt = now - 60.days,
         ),
         since = now - 20.days,

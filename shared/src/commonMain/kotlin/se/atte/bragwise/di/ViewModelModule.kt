@@ -102,6 +102,7 @@ val viewModelModule = module {
             challenges = get(),
             auth = get(),
             seenStore = get(),
+            social = get(),
             errorReporter = get(),
         )
     }

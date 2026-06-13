@@ -26,7 +26,7 @@ interface ChallengeRepository {
     /** Ids of challenges the current user has predicted on. Empty when signed out. */
     fun observeJoinedIds(): Flow<Set<String>>
     fun observeChallengeDetail(id: String): Flow<ChallengeDetail>
-    fun observeLeaderboard(challengeId: String, friendsOnly: Boolean = false): Flow<List<LeaderboardEntry>>
+    fun observeLeaderboard(challengeId: String): Flow<List<LeaderboardEntry>>
     fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>>
     /** All finished (RESULTS_POSTED) challenges the current user participated in, newest first. */
     fun observeFinished(): Flow<List<Challenge>>
@@ -135,7 +135,7 @@ class FirebaseChallengeRepository(
             remote.observeChallengeDetail(challengeId = id, myUid = uid)
         }
 
-    override fun observeLeaderboard(challengeId: String, friendsOnly: Boolean): Flow<List<LeaderboardEntry>> =
+    override fun observeLeaderboard(challengeId: String): Flow<List<LeaderboardEntry>> =
         remote.observeLeaderboard(challengeId)
 
     override fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> =

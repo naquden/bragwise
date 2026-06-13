@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -70,14 +72,22 @@ fun ResultsRevealScreen(viewModel: ResultsRevealViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            is UiState.Ready -> ResultsRevealBody(data = ui.data)
+            is UiState.Ready -> ResultsRevealBody(
+                data = ui.data,
+                friendsOnly = state.friendsOnly,
+                onToggleFriendsFilter = { viewModel.onIntent(ResultsRevealViewModel.Intent.ToggleFriendsFilter) },
+            )
         }
         if (showConfetti) Confetti(modifier = Modifier.fillMaxSize())
     }
 }
 
 @Composable
-private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
+private fun ResultsRevealBody(
+    data: ResultsRevealViewModel.RevealData,
+    friendsOnly: Boolean,
+    onToggleFriendsFilter: () -> Unit,
+) {
     var showBanner by remember { mutableStateOf(data.alreadySeen) }
     var showField by remember { mutableStateOf(data.alreadySeen) }
 
@@ -118,12 +128,36 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                 Podium(
                     entries = data.leaderboard,
                     myUid = data.myUid,
-                    alreadySeen = data.alreadySeen,
+                    alreadySeen = false,
                     modifier = Modifier.fillMaxWidth().padding(
                         horizontal = standardPadding,
                         vertical = standardPadding,
                     ),
                 )
+            }
+
+            if (data.hasFriendsToFilter) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilterChip(
+                            selected = !friendsOnly,
+                            onClick = onToggleFriendsFilter,
+                            label = { Text("Everyone") },
+                        )
+                        Spacer(Modifier.padding(horizontal = standardPaddingSmall / 2))
+                        FilterChip(
+                            selected = friendsOnly,
+                            onClick = onToggleFriendsFilter,
+                            label = { Text("Friends") },
+                        )
+                    }
+                }
             }
 
             item {
@@ -137,7 +171,7 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                     YourResultBanner(
                         myRank = data.myRank,
                         myPoints = data.myPoints,
-                        participantCount = data.participantCount,
+                        participantCount = data.displayedParticipantCount,
                         iAmWinner = data.iAmWinner,
                         iAmCreator = data.iAmCreator,
                         modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall),
@@ -152,9 +186,10 @@ private fun ResultsRevealBody(data: ResultsRevealViewModel.RevealData) {
                 ) {
                     Column {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall))
-                        val label = if (data.leaderboard.size > 10) "Top 10" else "All results"
+                        val baseLabel = if (data.displayedLeaderboard.size > 10) "Top 10" else "All results"
+                        val label = if (friendsOnly) "$baseLabel (friends)" else baseLabel
                         Text(
-                            text = "$label (${data.participantCount})",
+                            text = "$label (${data.displayedLeaderboard.size})",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall),
@@ -291,12 +326,16 @@ private fun ResultsRevealBody_Preview() {
             data = ResultsRevealViewModel.RevealData(
                 challengeTitle = "Champions League Final",
                 leaderboard = entries,
+                allLeaderboard = entries,
                 myUid = "u1",
                 myRank = 1,
                 myPoints = 92,
                 participantCount = 4,
+                friendUids = setOf("u2", "u3"),
                 alreadySeen = true,
             ),
+            friendsOnly = false,
+            onToggleFriendsFilter = {},
         )
     }
 }
@@ -314,13 +353,17 @@ private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
             data = ResultsRevealViewModel.RevealData(
                 challengeTitle = "Champions League Final",
                 leaderboard = entries,
+                allLeaderboard = entries,
                 myUid = "u1",
                 myRank = null,
                 myPoints = null,
                 participantCount = 3,
+                friendUids = setOf("u2"),
                 alreadySeen = true,
                 iAmCreator = true,
             ),
+            friendsOnly = false,
+            onToggleFriendsFilter = {},
         )
     }
 }
