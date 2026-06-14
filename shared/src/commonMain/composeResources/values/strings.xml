@@ -258,6 +258,10 @@
     <string name="me_delete_account_body">This permanently removes your account, predictions, and friends. This cannot be undone.</string>
     <string name="me_delete">Delete</string>
     <string name="me_cancel">Cancel</string>
+    <string name="me_legal_section">Legal</string>
+    <string name="me_terms_of_service">Terms of Service</string>
+    <string name="me_privacy_policy">Privacy Policy</string>
+    <string name="me_support">Support</string>
 
     <!-- Invite friends screen. -->
     <string name="invite_pick_friends">Pick friends to invite</string>

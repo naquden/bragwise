@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,10 +40,14 @@ import bragwise.shared.generated.resources.me_edit_profile
 import bragwise.shared.generated.resources.me_friends
 import bragwise.shared.generated.resources.me_guest_body
 import bragwise.shared.generated.resources.me_guest_label
+import bragwise.shared.generated.resources.me_legal_section
 import bragwise.shared.generated.resources.me_logged_in
+import bragwise.shared.generated.resources.me_privacy_policy
 import bragwise.shared.generated.resources.me_section_account
 import bragwise.shared.generated.resources.me_sign_in_or_sign_up
 import bragwise.shared.generated.resources.me_sign_out
+import bragwise.shared.generated.resources.me_support
+import bragwise.shared.generated.resources.me_terms_of_service
 import bragwise.shared.generated.resources.settings_about_title
 import bragwise.shared.generated.resources.settings_notifications_title
 import bragwise.shared.generated.resources.settings_section_title
@@ -156,6 +161,7 @@ private fun MeContent(
     onSetNotifications: (Boolean) -> Unit,
     onRequestDelete: () -> Unit,
 ) {
+    val uriHandler = LocalUriHandler.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -229,6 +235,26 @@ private fun MeContent(
                 ListGroupDivider()
                 NotificationToggleRow(enabled = notificationsEnabled, onToggle = onSetNotifications)
             }
+        }
+
+        SectionGap()
+
+        SectionHeader(stringResource(Res.string.me_legal_section))
+        ListGroup {
+            ListRow(
+                title = stringResource(Res.string.me_terms_of_service),
+                onClick = { uriHandler.openUri("https://bragwise.web.app/terms.html") },
+            )
+            ListGroupDivider()
+            ListRow(
+                title = stringResource(Res.string.me_privacy_policy),
+                onClick = { uriHandler.openUri("https://bragwise.web.app/privacy.html") },
+            )
+            ListGroupDivider()
+            ListRow(
+                title = stringResource(Res.string.me_support),
+                onClick = { uriHandler.openUri("https://bragwise.web.app/support.html") },
+            )
         }
 
         if (isSignedIn) {
