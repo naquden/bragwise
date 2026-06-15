@@ -23,7 +23,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		69D71AE0C0922560C2760842 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		69D71AE0C0922560C2760842 /* Exceptions for "iosApp" folder in "iosApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -41,7 +41,7 @@
 		E07C61A12D8CEDF42936AAF0 /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				69D71AE0C0922560C2760842 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				69D71AE0C0922560C2760842 /* Exceptions for "iosApp" folder in "iosApp" target */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -339,7 +339,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 2AN99UVZWL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -366,8 +366,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = 2AN99UVZWL;
 				ENABLE_PREVIEWS = YES;
@@ -382,7 +382,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE_SPECIFIER = "Bragwise Appstore";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -40,9 +40,18 @@ xcodebuild archive \
     <key>method</key>
     <string>app-store-connect</string>
     <key>teamID</key>
-    <string>2AN99UVZWL</string>
+    <string><teamId></string>
     <key>uploadSymbols</key>
     <true/>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>signingCertificate</key>
+    <string>Apple Distribution</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>se.atte.bragwise.Bragwise</key>
+        <string>Bragwise Appstore</string>
+    </dict>
 </dict>
 </plist>
 ```
@@ -56,9 +65,21 @@ xcodebuild -exportArchive \
   -allowProvisioningUpdates
 ```
 
-IPA is at `/tmp/bragwise-export/iosApp.ipa` — drag into Transporter to upload.
+IPA is at `/tmp/bragwise-export/Bragwise.ipa` — drag into Transporter to upload.
 
 Prereqs: Xcode signed in with Apple ID, bundle ID `se.atte.bragwise.Bragwise` registered in App Store Connect.
+
+The Release config uses **manual** signing (`CODE_SIGN_STYLE = Manual`, `CODE_SIGN_IDENTITY = "Apple Distribution"`, `PROVISIONING_PROFILE_SPECIFIER = "Bragwise Appstore"` in `iosApp.xcodeproj`). This avoids automatic signing's requirement for a registered iOS device.
+
+A fresh `git clone` does **not** carry provisioning profiles — they live in `~/Library/MobileDevice/Provisioning Profiles/`, not the repo. If archiving fails with `No profiles for 'se.atte.bragwise.Bragwise' were found`, recreate the App Store profile:
+
+1. developer.apple.com → Certificates, Identifiers & Profiles → Profiles → **+**
+2. **App Store Connect** (Distribution) → App ID `se.atte.bragwise.Bragwise` → cert **Apple Distribution** → name it `Bragwise Appstore` → Generate → Download.
+3. Install by UUID (double-click no longer auto-installs on recent Xcode):
+   ```bash
+   UUID=$(security cms -D -i ~/Downloads/Bragwise_Appstore.mobileprovision | plutil -extract UUID raw -)
+   cp ~/Downloads/Bragwise_Appstore.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+   ```
 
 Before building, ensure `useMock = false` in `iosApp/iosApp/iOSApp.swift`.
 
