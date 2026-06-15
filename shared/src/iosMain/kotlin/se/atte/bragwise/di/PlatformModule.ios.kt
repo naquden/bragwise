@@ -6,7 +6,9 @@ import se.atte.bragwise.data.AuthLocalDataSource
 import se.atte.bragwise.data.AuthRemoteDataSource
 import se.atte.bragwise.data.IosAuthLocalDataSource
 import se.atte.bragwise.data.IosOnboardingPrefs
+import se.atte.bragwise.data.IosLanguagePrefs
 import se.atte.bragwise.data.IosThemePrefs
+import se.atte.bragwise.data.LanguagePrefs
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.data.db.DatabaseDriverFactory
@@ -20,6 +22,7 @@ actual val platformModule: Module = module {
     single { AuthRemoteDataSource() }
     single<OnboardingPrefs> { IosOnboardingPrefs() }
     single<ThemePrefs> { IosThemePrefs() }
+    single<LanguagePrefs> { IosLanguagePrefs() }
     single<PlatformShare> { IosPlatformShare() }
     single { PushNotifications() }
     single { DatabaseDriverFactory() }

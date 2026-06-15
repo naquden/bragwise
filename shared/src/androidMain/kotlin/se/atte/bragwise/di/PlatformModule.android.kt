@@ -5,9 +5,11 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import se.atte.bragwise.data.AndroidAuthLocalDataSource
 import se.atte.bragwise.data.AndroidOnboardingPrefs
+import se.atte.bragwise.data.AndroidLanguagePrefs
 import se.atte.bragwise.data.AndroidThemePrefs
 import se.atte.bragwise.data.AuthLocalDataSource
 import se.atte.bragwise.data.AuthRemoteDataSource
+import se.atte.bragwise.data.LanguagePrefs
 import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.data.db.DatabaseDriverFactory
@@ -27,6 +29,7 @@ actual val platformModule: Module = module {
     }
     single<OnboardingPrefs> { AndroidOnboardingPrefs(context = androidContext()) }
     single<ThemePrefs> { AndroidThemePrefs(context = androidContext()) }
+    single<LanguagePrefs> { AndroidLanguagePrefs(context = androidContext()) }
     single<PlatformShare> { AndroidPlatformShare(context = androidContext()) }
     single { PushNotifications() }
     single { DatabaseDriverFactory(context = androidContext()) }

@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import se.atte.bragwise.data.AppLanguage
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.LanguagePrefs
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.domain.Player
@@ -19,9 +21,10 @@ class MeViewModel(
     private val profile: ProfileRepository,
     private val auth: AuthRepository,
     private val themePrefs: ThemePrefs,
+    private val languagePrefs: LanguagePrefs,
     private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<MeViewModel.State, MeViewModel.Intent, MeViewModel.Effect>(
-    initialState = State(themeMode = themePrefs.mode.value),
+    initialState = State(themeMode = themePrefs.mode.value, language = languagePrefs.language.value),
 ) {
 
     /**
@@ -42,6 +45,7 @@ class MeViewModel(
         val player: Player? = null,
         val email: String? = null,
         val themeMode: ThemeMode = ThemeMode.System,
+        val language: AppLanguage = AppLanguage.System,
         val notificationsEnabled: Boolean = true,
         val confirmingDelete: Boolean = false,
     )
@@ -52,6 +56,7 @@ class MeViewModel(
         data object OpenAbout : Intent
         data object SignOut : Intent
         data class SetTheme(val mode: ThemeMode) : Intent
+        data class SetLanguage(val language: AppLanguage) : Intent
         data class SetNotifications(val enabled: Boolean) : Intent
         data object RequestDelete : Intent
         data object CancelDelete : Intent
@@ -115,6 +120,10 @@ class MeViewModel(
             .onEach { m -> update { it.copy(themeMode = m) } }
             .launchIn(viewModelScope)
 
+        languagePrefs.language
+            .onEach { l -> update { it.copy(language = l) } }
+            .launchIn(viewModelScope)
+
         profile.observeNotificationsEnabled()
             .onEach { enabled -> update { it.copy(notificationsEnabled = enabled) } }
             .catch { /* keep last known */ }
@@ -131,6 +140,7 @@ class MeViewModel(
                 emitEffect(Effect.SignedOut)
             }
             is Intent.SetTheme -> themePrefs.set(intent.mode)
+            is Intent.SetLanguage -> languagePrefs.set(intent.language)
             is Intent.SetNotifications -> viewModelScope.launch {
                 // Optimistic: reflect immediately; the observe flow corrects on
                 // server confirmation, and we revert + snackbar on failure.

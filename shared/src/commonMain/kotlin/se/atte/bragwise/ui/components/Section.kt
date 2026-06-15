@@ -1,5 +1,6 @@
 package se.atte.bragwise.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -13,15 +14,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.theme.Elevation
@@ -117,6 +123,8 @@ fun ColoredSection(
     icon: String,
     onTitleColor: Color,
     modifier: Modifier = Modifier,
+    iconVector: ImageVector? = null,
+    iconPainter: Painter? = null,
     trailing: String? = null,
     topInset: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
@@ -129,7 +137,11 @@ fun ColoredSection(
                 modifier = Modifier.padding(horizontal = standardPadding),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = icon, style = MaterialTheme.typography.titleLarge)
+                when {
+                    iconPainter != null -> Image(painter = iconPainter, contentDescription = null, modifier = Modifier.size(24.dp), colorFilter = ColorFilter.tint(onTitleColor))
+                    iconVector != null -> Icon(imageVector = iconVector, contentDescription = null, modifier = Modifier.size(24.dp), tint = onTitleColor)
+                    else -> Text(text = icon, style = MaterialTheme.typography.titleLarge)
+                }
                 Spacer(Modifier.width(standardPaddingSmall))
                 Column {
                     Text(

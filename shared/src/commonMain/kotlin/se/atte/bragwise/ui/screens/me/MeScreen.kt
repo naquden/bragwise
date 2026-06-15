@@ -49,6 +49,8 @@ import bragwise.shared.generated.resources.me_sign_out
 import bragwise.shared.generated.resources.me_support
 import bragwise.shared.generated.resources.me_terms_of_service
 import bragwise.shared.generated.resources.settings_about_title
+import bragwise.shared.generated.resources.settings_language_system
+import bragwise.shared.generated.resources.settings_language_title
 import bragwise.shared.generated.resources.settings_notifications_title
 import bragwise.shared.generated.resources.settings_section_title
 import bragwise.shared.generated.resources.settings_theme_dark
@@ -59,6 +61,7 @@ import androidx.compose.material3.Icon
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.UsersRound
 import org.jetbrains.compose.resources.stringResource
+import se.atte.bragwise.data.AppLanguage
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.theme.ThemeMode
 import se.atte.bragwise.ui.standardPadding
@@ -109,6 +112,7 @@ fun MeScreen(
             email = state.email,
             isSignedIn = state.isSignedIn,
             themeMode = state.themeMode,
+            language = state.language,
             notificationsEnabled = state.notificationsEnabled,
             onFriends = { viewModel.onIntent(MeViewModel.Intent.OpenFriends) },
             onEditProfile = { viewModel.onIntent(MeViewModel.Intent.OpenEditProfile) },
@@ -116,6 +120,7 @@ fun MeScreen(
             onSignOut = { viewModel.onIntent(MeViewModel.Intent.SignOut) },
             onSignIn = onNavigateToSignIn,
             onSetTheme = { viewModel.onIntent(MeViewModel.Intent.SetTheme(it)) },
+            onSetLanguage = { viewModel.onIntent(MeViewModel.Intent.SetLanguage(it)) },
             onSetNotifications = { viewModel.onIntent(MeViewModel.Intent.SetNotifications(it)) },
             onRequestDelete = { viewModel.onIntent(MeViewModel.Intent.RequestDelete) },
         )
@@ -151,6 +156,7 @@ private fun MeContent(
     email: String?,
     isSignedIn: Boolean,
     themeMode: ThemeMode,
+    language: AppLanguage,
     notificationsEnabled: Boolean,
     onFriends: () -> Unit,
     onEditProfile: () -> Unit,
@@ -158,6 +164,7 @@ private fun MeContent(
     onSignOut: () -> Unit,
     onSignIn: () -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
+    onSetLanguage: (AppLanguage) -> Unit,
     onSetNotifications: (Boolean) -> Unit,
     onRequestDelete: () -> Unit,
 ) {
@@ -231,6 +238,8 @@ private fun MeContent(
             ListRow(title = stringResource(Res.string.settings_about_title), onClick = onAbout)
             ListGroupDivider()
             ThemePickerRow(current = themeMode, onSelect = onSetTheme)
+            ListGroupDivider()
+            LanguagePickerRow(current = language, onSelect = onSetLanguage)
             if (isSignedIn) {
                 ListGroupDivider()
                 NotificationToggleRow(enabled = notificationsEnabled, onToggle = onSetNotifications)
@@ -315,6 +324,32 @@ private fun NotificationToggleRow(enabled: Boolean, onToggle: (Boolean) -> Unit)
 }
 
 @Composable
+private fun AppLanguage.label(): String = nativeName ?: stringResource(Res.string.settings_language_system)
+
+@Composable
+private fun LanguagePickerRow(current: AppLanguage, onSelect: (AppLanguage) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        ListRow(
+            title = stringResource(Res.string.settings_language_title),
+            trailing = current.label(),
+            onClick = { open = true },
+        )
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            AppLanguage.entries.forEach { lang ->
+                DropdownMenuItem(
+                    text = { Text(lang.label()) },
+                    onClick = {
+                        onSelect(lang)
+                        open = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ThemePickerRow(current: ThemeMode, onSelect: (ThemeMode) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
@@ -348,6 +383,7 @@ private fun MeContent_Guest_Preview() {
             email = null,
             isSignedIn = false,
             themeMode = ThemeMode.System,
+            language = AppLanguage.System,
             notificationsEnabled = true,
             onFriends = {},
             onEditProfile = {},
@@ -355,6 +391,7 @@ private fun MeContent_Guest_Preview() {
             onSignOut = {},
             onSignIn = {},
             onSetTheme = {},
+            onSetLanguage = {},
             onSetNotifications = {},
             onRequestDelete = {},
         )
@@ -376,6 +413,7 @@ private fun MeContent_SignedIn_Preview() {
             email = "atte@example.com",
             isSignedIn = true,
             themeMode = ThemeMode.System,
+            language = AppLanguage.System,
             notificationsEnabled = true,
             onFriends = {},
             onEditProfile = {},
@@ -383,6 +421,7 @@ private fun MeContent_SignedIn_Preview() {
             onSignOut = {},
             onSignIn = {},
             onSetTheme = {},
+            onSetLanguage = {},
             onSetNotifications = {},
             onRequestDelete = {},
         )

@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Bragwise</string>
+
+    <string name="share_challenge_title">%1$s</string>
+    <string name="share_challenge_subject">%1$s на Bragwise</string>
+
+    <string name="error_network">Сеть недоступна. Повторите попытку.</string>
+    <string name="error_rate_limited">Замедлитесь — повторите попытку через минуту.</string>
+    <string name="error_auth">Сеанс истёк. Пожалуйста, войдите снова.</string>
+    <string name="error_email_unverified">Подтвердите свой адрес электронной почты, чтобы продолжить играть.</string>
+    <string name="error_challenge_cap">Вы можете иметь до 30 активных испытаний. Сначала завершите или удалите одно.</string>
+    <string name="error_no_access">У вас нет доступа к этому испытанию. Попросите создателя пригласить вас.</string>
+    <string name="error_challenge_closed">Это испытание заблокировано — прогнозы закрыты.</string>
+    <string name="error_not_found">Этого испытания больше не существует.</string>
+    <string name="error_already_friends">Вы уже друзья с этим человеком.</string>
+    <string name="error_request_already_sent">Вы уже отправили запрос на дружбу этому человеку.</string>
+    <string name="error_cannot_friend_self">Вы не можете добавить себя в друзья.</string>
+    <string name="error_handle_not_found">Пользователь с таким именем не найден.</string>
+    <string name="error_unknown">Что-то пошло не так.</string>
+    <string name="error_dialog_dismiss">OK</string>
+
+    <string name="cl_section_mine">Мои испытания</string>
+    <string name="cl_section_promoted">Рекомендуемые</string>
+    <string name="cl_section_from_friends">От друзей</string>
+    <string name="cl_section_invites">Приглашения</string>
+    <string name="cl_empty">Испытаний нет</string>
+
+    <string name="cta_make_predictions">ДЕЛАТЬ ПРОГНОЗЫ</string>
+    <string name="cta_edit_predictions">РЕДАКТИРОВАТЬ ПРОГНОЗЫ</string>
+    <string name="cta_save_predictions">СОХРАНИТЬ ПРОГНОЗЫ</string>
+    <string name="cta_publish">ОПУБЛИКОВАТЬ</string>
+    <string name="cta_save_draft">Сохранить как черновик</string>
+    <string name="cta_post_results">ОПУБЛИКОВАТЬ ВСЕ РЕЗУЛЬТАТЫ</string>
+    <string name="cta_share">Поделиться</string>
+
+    <string name="nav_back">Назад</string>
+    <string name="nav_tab_challenges">Испытания</string>
+    <string name="nav_tab_results">Результаты</string>
+    <string name="nav_tab_me">Я</string>
+
+    <string name="ranking_drop_here_hint">Отпустите здесь</string>
+    <string name="ranking_slot_removed">Удалено</string>
+    <string name="ranking_undo">Отменить</string>
+    <string name="ranking_a11y_move_to_slot">Переместить на позицию %1$d</string>
+    <string name="ranking_a11y_return_to_pool">Вернуться в пул</string>
+
+    <string name="auth_sign_in">Войти</string>
+    <string name="auth_continue_guest">Продолжить как гость</string>
+    <string name="auth_guest_signin_failed">Не удалось запустить гостевой сеанс. Вы можете продолжить использование приложения, но войдите для полного опыта.</string>
+    <string name="auth_email_label">Электронная почта</string>
+    <string name="auth_password_label">Пароль</string>
+    <string name="auth_google">Войти с Google</string>
+    <string name="auth_apple">Войти с Apple</string>
+
+    <string name="profile_unknown_player">Неизвестный игрок</string>
+    <string name="profile_former_participant">Бывший участник</string>
+
+    <string name="me_logged_in">Вошли</string>
+    <string name="me_section_account">Аккаунт</string>
+    <string name="settings_section_title">Настройки</string>
+    <string name="settings_about_title">О приложении</string>
+    <string name="settings_theme_title">Тема</string>
+    <string name="settings_theme_system">Система</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_notifications_title">Уведомления</string>
+
+    <string name="cc_title_field_label">Название</string>
+    <string name="cc_who_can_join">Кто может присоединиться</string>
+    <string name="cc_visibility_friends">Друзья</string>
+    <string name="cc_visibility_invite_only">Только по приглашениям</string>
+    <string name="cc_visibility_friends_hint">Любой из ваших друзей может присоединиться по ссылке.</string>
+    <string name="cc_visibility_invite_only_hint">Только люди, которых вы явно пригласите, могут присоединиться.</string>
+    <string name="cc_pick_friends">Выберите друзей</string>
+    <string name="cc_invited_summary">Приглашено друзей: %1$d — Редактировать</string>
+    <string name="cc_invite_dialog_title">Пригласить друзей</string>
+    <string name="cc_no_friends_yet">Друзей нет — сначала добавьте.</string>
+    <string name="cc_done">Готово</string>
+    <string name="cc_cancel">Отменить</string>
+    <string name="cc_add_bet">+ Добавить ставку</string>
+    <string name="cc_add_bet_question">Вопрос</string>
+    <string name="cc_bet_type_yes_no">Да / Нет</string>
+    <string name="cc_bet_type_single_pick">Одиночный выбор</string>
+    <string name="cc_bet_type_ranking">Рейтинг</string>
+    <string name="cc_bet_remove">Удалить ставку</string>
+    <string name="cc_deadline_label">Крайний срок</string>
+    <string name="cc_deadline_hint">Прогнозы закрываются в это время</string>
+    <string name="cc_save_draft">Сохранить черновик</string>
+    <string name="cc_publish">Опубликовать</string>
+
+    <string name="migration_failed_notice">%1$d прогноз(ов) гостя не мог(ли) быть импортирован(ы) — крайний срок прошёл.</string>
+
+    <string name="welcome_tagline">Прогнозируйте. Соревнуйтесь. Хвалитесь.</string>
+    <string name="welcome_sign_in">Войти</string>
+
+    <string name="auth_sign_in_with_email">Войти по электронной почте</string>
+    <string name="auth_send_link">Отправить ссылку входа</string>
+    <string name="auth_sending">Отправка…</string>
+    <string name="auth_email_hint">Мы отправим вам ссылку по электронной почте. Коснитесь её на этом устройстве, чтобы завершить вход.</string>
+    <string name="auth_check_inbox">Проверьте входящие</string>
+    <string name="auth_sent_link_to">Мы отправили ссылку входа на:</string>
+    <string name="auth_tap_link_hint">Коснитесь ссылки на этом устройстве, чтобы завершить вход.</string>
+    <string name="auth_use_different_email">Использовать другую электронную почту</string>
+    <string name="auth_resend">Отправить снова</string>
+
+    <string name="cd_no_challenge">Нет испытания</string>
+    <string name="cd_invite_only">Это испытание только по приглашениям</string>
+    <string name="cd_invite_only_hint">Попросите создателя пригласить вас.</string>
+    <string name="cd_your_rank">Ваш рейтинг</string>
+    <string name="cd_predicted">Предсказано</string>
+    <string name="cd_not_predicted">Не предсказано</string>
+    <string name="cd_participants">Участники</string>
+    <string name="cd_bets_hidden">Ставки скрыты</string>
+    <string name="cd_show_more">Показать ещё (%1$d)</string>
+    <string name="cd_invite_friends">Пригласить друзей</string>
+    <string name="cd_results_posted">Результаты опубликованы</string>
+    <string name="cd_post_results">Опубликовать результаты</string>
+    <string name="cd_delete_challenge">Удалить испытание</string>
+    <string name="cd_delete_challenge_title">Удалить испытание?</string>
+    <string name="cd_delete_challenge_body">Это навсегда удалит испытание, все прогнозы и приглашения. Это невозможно отменить.</string>
+    <string name="cd_delete">Удалить</string>
+    <string name="cd_cancel">Отменить</string>
+    <string name="cd_edit_predictions">Редактировать прогнозы</string>
+    <string name="cd_make_predictions">Делать прогнозы</string>
+    <string name="cd_view_predictions">Просмотреть прогнозы</string>
+    <string name="cd_snackbar_share_failed">Не удалось поделиться испытанием</string>
+    <string name="cd_snackbar_delete_failed">Ошибка удаления: %1$s</string>
+
+    <string name="cl_empty_create_first">Создайте своё первое испытание</string>
+    <string name="cl_empty_body">Создайте одно, чтобы начать прогнозировать с друзьями.</string>
+    <string name="cl_section_mine_title">Мои испытания</string>
+    <string name="cl_active_count_one">1 активное</string>
+    <string name="cl_active_count">%1$d активных</string>
+
+    <string name="results_are_in">Результаты готовы!</string>
+    <string name="results_history">История</string>
+    <string name="results_new_count">%1$d новых</string>
+    <string name="results_finished_count">%1$d завершено</string>
+    <string name="results_empty_title">Результатов нет</string>
+    <string name="results_empty_body">Завершённые испытания будут показаны здесь.</string>
+
+    <string name="predict_no_bets">Нет ставок</string>
+    <string name="predict_yes">Да</string>
+    <string name="predict_no">Нет</string>
+    <string name="predict_submitting">Отправка…</string>
+    <string name="predict_progress">Прогноз %1$d/%2$d</string>
+    <string name="predict_saving">Сохранение прогнозов…</string>
+    <string name="predict_snackbar_save_failed">Не удалось сохранить прогнозы — повторите попытку</string>
+
+    <string name="postresults_yes">Да</string>
+    <string name="postresults_no">Нет</string>
+    <string name="postresults_posting">Публикация…</string>
+    <string name="postresults_post_results">Опубликовать результаты</string>
+    <string name="postresults_post_results_title">Опубликовать результаты?</string>
+    <string name="postresults_post_results_body">Это окончательно. Баллы будут рассчитаны и поделены со всеми участниками.</string>
+    <string name="postresults_post">Опубликовать</string>
+    <string name="postresults_cancel">Отменить</string>
+    <string name="postresults_posting_dialog">Публикация результатов…</string>
+
+    <string name="summary_no_predictions">Нет прогнозов</string>
+    <string name="summary_bets_count">Ставки: %1$d</string>
+    <string name="summary_your_rank">Ваш рейтинг: %1$s</string>
+    <string name="summary_top_score">Лучший счёт: %1$d</string>
+    <string name="summary_edit_predictions">Редактировать прогнозы</string>
+
+    <string name="friends_add_by_username">Добавить по имени пользователя</string>
+    <string name="friends_sending_request">Отправка запроса…</string>
+    <string name="friends_no_friends_title">Друзей нет</string>
+    <string name="friends_empty_with_pending">Примите ожидающий запрос выше или добавьте друзей по их @имени пользователя.</string>
+    <string name="friends_empty_no_pending">Добавьте друзей по их @имени пользователя, чтобы соревноваться в совместных испытаниях.</string>
+    <string name="friends_section_title">Друзья (%1$d)</string>
+    <string name="friends_pending_section">Ожидающие запросы (%1$d)</string>
+    <string name="friends_requests_nav">Запросы на дружбу</string>
+    <string name="friends_add_dialog_title">Добавить друга</string>
+    <string name="friends_add_dialog_body">Введите @имя пользователя человека, которого вы хотите добавить.</string>
+    <string name="friends_username_label">Имя пользователя</string>
+    <string name="friends_username_placeholder">@имя пользователя</string>
+    <string name="friends_username_format_error">3–20 строчных букв, цифр или подчеркиваний</string>
+    <string name="friends_send_request">Отправить запрос</string>
+    <string name="friends_cancel">Отменить</string>
+    <string name="friends_decline">Отклонить</string>
+    <string name="friends_accept">Принять</string>
+    <string name="friends_snackbar_request_sent">Запрос на дружбу отправлен @%1$s</string>
+    <string name="friends_snackbar_already_friends">Вы уже друзья с @%1$s</string>
+    <string name="friends_snackbar_request_already_sent">Вы уже отправили запрос @%1$s</string>
+    <string name="friends_snackbar_cannot_friend_self">Вы не можете добавить себя</string>
+    <string name="friends_snackbar_handle_not_found">Пользователь с именем @%1$s не найден</string>
+    <string name="friends_snackbar_request_unavailable">Этот запрос больше недоступен</string>
+
+    <string name="freq_no_pending">Нет ожидающих запросов</string>
+    <string name="freq_incoming">Входящие (%1$d)</string>
+    <string name="freq_sent">Отправленные (%1$d)</string>
+    <string name="freq_cancel">Отменить</string>
+
+    <string name="edit_section_identity">Личность</string>
+    <string name="edit_username_label">Имя пользователя</string>
+    <string name="edit_username_hint">Уникальный идентификатор для запросов на дружбу и приглашений. Строчные буквы, цифры и _, 3-20 символов.</string>
+    <string name="edit_display_name_label">Отображаемое имя</string>
+    <string name="edit_display_name_hint">Показано в испытаниях и рейтинге.</string>
+    <string name="edit_email_label">Электронная почта</string>
+    <string name="edit_email_hint">Используется для входа. Не показано другим.</string>
+    <string name="edit_section_avatar">Аватар</string>
+    <string name="edit_avatar_emoji">Эмодзи</string>
+    <string name="edit_avatar_flags">Флаги</string>
+    <string name="edit_show_less">Показать меньше</string>
+    <string name="edit_show_all_flags">Показать все %1$d флаги</string>
+    <string name="edit_saving">Сохранение…</string>
+    <string name="edit_save">Сохранить</string>
+    <string name="edit_saving_dialog">Сохранение…</string>
+    <string name="edit_snackbar_avatar_error">Этот аватар нельзя использовать. Выберите другой.</string>
+    <string name="edit_error_username_taken">Это имя пользователя уже занято</string>
+    <string name="edit_error_username_format">3–20 символов: только строчные буквы, цифры и _</string>
+    <string name="edit_error_display_name_format">Отображаемое имя должно быть не более 40 символов</string>
+
+    <string name="player_not_found">Игрок не найден</string>
+    <string name="player_head_to_head">Личная встреча</string>
+    <string name="player_no_shared_challenges">Нет совместных испытаний.</string>
+    <string name="player_head_to_head_record">Вы: %1$d · Они: %2$d · Ничьи: %3$d</string>
+
+    <string name="me_guest_label">Гость</string>
+    <string name="me_guest_body">Зарегистрируйтесь, чтобы сохранить прогресс между устройствами, присоединиться к друзьям и появиться в рейтингах.</string>
+    <string name="me_sign_in_or_sign_up">Войти или зарегистрироваться</string>
+    <string name="me_friends">Друзья</string>
+    <string name="me_edit_profile">Редактировать профиль</string>
+    <string name="me_sign_out">Выйти</string>
+    <string name="me_delete_account">Удалить аккаунт</string>
+    <string name="me_delete_account_title">Удалить аккаунт?</string>
+    <string name="me_delete_account_body">Это навсегда удалит ваш аккаунт, прогнозы и друзей. Это невозможно отменить.</string>
+    <string name="me_delete">Удалить</string>
+    <string name="me_cancel">Отменить</string>
+
+    <string name="invite_pick_friends">Выберите друзей для приглашения</string>
+    <string name="invite_selected">%1$d выбрано</string>
+    <string name="invite_sending">Отправка…</string>
+    <string name="invite_button">Пригласить %1$d</string>
+    <string name="invite_no_friends">Друзей нет — сначала добавьте.</string>
+
+    <string name="about_section_title" translatable="false">Bragwise</string>
+    <string name="about_tagline">Прогнозируйте. Соревнуйтесь. Хвалитесь.</string>
+    <string name="about_version">Версия: %1$s</string>
+    <string name="about_open_source">Открытый исходный код</string>
+    <string name="about_open_source_body">Создано с использованием Kotlin Multiplatform, Compose Multiplatform, Firebase и Koin.</string>
+
+    <string name="namegate_title">Выберите имя</string>
+    <string name="namegate_label">Ваше имя</string>
+    <string name="namegate_placeholder">Как вас видят друзья</string>
+    <string name="namegate_confirm">Продолжить</string>
+    <string name="namegate_cancel">Отменить</string>
+
+    <string name="deadline_pick_time_title">Выберите время (UTC)</string>
+    <string name="deadline_next">Далее</string>
+    <string name="deadline_cancel">Отменить</string>
+    <string name="deadline_done">Готово</string>
+    <string name="deadline_locks_prefix">Блокировки: %1$s</string>
+    <string name="deadline_hint">Прогнозы закрываются в это время</string>
+
+    <string name="country_clear_a11y">Очистить страну</string>
+
+    <string name="cc_title_field">Название</string>
+    <string name="cc_deadline_section">Крайний срок</string>
+    <string name="cc_who_can_join_section">Кто может присоединиться</string>
+    <string name="cc_bets_visible_label">Ставки видны другим</string>
+    <string name="cc_bets_visible_hint">Участники могут видеть прогнозы друг друга</string>
+    <string name="cc_edit_bet_title">Редактировать ставку</string>
+    <string name="cc_add_bet_title">Добавить ставку</string>
+    <string name="cc_bet_cancel_a11y">Отменить</string>
+    <string name="cc_custom_options">Пользовательские параметры</string>
+    <string name="cc_countries">Страны</string>
+    <string name="cc_question_label">Вопрос</string>
+    <string name="cc_option_label">Опция %1$d</string>
+    <string name="cc_country_placeholder">Страна %1$d</string>
+    <string name="cc_remove_bet_a11y">Удалить ставку</string>
+    <string name="cc_remove_option_a11y">Удалить опцию</string>
+    <string name="cc_add_option">+ Добавить опцию</string>
+    <string name="cc_add_country">+ Добавить страну</string>
+    <string name="cc_top_n_ranked">Топ N рейтинг</string>
+    <string name="cc_decrease_top_n_a11y">Уменьшить топ N</string>
+    <string name="cc_increase_top_n_a11y">Увеличить топ N</string>
+    <string name="cc_save_bet">Сохранить ставку</string>
+    <string name="cc_show_less">Показать меньше</string>
+    <string name="cc_show_more_options">… %1$d ещё · Нажмите для разворачивания</string>
+    <string name="cc_saving_dialog">Сохранение испытания…</string>
+    <string name="cc_duplicate_options_error">Удалите дублирующиеся опции перед сохранением</string>
+    <string name="cc_snackbar_nothing_to_save">Нечего сохранять</string>
+    <string name="cc_snackbar_title_and_bet_required">Требуется название и по крайней мере одна ставка</string>
+    <string name="cc_snackbar_deadline_future">Крайний срок должен быть в будущем</string>
+    <string name="cc_snackbar_no_reachable_invitees">Ни один из ваших приглашённых друзей не доступен — выберите по крайней мере одного</string>
+
+    <string name="nav_create_challenge_a11y">Создать испытание</string>
+</resources>

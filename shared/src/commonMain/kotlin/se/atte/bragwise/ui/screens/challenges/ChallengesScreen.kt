@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.Image
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +45,7 @@ import se.atte.bragwise.domain.Visibility
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.cl_active_count
+import se.atte.bragwise.ui.icons.BragIconWithRing
 import bragwise.shared.generated.resources.cl_active_count_one
 import bragwise.shared.generated.resources.cl_empty
 import bragwise.shared.generated.resources.cl_empty_body
@@ -56,8 +61,11 @@ import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.theme.appShadow
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.ChallengeCard
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.UsersRound
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.WaveSeparator
+import se.atte.bragwise.ui.icons.BragIcon
 import kotlin.time.Instant
 
 @Composable
@@ -132,7 +140,7 @@ private fun EmptyState(onCreate: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(text = "🎯", style = MaterialTheme.typography.headlineLarge)
+        Icon(imageVector = BragIconWithRing, contentDescription = null, modifier = Modifier.size(64.dp))
         Spacer(Modifier.height(standardPadding))
         Text(
             text = stringResource(Res.string.cl_empty),
@@ -168,7 +176,8 @@ private fun ChallengesContent(
             ColoredSection(
                 bg = sc.mineBg,
                 title = stringResource(Res.string.cl_section_mine),
-                icon = "🎯",
+                icon = "",
+                iconVector = BragIcon,
                 onTitleColor = sc.onMine,
                 trailing = if (sections.mine.size == 1) stringResource(Res.string.cl_active_count_one) else stringResource(Res.string.cl_active_count, sections.mine.size),
                 topInset = topInset,
@@ -191,7 +200,7 @@ private fun ChallengesContent(
             }
         })
         if (sections.fromFriends.isNotEmpty()) add(SectionEntry(sc.friendsBg) { topInset ->
-            ColoredSection(bg = sc.friendsBg, title = stringResource(Res.string.cl_section_from_friends), icon = "👥", onTitleColor = sc.onFriends, topInset = topInset) {
+            ColoredSection(bg = sc.friendsBg, title = stringResource(Res.string.cl_section_from_friends), icon = "👥", onTitleColor = sc.onFriends, iconVector = Lucide.UsersRound, topInset = topInset) {
                 sections.fromFriends.forEach { c ->
                     ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = { onChallenge(c.id) }, surfaceColor = sc.friendsCard)
                 }

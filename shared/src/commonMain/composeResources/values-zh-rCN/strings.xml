@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Bragwise</string>
+
+    <string name="share_challenge_title">%1$s</string>
+    <string name="share_challenge_subject">%1$s 在 Bragwise</string>
+
+    <string name="error_network">网络不可用。请重试。</string>
+    <string name="error_rate_limited">放慢速度 — 请在一分钟后重试。</string>
+    <string name="error_auth">会话已过期。请重新登录。</string>
+    <string name="error_email_unverified">验证您的电子邮件以继续游戏。</string>
+    <string name="error_challenge_cap">您最多可以有 30 个活跃挑战。先完成或删除一个。</string>
+    <string name="error_no_access">您无权访问此挑战。请要求创建者邀请您。</string>
+    <string name="error_challenge_closed">此挑战已锁定 — 预测已关闭。</string>
+    <string name="error_not_found">此挑战不再存在。</string>
+    <string name="error_already_friends">您已经是这个人的朋友。</string>
+    <string name="error_request_already_sent">您已经向这个人发送了好友请求。</string>
+    <string name="error_cannot_friend_self">您不能将自己添加为朋友。</string>
+    <string name="error_handle_not_found">找不到该用户名的用户。</string>
+    <string name="error_unknown">出了点问题。</string>
+    <string name="error_dialog_dismiss">OK</string>
+
+    <string name="cl_section_mine">我的挑战</string>
+    <string name="cl_section_promoted">推荐</string>
+    <string name="cl_section_from_friends">来自朋友</string>
+    <string name="cl_section_invites">邀请</string>
+    <string name="cl_empty">还没有挑战</string>
+
+    <string name="cta_make_predictions">进行预测</string>
+    <string name="cta_edit_predictions">编辑预测</string>
+    <string name="cta_save_predictions">保存预测</string>
+    <string name="cta_publish">发布</string>
+    <string name="cta_save_draft">保存为草稿</string>
+    <string name="cta_post_results">发布所有结果</string>
+    <string name="cta_share">分享</string>
+
+    <string name="nav_back">返回</string>
+    <string name="nav_tab_challenges">挑战</string>
+    <string name="nav_tab_results">结果</string>
+    <string name="nav_tab_me">我</string>
+
+    <string name="ranking_drop_here_hint">在此处放下</string>
+    <string name="ranking_slot_removed">已移除</string>
+    <string name="ranking_undo">撤销</string>
+    <string name="ranking_a11y_move_to_slot">移至位置 %1$d</string>
+    <string name="ranking_a11y_return_to_pool">返回池中</string>
+
+    <string name="auth_sign_in">登录</string>
+    <string name="auth_continue_guest">以访客身份继续</string>
+    <string name="auth_guest_signin_failed">无法启动访客会话。您可以继续使用该应用，但请登录以获得完整体验。</string>
+    <string name="auth_email_label">电子邮件</string>
+    <string name="auth_password_label">密码</string>
+    <string name="auth_google">使用 Google 登录</string>
+    <string name="auth_apple">使用 Apple 登录</string>
+
+    <string name="profile_unknown_player">未知玩家</string>
+    <string name="profile_former_participant">前参与者</string>
+
+    <string name="me_logged_in">已登录</string>
+    <string name="me_section_account">账户</string>
+    <string name="settings_section_title">设置</string>
+    <string name="settings_about_title">关于</string>
+    <string name="settings_theme_title">主题</string>
+    <string name="settings_theme_system">系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_notifications_title">通知</string>
+
+    <string name="cc_title_field_label">标题</string>
+    <string name="cc_who_can_join">谁可以加入</string>
+    <string name="cc_visibility_friends">朋友</string>
+    <string name="cc_visibility_invite_only">仅限邀请</string>
+    <string name="cc_visibility_friends_hint">任何朋友都可以通过链接加入。</string>
+    <string name="cc_visibility_invite_only_hint">只有您明确邀请的人才能加入。</string>
+    <string name="cc_pick_friends">选择朋友</string>
+    <string name="cc_invited_summary">邀请了 %1$d 个朋友 — 编辑</string>
+    <string name="cc_invite_dialog_title">邀请朋友</string>
+    <string name="cc_no_friends_yet">还没有朋友 — 先添加一些。</string>
+    <string name="cc_done">完成</string>
+    <string name="cc_cancel">取消</string>
+    <string name="cc_add_bet">+ 添加投注</string>
+    <string name="cc_add_bet_question">问题</string>
+    <string name="cc_bet_type_yes_no">是 / 否</string>
+    <string name="cc_bet_type_single_pick">单一选择</string>
+    <string name="cc_bet_type_ranking">排名</string>
+    <string name="cc_bet_remove">删除投注</string>
+    <string name="cc_deadline_label">截止日期</string>
+    <string name="cc_deadline_hint">预测在此时间关闭</string>
+    <string name="cc_save_draft">保存草稿</string>
+    <string name="cc_publish">发布</string>
+
+    <string name="migration_failed_notice">%1$d 个访客预测无法导入 — 其截止日期已过期。</string>
+
+    <string name="welcome_tagline">预测。竞争。吹牛。</string>
+    <string name="welcome_sign_in">登录</string>
+
+    <string name="auth_sign_in_with_email">使用电子邮件登录</string>
+    <string name="auth_send_link">发送登录链接</string>
+    <string name="auth_sending">正在发送…</string>
+    <string name="auth_email_hint">我们会通过电子邮件向您发送链接。在此设备上点击它以完成登录。</string>
+    <string name="auth_check_inbox">检查您的收件箱</string>
+    <string name="auth_sent_link_to">我们已发送登录链接至:</string>
+    <string name="auth_tap_link_hint">在此设备上点击链接以完成登录。</string>
+    <string name="auth_use_different_email">使用其他电子邮件</string>
+    <string name="auth_resend">重新发送</string>
+
+    <string name="cd_no_challenge">没有挑战</string>
+    <string name="cd_invite_only">此挑战仅限邀请</string>
+    <string name="cd_invite_only_hint">要求创建者邀请您。</string>
+    <string name="cd_your_rank">您的排名</string>
+    <string name="cd_predicted">已预测</string>
+    <string name="cd_not_predicted">未预测</string>
+    <string name="cd_participants">参与者</string>
+    <string name="cd_bets_hidden">投注隐藏</string>
+    <string name="cd_show_more">显示更多 (%1$d)</string>
+    <string name="cd_invite_friends">邀请朋友</string>
+    <string name="cd_results_posted">结果已发布</string>
+    <string name="cd_post_results">发布结果</string>
+    <string name="cd_delete_challenge">删除挑战</string>
+    <string name="cd_delete_challenge_title">删除挑战?</string>
+    <string name="cd_delete_challenge_body">这将永久删除挑战、所有预测和邀请。这无法撤销。</string>
+    <string name="cd_delete">删除</string>
+    <string name="cd_cancel">取消</string>
+    <string name="cd_edit_predictions">编辑预测</string>
+    <string name="cd_make_predictions">进行预测</string>
+    <string name="cd_view_predictions">查看预测</string>
+    <string name="cd_snackbar_share_failed">无法分享挑战</string>
+    <string name="cd_snackbar_delete_failed">删除失败: %1$s</string>
+
+    <string name="cl_empty_create_first">创建您的第一个挑战</string>
+    <string name="cl_empty_body">创建一个开始与朋友一起预测。</string>
+    <string name="cl_section_mine_title">我的挑战</string>
+    <string name="cl_active_count_one">1 个活跃</string>
+    <string name="cl_active_count">%1$d 个活跃</string>
+
+    <string name="results_are_in">结果出来了!</string>
+    <string name="results_history">历史</string>
+    <string name="results_new_count">%1$d 个新的</string>
+    <string name="results_finished_count">%1$d 个已完成</string>
+    <string name="results_empty_title">还没有结果</string>
+    <string name="results_empty_body">已完成的挑战将出现在这里。</string>
+
+    <string name="predict_no_bets">没有投注</string>
+    <string name="predict_yes">是</string>
+    <string name="predict_no">否</string>
+    <string name="predict_submitting">正在提交…</string>
+    <string name="predict_progress">预测 %1$d/%2$d</string>
+    <string name="predict_saving">正在保存预测…</string>
+    <string name="predict_snackbar_save_failed">无法保存预测 — 请重试</string>
+
+    <string name="postresults_yes">是</string>
+    <string name="postresults_no">否</string>
+    <string name="postresults_posting">正在发布…</string>
+    <string name="postresults_post_results">发布结果</string>
+    <string name="postresults_post_results_title">发布结果?</string>
+    <string name="postresults_post_results_body">这是最终的。分数将被计算并与所有参与者共享。</string>
+    <string name="postresults_post">发布</string>
+    <string name="postresults_cancel">取消</string>
+    <string name="postresults_posting_dialog">正在发布结果…</string>
+
+    <string name="summary_no_predictions">还没有预测</string>
+    <string name="summary_bets_count">投注: %1$d</string>
+    <string name="summary_your_rank">您的排名: %1$s</string>
+    <string name="summary_top_score">最高分: %1$d</string>
+    <string name="summary_edit_predictions">编辑预测</string>
+
+    <string name="friends_add_by_username">按用户名添加</string>
+    <string name="friends_sending_request">正在发送请求…</string>
+    <string name="friends_no_friends_title">还没有朋友</string>
+    <string name="friends_empty_with_pending">接受上方的待处理请求，或按 @用户名 添加朋友。</string>
+    <string name="friends_empty_no_pending">按 @用户名 添加朋友以在共享挑战中竞争。</string>
+    <string name="friends_section_title">朋友 (%1$d)</string>
+    <string name="friends_pending_section">待处理请求 (%1$d)</string>
+    <string name="friends_requests_nav">好友请求</string>
+    <string name="friends_add_dialog_title">添加朋友</string>
+    <string name="friends_add_dialog_body">输入您想添加的人的 @用户名。</string>
+    <string name="friends_username_label">用户名</string>
+    <string name="friends_username_placeholder">@用户名</string>
+    <string name="friends_username_format_error">3–20 个小写字母、数字或下划线</string>
+    <string name="friends_send_request">发送请求</string>
+    <string name="friends_cancel">取消</string>
+    <string name="friends_decline">拒绝</string>
+    <string name="friends_accept">接受</string>
+    <string name="friends_snackbar_request_sent">好友请求已发送至 @%1$s</string>
+    <string name="friends_snackbar_already_friends">您已经是 @%1$s 的朋友</string>
+    <string name="friends_snackbar_request_already_sent">您已经向 @%1$s 发送过请求</string>
+    <string name="friends_snackbar_cannot_friend_self">您不能添加自己</string>
+    <string name="friends_snackbar_handle_not_found">找不到用户名 @%1$s</string>
+    <string name="friends_snackbar_request_unavailable">此请求不再可用</string>
+
+    <string name="freq_no_pending">没有待处理的请求</string>
+    <string name="freq_incoming">收到 (%1$d)</string>
+    <string name="freq_sent">已发送 (%1$d)</string>
+    <string name="freq_cancel">取消</string>
+
+    <string name="edit_section_identity">身份</string>
+    <string name="edit_username_label">用户名</string>
+    <string name="edit_username_hint">用于好友请求和邀请的唯一标识符。小写字母、数字和 _，3-20 个字符。</string>
+    <string name="edit_display_name_label">显示名称</string>
+    <string name="edit_display_name_hint">显示在挑战和排排行榜上。</string>
+    <string name="edit_email_label">电子邮件</string>
+    <string name="edit_email_hint">用于登录。不向他人显示。</string>
+    <string name="edit_section_avatar">头像</string>
+    <string name="edit_avatar_emoji">表情符号</string>
+    <string name="edit_avatar_flags">国旗</string>
+    <string name="edit_show_less">显示更少</string>
+    <string name="edit_show_all_flags">显示所有 %1$d 个国旗</string>
+    <string name="edit_saving">正在保存…</string>
+    <string name="edit_save">保存</string>
+    <string name="edit_saving_dialog">正在保存…</string>
+    <string name="edit_snackbar_avatar_error">无法使用该头像。选择另一个。</string>
+    <string name="edit_error_username_taken">该用户名已被使用</string>
+    <string name="edit_error_username_format">3–20 个字符: 仅小写字母、数字和 _</string>
+    <string name="edit_error_display_name_format">显示名称必须为 40 个字符或更少</string>
+
+    <string name="player_not_found">找不到玩家</string>
+    <string name="player_head_to_head">对阵</string>
+    <string name="player_no_shared_challenges">还没有共享挑战。</string>
+    <string name="player_head_to_head_record">您: %1$d · 他们: %2$d · 平手: %3$d</string>
+
+    <string name="me_guest_label">访客</string>
+    <string name="me_guest_body">注册以在设备间保持进度、加入朋友并出现在排行榜上。</string>
+    <string name="me_sign_in_or_sign_up">登录或注册</string>
+    <string name="me_friends">朋友</string>
+    <string name="me_edit_profile">编辑个人资料</string>
+    <string name="me_sign_out">登出</string>
+    <string name="me_delete_account">删除账户</string>
+    <string name="me_delete_account_title">删除账户?</string>
+    <string name="me_delete_account_body">这将永久删除您的账户、预测和朋友。这无法撤销。</string>
+    <string name="me_delete">删除</string>
+    <string name="me_cancel">取消</string>
+
+    <string name="invite_pick_friends">选择要邀请的朋友</string>
+    <string name="invite_selected">已选择 %1$d 个</string>
+    <string name="invite_sending">正在发送…</string>
+    <string name="invite_button">邀请 %1$d 人</string>
+    <string name="invite_no_friends">还没有朋友 — 先添加一些。</string>
+
+    <string name="about_section_title" translatable="false">Bragwise</string>
+    <string name="about_tagline">预测。竞争。吹牛。</string>
+    <string name="about_version">版本: %1$s</string>
+    <string name="about_open_source">开源</string>
+    <string name="about_open_source_body">使用 Kotlin Multiplatform、Compose Multiplatform、Firebase 和 Koin 构建。</string>
+
+    <string name="namegate_title">选择一个名称</string>
+    <string name="namegate_label">您的名字</string>
+    <string name="namegate_placeholder">朋友看到您的方式</string>
+    <string name="namegate_confirm">继续</string>
+    <string name="namegate_cancel">取消</string>
+
+    <string name="deadline_pick_time_title">选择时间 (UTC)</string>
+    <string name="deadline_next">下一个</string>
+    <string name="deadline_cancel">取消</string>
+    <string name="deadline_done">完成</string>
+    <string name="deadline_locks_prefix">锁定: %1$s</string>
+    <string name="deadline_hint">预测在此时间关闭</string>
+
+    <string name="country_clear_a11y">清除国家</string>
+
+    <string name="cc_title_field">标题</string>
+    <string name="cc_deadline_section">截止日期</string>
+    <string name="cc_who_can_join_section">谁可以加入</string>
+    <string name="cc_bets_visible_label">投注对他人可见</string>
+    <string name="cc_bets_visible_hint">参与者可以看到彼此的预测</string>
+    <string name="cc_edit_bet_title">编辑投注</string>
+    <string name="cc_add_bet_title">添加投注</string>
+    <string name="cc_bet_cancel_a11y">取消</string>
+    <string name="cc_custom_options">自定义选项</string>
+    <string name="cc_countries">国家</string>
+    <string name="cc_question_label">问题</string>
+    <string name="cc_option_label">选项 %1$d</string>
+    <string name="cc_country_placeholder">国家 %1$d</string>
+    <string name="cc_remove_bet_a11y">删除投注</string>
+    <string name="cc_remove_option_a11y">删除选项</string>
+    <string name="cc_add_option">+ 添加选项</string>
+    <string name="cc_add_country">+ 添加国家</string>
+    <string name="cc_top_n_ranked">前 N 名排名</string>
+    <string name="cc_decrease_top_n_a11y">降低前 N 名</string>
+    <string name="cc_increase_top_n_a11y">增加前 N 名</string>
+    <string name="cc_save_bet">保存投注</string>
+    <string name="cc_show_less">显示更少</string>
+    <string name="cc_show_more_options">… 还有 %1$d 个 · 点击展开</string>
+    <string name="cc_saving_dialog">正在保存挑战…</string>
+    <string name="cc_duplicate_options_error">保存前删除重复选项</string>
+    <string name="cc_snackbar_nothing_to_save">还没有要保存的内容</string>
+    <string name="cc_snackbar_title_and_bet_required">需要标题和至少一个投注</string>
+    <string name="cc_snackbar_deadline_future">截止日期必须在未来</string>
+    <string name="cc_snackbar_no_reachable_invitees">您邀请的朋友中没有可达到的 — 至少选择一个</string>
+
+    <string name="nav_create_challenge_a11y">创建挑战</string>
+</resources>

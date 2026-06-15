@@ -4,6 +4,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -49,10 +51,10 @@ import bragwise.shared.generated.resources.nav_tab_challenges
 import bragwise.shared.generated.resources.nav_tab_me
 import bragwise.shared.generated.resources.nav_create_challenge_a11y
 import bragwise.shared.generated.resources.nav_tab_results
+import se.atte.bragwise.ui.icons.BragIconWithRing
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
-import com.composables.icons.lucide.Target
 import com.composables.icons.lucide.Trophy
 import com.composables.icons.lucide.User
 import kotlinx.coroutines.launch
@@ -75,6 +77,7 @@ import se.atte.bragwise.push.PushNotifications
 import se.atte.bragwise.ui.LocalSnackbarHost
 import se.atte.bragwise.ui.components.ErrorDialog
 import se.atte.bragwise.ui.enableTestTagsAsResourceId
+import se.atte.bragwise.ui.icons.BragIcon
 import se.atte.bragwise.ui.screens.about.AboutScreen
 import se.atte.bragwise.ui.screens.auth.SignInScreen
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
@@ -237,7 +240,7 @@ fun AppNav() {
                     NavigationBarItem(
                         selected = isAtChallengesTab,
                         onClick = { navigateToTab(RouteChallenges) },
-                        icon = { Icon(imageVector = Lucide.Target, contentDescription = null) },
+                        icon = { Icon(imageVector = BragIcon, contentDescription = null, modifier = Modifier.size(24.dp)) },
                         label = { Text(stringResource(Res.string.nav_tab_challenges)) },
                         colors = navItemColors,
                         modifier = Modifier.testTag("nav_tab_challenges"),

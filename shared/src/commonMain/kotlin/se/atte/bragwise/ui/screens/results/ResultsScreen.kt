@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,12 +40,15 @@ import bragwise.shared.generated.resources.results_empty_title
 import bragwise.shared.generated.resources.results_finished_count
 import bragwise.shared.generated.resources.results_history
 import bragwise.shared.generated.resources.results_new_count
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Trophy
 import se.atte.bragwise.theme.LocalSectionColors
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.ui.components.ChallengeCard
 import se.atte.bragwise.ui.components.ColoredSection
+import se.atte.bragwise.ui.icons.LucideSparkles
 import kotlin.time.Instant
 
 @Composable
@@ -74,7 +79,7 @@ private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> 
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "🏆", style = MaterialTheme.typography.headlineLarge)
+                Icon(imageVector = Lucide.Trophy, contentDescription = null, modifier = Modifier.size(34.dp))
                 Spacer(Modifier.height(standardPadding))
                 Text(
                     text = stringResource(Res.string.results_empty_title),
@@ -105,16 +110,19 @@ private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> 
 @Composable
 private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (String) -> Unit) {
     val sc = LocalSectionColors.current
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    val bottomBg = if (sections.history.isNotEmpty()) sc.historyBg else sc.mineBg
+    Box(modifier = Modifier.fillMaxSize().background(bottomBg)) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
     ) {
         if (sections.unseen.isNotEmpty()) {
+            // use this instead Icon(imageVector = Lucide.Trophy, contentDescription = null)
             ColoredSection(
                 bg = sc.mineBg,
                 title = stringResource(Res.string.results_are_in),
-                icon = "🏆",
+                icon = "",
+                iconVector = Lucide.Trophy,
                 onTitleColor = sc.onMine,
                 trailing = stringResource(Res.string.results_new_count, sections.unseen.size),
                 topInset = true,
@@ -134,7 +142,8 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
             ColoredSection(
                 bg = sc.historyBg,
                 title = stringResource(Res.string.results_history),
-                icon = "🕐",
+                icon = "",
+                iconVector = LucideSparkles,
                 onTitleColor = sc.onHistory,
                 trailing = stringResource(Res.string.results_finished_count, sections.history.size),
                 topInset = sections.unseen.isEmpty(),

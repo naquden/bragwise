@@ -79,6 +79,8 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_system">System default</string>
 
     <!-- Create Challenge screen (cc_). -->
     <string name="cc_title_field_label">Title</string>

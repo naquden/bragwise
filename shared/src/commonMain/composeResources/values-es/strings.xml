@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Bragwise</string>
+
+    <string name="share_challenge_title">%1$s</string>
+    <string name="share_challenge_subject">%1$s en Bragwise</string>
+
+    <string name="error_network">Red no disponible. Intenta de nuevo.</string>
+    <string name="error_rate_limited">Ve más lentamente — intenta de nuevo en un minuto.</string>
+    <string name="error_auth">La sesión ha expirado. Por favor, inicia sesión de nuevo.</string>
+    <string name="error_email_unverified">Verifica tu correo para seguir jugando.</string>
+    <string name="error_challenge_cap">Puedes tener hasta 30 desafíos activos. Completa o elimina uno primero.</string>
+    <string name="error_no_access">No tienes acceso a este desafío. Pide al creador que te invite.</string>
+    <string name="error_challenge_closed">Este desafío está bloqueado — las predicciones están cerradas.</string>
+    <string name="error_not_found">Este desafío ya no existe.</string>
+    <string name="error_already_friends">Ya eres amigo de esta persona.</string>
+    <string name="error_request_already_sent">Ya has enviado una solicitud de amistad a esta persona.</string>
+    <string name="error_cannot_friend_self">No puedes añadirte a ti mismo como amigo.</string>
+    <string name="error_handle_not_found">No se encontró usuario con ese nombre de usuario.</string>
+    <string name="error_unknown">Algo salió mal.</string>
+    <string name="error_dialog_dismiss">OK</string>
+
+    <string name="cl_section_mine">Mis desafíos</string>
+    <string name="cl_section_promoted">Destacados</string>
+    <string name="cl_section_from_friends">De amigos</string>
+    <string name="cl_section_invites">Invitaciones</string>
+    <string name="cl_empty">Sin desafíos aún</string>
+
+    <string name="cta_make_predictions">HACER PREDICCIONES</string>
+    <string name="cta_edit_predictions">EDITAR PREDICCIONES</string>
+    <string name="cta_save_predictions">GUARDAR PREDICCIONES</string>
+    <string name="cta_publish">PUBLICAR</string>
+    <string name="cta_save_draft">Guardar como borrador</string>
+    <string name="cta_post_results">PUBLICAR TODOS LOS RESULTADOS</string>
+    <string name="cta_share">Compartir</string>
+
+    <string name="nav_back">Atrás</string>
+    <string name="nav_tab_challenges">Desafíos</string>
+    <string name="nav_tab_results">Resultados</string>
+    <string name="nav_tab_me">Yo</string>
+
+    <string name="ranking_drop_here_hint">Suelta aquí</string>
+    <string name="ranking_slot_removed">Removido</string>
+    <string name="ranking_undo">Deshacer</string>
+    <string name="ranking_a11y_move_to_slot">Mover a posición %1$d</string>
+    <string name="ranking_a11y_return_to_pool">Volver al grupo</string>
+
+    <string name="auth_sign_in">Iniciar sesión</string>
+    <string name="auth_continue_guest">Continuar como invitado</string>
+    <string name="auth_guest_signin_failed">No se pudo iniciar una sesión de invitado. Puedes seguir usando la app, pero inicia sesión para la experiencia completa.</string>
+    <string name="auth_email_label">Correo electrónico</string>
+    <string name="auth_password_label">Contraseña</string>
+    <string name="auth_google">Iniciar sesión con Google</string>
+    <string name="auth_apple">Iniciar sesión con Apple</string>
+
+    <string name="profile_unknown_player">Jugador desconocido</string>
+    <string name="profile_former_participant">Participante anterior</string>
+
+    <string name="me_logged_in">Sesión iniciada</string>
+    <string name="me_section_account">Cuenta</string>
+    <string name="settings_section_title">Configuración</string>
+    <string name="settings_about_title">Acerca de</string>
+    <string name="settings_theme_title">Tema</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_notifications_title">Notificaciones</string>
+
+    <string name="cc_title_field_label">Título</string>
+    <string name="cc_who_can_join">Quién puede unirse</string>
+    <string name="cc_visibility_friends">Amigos</string>
+    <string name="cc_visibility_invite_only">Solo por invitación</string>
+    <string name="cc_visibility_friends_hint">Cualquiera de tus amigos puede unirse con el enlace.</string>
+    <string name="cc_visibility_invite_only_hint">Solo las personas que invites explícitamente pueden unirse.</string>
+    <string name="cc_pick_friends">Selecciona amigos</string>
+    <string name="cc_invited_summary">%1$d amigos invitados — Editar</string>
+    <string name="cc_invite_dialog_title">Invitar amigos</string>
+    <string name="cc_no_friends_yet">Sin amigos aún — añade algunos primero.</string>
+    <string name="cc_done">Hecho</string>
+    <string name="cc_cancel">Cancelar</string>
+    <string name="cc_add_bet">+ Añadir apuesta</string>
+    <string name="cc_add_bet_question">Pregunta</string>
+    <string name="cc_bet_type_yes_no">Sí / No</string>
+    <string name="cc_bet_type_single_pick">Opción única</string>
+    <string name="cc_bet_type_ranking">Clasificación</string>
+    <string name="cc_bet_remove">Eliminar apuesta</string>
+    <string name="cc_deadline_label">Fecha límite</string>
+    <string name="cc_deadline_hint">Las predicciones se cierran en este momento</string>
+    <string name="cc_save_draft">Guardar borrador</string>
+    <string name="cc_publish">Publicar</string>
+
+    <string name="migration_failed_notice">%1$d predicción(es) de invitado no se pudo(pudieron) importar — su fecha límite había pasado.</string>
+
+    <string name="welcome_tagline">Predice. Compite. Alardea.</string>
+    <string name="welcome_sign_in">Iniciar sesión</string>
+
+    <string name="auth_sign_in_with_email">Iniciar sesión con correo</string>
+    <string name="auth_send_link">Enviar enlace de inicio de sesión</string>
+    <string name="auth_sending">Enviando…</string>
+    <string name="auth_email_hint">Te enviaremos un enlace por correo. Tócalo en este dispositivo para terminar de iniciar sesión.</string>
+    <string name="auth_check_inbox">Revisa tu bandeja de entrada</string>
+    <string name="auth_sent_link_to">Hemos enviado un enlace de inicio de sesión a:</string>
+    <string name="auth_tap_link_hint">Toca el enlace en este dispositivo para terminar de iniciar sesión.</string>
+    <string name="auth_use_different_email">Usar un correo diferente</string>
+    <string name="auth_resend">Reenviar</string>
+
+    <string name="cd_no_challenge">Sin desafío</string>
+    <string name="cd_invite_only">Este desafío es solo por invitación</string>
+    <string name="cd_invite_only_hint">Pide al creador que te invite.</string>
+    <string name="cd_your_rank">Tu clasificación</string>
+    <string name="cd_predicted">Predicho</string>
+    <string name="cd_not_predicted">No predicho</string>
+    <string name="cd_participants">Participantes</string>
+    <string name="cd_bets_hidden">Apuestas ocultas</string>
+    <string name="cd_show_more">Mostrar más (%1$d)</string>
+    <string name="cd_invite_friends">Invitar amigos</string>
+    <string name="cd_results_posted">Resultados publicados</string>
+    <string name="cd_post_results">Publicar resultados</string>
+    <string name="cd_delete_challenge">Eliminar desafío</string>
+    <string name="cd_delete_challenge_title">¿Eliminar desafío?</string>
+    <string name="cd_delete_challenge_body">Esto elimina permanentemente el desafío, todas las predicciones e invitaciones. Esto no se puede deshacer.</string>
+    <string name="cd_delete">Eliminar</string>
+    <string name="cd_cancel">Cancelar</string>
+    <string name="cd_edit_predictions">Editar predicciones</string>
+    <string name="cd_make_predictions">Hacer predicciones</string>
+    <string name="cd_view_predictions">Ver predicciones</string>
+    <string name="cd_snackbar_share_failed">No se pudo compartir el desafío</string>
+    <string name="cd_snackbar_delete_failed">Error al eliminar: %1$s</string>
+
+    <string name="cl_empty_create_first">Crea tu primer desafío</string>
+    <string name="cl_empty_body">Crea uno para comenzar a predecir con amigos.</string>
+    <string name="cl_section_mine_title">Mis desafíos</string>
+    <string name="cl_active_count_one">1 activo</string>
+    <string name="cl_active_count">%1$d activos</string>
+
+    <string name="results_are_in">¡Los resultados están aquí!</string>
+    <string name="results_history">Historial</string>
+    <string name="results_new_count">%1$d nuevo</string>
+    <string name="results_finished_count">%1$d completado</string>
+    <string name="results_empty_title">Sin resultados aún</string>
+    <string name="results_empty_body">Los desafíos completados aparecerán aquí.</string>
+
+    <string name="predict_no_bets">Sin apuestas</string>
+    <string name="predict_yes">Sí</string>
+    <string name="predict_no">No</string>
+    <string name="predict_submitting">Enviando…</string>
+    <string name="predict_progress">Predice %1$d/%2$d</string>
+    <string name="predict_saving">Guardando predicciones…</string>
+    <string name="predict_snackbar_save_failed">No se pudieron guardar las predicciones — intenta de nuevo</string>
+
+    <string name="postresults_yes">Sí</string>
+    <string name="postresults_no">No</string>
+    <string name="postresults_posting">Publicando…</string>
+    <string name="postresults_post_results">Publicar resultados</string>
+    <string name="postresults_post_results_title">¿Publicar resultados?</string>
+    <string name="postresults_post_results_body">Esto es final. Las puntuaciones se calcularán y compartirán con todos los participantes.</string>
+    <string name="postresults_post">Publicar</string>
+    <string name="postresults_cancel">Cancelar</string>
+    <string name="postresults_posting_dialog">Publicando resultados…</string>
+
+    <string name="summary_no_predictions">Sin predicciones aún</string>
+    <string name="summary_bets_count">Apuestas: %1$d</string>
+    <string name="summary_your_rank">Tu clasificación: %1$s</string>
+    <string name="summary_top_score">Puntuación máxima: %1$d</string>
+    <string name="summary_edit_predictions">Editar predicciones</string>
+
+    <string name="friends_add_by_username">Añadir por nombre de usuario</string>
+    <string name="friends_sending_request">Enviando solicitud…</string>
+    <string name="friends_no_friends_title">Sin amigos aún</string>
+    <string name="friends_empty_with_pending">Acepta una solicitud pendiente arriba, o añade amigos por su @nombre de usuario.</string>
+    <string name="friends_empty_no_pending">Añade amigos por su @nombre de usuario para competir en desafíos compartidos.</string>
+    <string name="friends_section_title">Amigos (%1$d)</string>
+    <string name="friends_pending_section">Solicitudes pendientes (%1$d)</string>
+    <string name="friends_requests_nav">Solicitudes de amistad</string>
+    <string name="friends_add_dialog_title">Añadir amigo</string>
+    <string name="friends_add_dialog_body">Ingresa el @nombre de usuario de la persona que deseas añadir.</string>
+    <string name="friends_username_label">Nombre de usuario</string>
+    <string name="friends_username_placeholder">@nombre de usuario</string>
+    <string name="friends_username_format_error">3–20 letras minúsculas, números o guiones bajos</string>
+    <string name="friends_send_request">Enviar solicitud</string>
+    <string name="friends_cancel">Cancelar</string>
+    <string name="friends_decline">Rechazar</string>
+    <string name="friends_accept">Aceptar</string>
+    <string name="friends_snackbar_request_sent">Solicitud de amistad enviada a @%1$s</string>
+    <string name="friends_snackbar_already_friends">Ya eres amigo de @%1$s</string>
+    <string name="friends_snackbar_request_already_sent">Ya has enviado una solicitud a @%1$s</string>
+    <string name="friends_snackbar_cannot_friend_self">No puedes añadirte a ti mismo</string>
+    <string name="friends_snackbar_handle_not_found">No se encontró usuario con el nombre @%1$s</string>
+    <string name="friends_snackbar_request_unavailable">Esta solicitud ya no está disponible</string>
+
+    <string name="freq_no_pending">Sin solicitudes pendientes</string>
+    <string name="freq_incoming">Entrantes (%1$d)</string>
+    <string name="freq_sent">Enviadas (%1$d)</string>
+    <string name="freq_cancel">Cancelar</string>
+
+    <string name="edit_section_identity">Identidad</string>
+    <string name="edit_username_label">Nombre de usuario</string>
+    <string name="edit_username_hint">Identificador único utilizado para solicitudes de amistad e invitaciones. Letras minúsculas, números y _, 3-20 caracteres.</string>
+    <string name="edit_display_name_label">Nombre para mostrar</string>
+    <string name="edit_display_name_hint">Se muestra en desafíos y la clasificación.</string>
+    <string name="edit_email_label">Correo electrónico</string>
+    <string name="edit_email_hint">Utilizado para iniciar sesión. No se muestra a otros.</string>
+    <string name="edit_section_avatar">Avatar</string>
+    <string name="edit_avatar_emoji">Emoji</string>
+    <string name="edit_avatar_flags">Banderas</string>
+    <string name="edit_show_less">Mostrar menos</string>
+    <string name="edit_show_all_flags">Mostrar todas las %1$d banderas</string>
+    <string name="edit_saving">Guardando…</string>
+    <string name="edit_save">Guardar</string>
+    <string name="edit_saving_dialog">Guardando…</string>
+    <string name="edit_snackbar_avatar_error">Ese avatar no se puede usar. Elige otro.</string>
+    <string name="edit_error_username_taken">Ese nombre de usuario ya está en uso</string>
+    <string name="edit_error_username_format">3–20 caracteres: solo letras minúsculas, números y _</string>
+    <string name="edit_error_display_name_format">El nombre para mostrar debe tener 40 caracteres o menos</string>
+
+    <string name="player_not_found">Jugador no encontrado</string>
+    <string name="player_head_to_head">Uno contra uno</string>
+    <string name="player_no_shared_challenges">Sin desafíos compartidos aún.</string>
+    <string name="player_head_to_head_record">Tú: %1$d · Ellos: %2$d · Empates: %3$d</string>
+
+    <string name="me_guest_label">Invitado</string>
+    <string name="me_guest_body">Regístrate para mantener tu progreso en dispositivos, unirte a amigos y aparecer en clasificaciones.</string>
+    <string name="me_sign_in_or_sign_up">Inicia sesión o regístrate</string>
+    <string name="me_friends">Amigos</string>
+    <string name="me_edit_profile">Editar perfil</string>
+    <string name="me_sign_out">Cerrar sesión</string>
+    <string name="me_delete_account">Eliminar cuenta</string>
+    <string name="me_delete_account_title">¿Eliminar cuenta?</string>
+    <string name="me_delete_account_body">Esto elimina permanentemente tu cuenta, predicciones y amigos. Esto no se puede deshacer.</string>
+    <string name="me_delete">Eliminar</string>
+    <string name="me_cancel">Cancelar</string>
+
+    <string name="invite_pick_friends">Elige amigos para invitar</string>
+    <string name="invite_selected">%1$d seleccionados</string>
+    <string name="invite_sending">Enviando…</string>
+    <string name="invite_button">Invitar %1$d</string>
+    <string name="invite_no_friends">Sin amigos aún — añade algunos primero.</string>
+
+    <string name="about_section_title" translatable="false">Bragwise</string>
+    <string name="about_tagline">Predice. Compite. Alardea.</string>
+    <string name="about_version">Versión: %1$s</string>
+    <string name="about_open_source">Código abierto</string>
+    <string name="about_open_source_body">Creado con Kotlin Multiplatform, Compose Multiplatform, Firebase y Koin.</string>
+
+    <string name="namegate_title">Elige un nombre</string>
+    <string name="namegate_label">Tu nombre</string>
+    <string name="namegate_placeholder">Cómo te ven los amigos</string>
+    <string name="namegate_confirm">Continuar</string>
+    <string name="namegate_cancel">Cancelar</string>
+
+    <string name="deadline_pick_time_title">Elige hora (UTC)</string>
+    <string name="deadline_next">Siguiente</string>
+    <string name="deadline_cancel">Cancelar</string>
+    <string name="deadline_done">Hecho</string>
+    <string name="deadline_locks_prefix">Se bloquea: %1$s</string>
+    <string name="deadline_hint">Las predicciones se cierran en este momento</string>
+
+    <string name="country_clear_a11y">Borrar país</string>
+
+    <string name="cc_title_field">Título</string>
+    <string name="cc_deadline_section">Fecha límite</string>
+    <string name="cc_who_can_join_section">Quién puede unirse</string>
+    <string name="cc_bets_visible_label">Apuestas visibles para otros</string>
+    <string name="cc_bets_visible_hint">Los participantes pueden ver las predicciones de los demás</string>
+    <string name="cc_edit_bet_title">Editar apuesta</string>
+    <string name="cc_add_bet_title">Añadir apuesta</string>
+    <string name="cc_bet_cancel_a11y">Cancelar</string>
+    <string name="cc_custom_options">Opciones personalizadas</string>
+    <string name="cc_countries">Países</string>
+    <string name="cc_question_label">Pregunta</string>
+    <string name="cc_option_label">Opción %1$d</string>
+    <string name="cc_country_placeholder">País %1$d</string>
+    <string name="cc_remove_bet_a11y">Eliminar apuesta</string>
+    <string name="cc_remove_option_a11y">Eliminar opción</string>
+    <string name="cc_add_option">+ Añadir opción</string>
+    <string name="cc_add_country">+ Añadir país</string>
+    <string name="cc_top_n_ranked">Top N clasificados</string>
+    <string name="cc_decrease_top_n_a11y">Disminuir top N</string>
+    <string name="cc_increase_top_n_a11y">Aumentar top N</string>
+    <string name="cc_save_bet">Guardar apuesta</string>
+    <string name="cc_show_less">Mostrar menos</string>
+    <string name="cc_show_more_options">… %1$d más · Toca para expandir</string>
+    <string name="cc_saving_dialog">Guardando desafío…</string>
+    <string name="cc_duplicate_options_error">Elimina opciones duplicadas antes de guardar</string>
+    <string name="cc_snackbar_nothing_to_save">Nada que guardar aún</string>
+    <string name="cc_snackbar_title_and_bet_required">Se requiere título y al menos una apuesta</string>
+    <string name="cc_snackbar_deadline_future">La fecha límite debe ser en el futuro</string>
+    <string name="cc_snackbar_no_reachable_invitees">Ninguno de tus amigos invitados son accesibles — elige al menos uno</string>
+
+    <string name="nav_create_challenge_a11y">Crear desafío</string>
+</resources>

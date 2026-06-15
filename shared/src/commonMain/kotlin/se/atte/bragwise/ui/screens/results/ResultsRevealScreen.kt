@@ -4,25 +4,32 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import bragwise.shared.generated.resources.Res
+import se.atte.bragwise.ui.icons.BragIconWithRing
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +47,8 @@ import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Trophy
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.ui.components.AvatarBubble
@@ -110,11 +119,15 @@ private fun ResultsRevealBody(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = standardPadding, vertical = standardPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = "🏆 Results are in!",
-                        style = MaterialTheme.typography.headlineLarge,
-                        textAlign = TextAlign.Center,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Lucide.Trophy, contentDescription = null, modifier = Modifier.size(32.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Results are in!",
+                            style = MaterialTheme.typography.headlineLarge,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                     Text(
                         text = data.challengeTitle,
                         style = MaterialTheme.typography.bodyLarge,
@@ -229,13 +242,14 @@ private fun YourResultBanner(
     iAmCreator: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    data class BannerData(val emoji: String?, val headline: String, val subtitle: String)
     val (emoji, headline, subtitle) = when {
-        iAmWinner -> Triple("🥇", "You won!", "You topped the leaderboard")
-        myRank == 2 -> Triple("🥈", "Runner-up!", "#2 of $participantCount")
-        myRank == 3 -> Triple("🥉", "3rd place!", "#3 of $participantCount")
-        myRank != null -> Triple("🎯", "Your result", "#$myRank of $participantCount")
-        iAmCreator -> Triple("🎬", "You hosted this!", "Here's how your challenge played out")
-        else -> Triple("🎯", "You didn't predict", "Join next time to compete")
+        iAmWinner -> BannerData("🥇", "You won!", "You topped the leaderboard")
+        myRank == 2 -> BannerData("🥈", "Runner-up!", "#2 of $participantCount")
+        myRank == 3 -> BannerData("🥉", "3rd place!", "#3 of $participantCount")
+        myRank != null -> BannerData(null, "Your result", "#$myRank of $participantCount")
+        iAmCreator -> BannerData("🎬", "You hosted this!", "Here's how your challenge played out")
+        else -> BannerData(null, "You didn't predict", "Join next time to compete")
     }
     val surfaceColor = when {
         iAmWinner -> MaterialTheme.colorScheme.primaryContainer
@@ -252,7 +266,15 @@ private fun YourResultBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(standardPadding),
         ) {
-            Text(text = emoji, style = MaterialTheme.typography.headlineMedium)
+            if (emoji != null) {
+                Text(text = emoji, style = MaterialTheme.typography.headlineMedium)
+            } else {
+                Icon(
+                    imageVector = BragIconWithRing,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = headline, style = MaterialTheme.typography.titleLarge)
                 Text(

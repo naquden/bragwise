@@ -1,11 +1,19 @@
 package se.atte.bragwise.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import com.composables.icons.lucide.Lucide
+import se.atte.bragwise.ui.icons.LucideSparkles
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -43,18 +51,25 @@ fun CountdownChip(locksAt: Instant?, modifier: Modifier = Modifier) {
     }
     val isUrgent = remainingSec != null && remainingSec in 1..3600
 
-    Text(
-        text = "⏱ ${if (remainingSec != null) formatRemaining(remainingSec) else "—"}",
-        color = if (isUrgent) MaterialTheme.colorScheme.tertiary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
+    val contentColor = if (isUrgent) MaterialTheme.colorScheme.tertiary
+                       else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(50),
             )
             .padding(horizontal = 12.dp, vertical = 4.dp),
-    )
+    ) {
+        Icon(imageVector = LucideSparkles, contentDescription = null, modifier = Modifier.size(16.dp), tint = contentColor)
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = if (remainingSec != null) formatRemaining(remainingSec) else "—",
+            color = contentColor,
+            style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
+        )
+    }
 }
 
 private fun formatRemaining(totalSec: Long): String {
