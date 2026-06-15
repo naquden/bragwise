@@ -14,6 +14,7 @@ data class SectionColors(
     val friendsBg: Color, val friendsCard: Color, val onFriends: Color,
     val invitesBg: Color, val invitesCard: Color, val onInvites: Color,
     val historyBg: Color, val historyCard: Color, val onHistory: Color,
+    val resultsBgHeader: Color, val resultsCardFrost: Color, val onResultsBgHeader: Color,
 )
 
 val LightSectionColors = SectionColors(
@@ -22,6 +23,7 @@ val LightSectionColors = SectionColors(
     friendsBg = Color(0xFFC8EED8), friendsCard = Color(0xFFE2F7EC), onFriends = Color(0xFF003A1F),
     invitesBg = Color(0xFFD4F5A8), invitesCard = Color(0xFFE8FBC9), onInvites = Color(0xFF1A4200),
     historyBg = Color(0xFFEAEAEA), historyCard = Color(0xFFF5F5F5), onHistory = Color(0xFF3A3A3A),
+    resultsBgHeader = Color.Transparent, resultsCardFrost = Color.White.copy(alpha = 0.62f), onResultsBgHeader = Color(0xFF3A3A3A),
 )
 
 val DarkSectionColors = SectionColors(
@@ -30,6 +32,7 @@ val DarkSectionColors = SectionColors(
     friendsBg = Color(0xFF1A4A2E), friendsCard = Color(0xFF24623D), onFriends = Color(0xFFC8EED8),
     invitesBg = Color(0xFF265E00), invitesCard = Color(0xFF347C00), onInvites = Color(0xFFD4F5A8),
     historyBg = Color(0xFF2A2A2A), historyCard = Color(0xFF383838), onHistory = Color(0xFFD0D0D0),
+    resultsBgHeader = Color.Transparent, resultsCardFrost = Color(0xFF2A2F36).copy(alpha = 0.55f), onResultsBgHeader = Color(0xFFD0D0D0),
 )
 
 val LocalSectionColors = staticCompositionLocalOf { LightSectionColors }

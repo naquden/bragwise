@@ -48,6 +48,7 @@ import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.ui.components.ChallengeCard
 import se.atte.bragwise.ui.components.ColoredSection
+import se.atte.bragwise.ui.components.PlatinumBackground
 import se.atte.bragwise.ui.icons.LucideSparkles
 import kotlin.time.Instant
 
@@ -67,100 +68,103 @@ fun ResultsScreen(viewModel: ResultsViewModel, onNavigateToReveal: (challengeId:
 
 @Composable
 private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> Unit) {
-    when (val ui = state.ui) {
-        UiState.Loading -> Box(
-            modifier = Modifier.fillMaxSize().statusBarsPadding(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
-        is UiState.Empty -> Box(
-            modifier = Modifier.fillMaxSize().statusBarsPadding(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(imageVector = Lucide.Trophy, contentDescription = null, modifier = Modifier.size(34.dp))
-                Spacer(Modifier.height(standardPadding))
+    // Platinum backdrop spans every state (loading/empty/failed/ready) so the
+    // living animation is always visible, not just when results exist.
+    Box(modifier = Modifier.fillMaxSize()) {
+        PlatinumBackground(modifier = Modifier.matchParentSize())
+        when (val ui = state.ui) {
+            UiState.Loading -> Box(
+                modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+            is UiState.Empty -> Box(
+                modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(imageVector = Lucide.Trophy, contentDescription = null, modifier = Modifier.size(34.dp))
+                    Spacer(Modifier.height(standardPadding))
+                    Text(
+                        text = stringResource(Res.string.results_empty_title),
+                        style = MaterialTheme.typography.headlineLarge,
+                    )
+                    Spacer(Modifier.height(standardPaddingSmall))
+                    Text(
+                        text = stringResource(Res.string.results_empty_body),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            is UiState.Failed -> Box(
+                modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
-                    text = stringResource(Res.string.results_empty_title),
-                    style = MaterialTheme.typography.headlineLarge,
-                )
-                Spacer(Modifier.height(standardPaddingSmall))
-                Text(
-                    text = stringResource(Res.string.results_empty_body),
+                    text = ui.cause.toUserMessage(),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            is UiState.Ready -> ResultsContent(sections = ui.data, onChallenge = onChallenge)
         }
-        is UiState.Failed -> Box(
-            modifier = Modifier.fillMaxSize().statusBarsPadding(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = ui.cause.toUserMessage(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        is UiState.Ready -> ResultsContent(sections = ui.data, onChallenge = onChallenge)
     }
 }
 
 @Composable
 private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (String) -> Unit) {
     val sc = LocalSectionColors.current
-    val bottomBg = if (sections.history.isNotEmpty()) sc.historyBg else sc.mineBg
-    Box(modifier = Modifier.fillMaxSize().background(bottomBg)) {
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Top,
-    ) {
-        if (sections.unseen.isNotEmpty()) {
-            // use this instead Icon(imageVector = Lucide.Trophy, contentDescription = null)
-            ColoredSection(
-                bg = sc.mineBg,
-                title = stringResource(Res.string.results_are_in),
-                icon = "",
-                iconVector = Lucide.Trophy,
-                onTitleColor = sc.onMine,
-                trailing = stringResource(Res.string.results_new_count, sections.unseen.size),
-                topInset = true,
-            ) {
-                sections.unseen.forEach { challenge ->
-                    ChallengeCard(
-                        challenge = challenge,
-                        rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                        onClick = { onChallenge(challenge.id) },
-                        surfaceColor = sc.mineCard,
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top,
+        ) {
+            if (sections.unseen.isNotEmpty()) {
+                ColoredSection(
+                    bg = sc.resultsBgHeader,
+                    title = stringResource(Res.string.results_are_in),
+                    icon = "",
+                    iconVector = Lucide.Trophy,
+                    onTitleColor = sc.onResultsBgHeader,
+                    trailing = stringResource(Res.string.results_new_count, sections.unseen.size),
+                    topInset = true,
+                ) {
+                    sections.unseen.forEach { challenge ->
+                        ChallengeCard(
+                            challenge = challenge,
+                            rank = myRankFor(challenge = challenge, myUid = sections.myUid),
+                            onClick = { onChallenge(challenge.id) },
+                            surfaceColor = sc.resultsCardFrost,
+                        )
+                    }
                 }
             }
-        }
 
-        if (sections.history.isNotEmpty()) {
-            ColoredSection(
-                bg = sc.historyBg,
-                title = stringResource(Res.string.results_history),
-                icon = "",
-                iconVector = LucideSparkles,
-                onTitleColor = sc.onHistory,
-                trailing = stringResource(Res.string.results_finished_count, sections.history.size),
-                topInset = sections.unseen.isEmpty(),
-            ) {
-                sections.history.forEach { challenge ->
-                    ChallengeCard(
-                        challenge = challenge,
-                        rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                        onClick = { onChallenge(challenge.id) },
-                        surfaceColor = sc.historyCard,
-                    )
+            if (sections.history.isNotEmpty()) {
+                ColoredSection(
+                    bg = sc.resultsBgHeader,
+                    title = stringResource(Res.string.results_history),
+                    icon = "",
+                    iconVector = LucideSparkles,
+                    onTitleColor = sc.onResultsBgHeader,
+                    trailing = stringResource(Res.string.results_finished_count, sections.history.size),
+                    topInset = sections.unseen.isEmpty(),
+                ) {
+                    sections.history.forEach { challenge ->
+                        ChallengeCard(
+                            challenge = challenge,
+                            rank = myRankFor(challenge = challenge, myUid = sections.myUid),
+                            onClick = { onChallenge(challenge.id) },
+                            surfaceColor = sc.resultsCardFrost,
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(32.dp))
-    }
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }
 
