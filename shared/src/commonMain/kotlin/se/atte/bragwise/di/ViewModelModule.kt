@@ -52,6 +52,7 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             challenges = get(),
             auth = get(),
+            profile = get(),
             errorReporter = get(),
         )
     }

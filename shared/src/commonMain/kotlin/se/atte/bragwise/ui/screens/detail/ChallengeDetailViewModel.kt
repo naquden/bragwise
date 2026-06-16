@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
+import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.shareUrlForChallenge
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.mvi.ErrorReporter
@@ -29,6 +30,7 @@ class ChallengeDetailViewModel(
     private val challengeId: String,
     private val challenges: ChallengeRepository,
     private val auth: AuthRepository,
+    private val profile: ProfileRepository,
     private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<ChallengeDetailViewModel.State, ChallengeDetailViewModel.Intent, ChallengeDetailViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
@@ -77,12 +79,30 @@ class ChallengeDetailViewModel(
         combine(
             challenges.observeChallengeDetail(challengeId),
             auth.authState,
-        ) { detail, authState ->
+            profile.observeMe(),
+        ) { detail, authState, me ->
             val uid = (authState as? AuthState.SignedIn)?.uid
+            val updatedDetail = if (uid != null && me != null &&
+                detail.myPredictions.isNotEmpty() &&
+                !detail.challenge.participants.any { it.uid == uid }
+            ) {
+                val selfParticipant = se.atte.bragwise.domain.ParticipantInfo(
+                    uid = uid,
+                    displayName = me.displayName,
+                    avatarSeed = me.avatarSeed,
+                )
+                detail.copy(
+                    challenge = detail.challenge.copy(
+                        participants = detail.challenge.participants + selfParticipant,
+                    ),
+                )
+            } else {
+                detail
+            }
             update {
                 it.copy(
-                    ui = UiState.Ready(detail),
-                    isOwner = uid != null && uid == detail.challenge.createdBy,
+                    ui = UiState.Ready(updatedDetail),
+                    isOwner = uid != null && uid == updatedDetail.challenge.createdBy,
                     myUid = uid ?: "",
                 )
             }
