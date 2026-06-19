@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.group
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -18,9 +19,10 @@ val BragIcon: ImageVector
             name = "BragIcon",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f,
+            viewportWidth = 26f,
+            viewportHeight = 26f,
         ).apply {
+            group(translationX = 1f, translationY = 1f) {
             path(
                 fill = SolidColor(Color.Black),
                 stroke = SolidColor(Color.Black),
@@ -257,6 +259,7 @@ val BragIcon: ImageVector
                 curveTo(16.64f, 10.2358f, 16.8635f, 10.2543f, 17.0118f, 10.3098f)
                 close()
             }
+            }
         }.build()
         return _BragIcon!!
     }
@@ -270,9 +273,10 @@ val BragIconWithRing: ImageVector
             name = "BragIconWithRing",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f,
+            viewportWidth = 26f,
+            viewportHeight = 26f,
         ).apply {
+            group(translationX = 1f, translationY = 1f) {
             path(
                 fill = SolidColor(Color.Black),
                 stroke = SolidColor(Color.Black),
@@ -569,6 +573,7 @@ val BragIconWithRing: ImageVector
                 curveTo(16.1318f, 23.052f, 16.0282f, 22.8879f, 15.8541f, 22.8925f)
                 curveTo(15.8118f, 22.8925f, 15.6706f, 22.9295f, 15.5412f, 22.9734f)
                 close()
+            }
             }
         }.build()
         return _BragIconWithRing!!
