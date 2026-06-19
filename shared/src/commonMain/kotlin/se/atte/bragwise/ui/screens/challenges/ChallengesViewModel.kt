@@ -81,7 +81,9 @@ class ChallengesViewModel(
             val mine = allMine.filter { it.status != ChallengeStatus.RESULTS_POSTED }
             Sections(
                 mine = mine.byLockAsc(),
-                promoted = promoted.byLockAsc(),
+                promoted = promoted
+                    .filter { it.status != ChallengeStatus.LOCKED || it.id in joinedIds }
+                    .byLockAsc(),
                 fromFriends = fromFriends.byLockAsc(),
                 invites = invites,
                 joinedIds = joinedIds,
