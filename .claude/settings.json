@@ -51,6 +51,10 @@
       "Bash(ln*)",
       "Bash(env*)",
       "Bash(export*)",
+      "Bash(sleep*)",
+      "Bash(date*)",
+      "Bash(tr*)",
+      "Bash(xargs*)",
       "Read(/Users/atte/git/bragwise/**)",
       "Write(/Users/atte/git/bragwise/**)",
       "Skill(*)"

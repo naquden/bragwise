@@ -5,17 +5,8 @@
       "namespace": "android_app",
       "package_name": "se.atte.bragwise",
       "sha256_cert_fingerprints": [
-        "6F:4D:61:55:7D:B9:5A:BF:69:FB:01:8D:78:D9:EF:2A:D2:1A:F5:81:94:2A:6D:D9:EE:AA:56:31:23:97:6A:98"
-      ]
-    }
-  },
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "se.atte.bragwise.dev",
-      "sha256_cert_fingerprints": [
-        "6F:4D:61:55:7D:B9:5A:BF:69:FB:01:8D:78:D9:EF:2A:D2:1A:F5:81:94:2A:6D:D9:EE:AA:56:31:23:97:6A:98"
+        "6F:4D:61:55:7D:B9:5A:BF:69:FB:01:8D:78:D9:EF:2A:D2:1A:F5:81:94:2A:6D:D9:EE:AA:56:31:23:97:6A:98",
+        "C8:B7:CE:3F:5B:AB:D2:EC:4A:99:10:5C:F4:6B:87:BF:D8:F7:BC:56:C1:8D:B9:44:0B:50:E9:84:7F:FC:6E:73"
       ]
     }
   }
