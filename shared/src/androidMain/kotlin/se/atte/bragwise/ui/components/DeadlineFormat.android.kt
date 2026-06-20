@@ -8,3 +8,6 @@ actual fun formatDeadline(instant: Instant): String {
     val fmt = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
     return fmt.format(Date(instant.toEpochMilliseconds()))
 }
+
+actual fun timezoneOffsetMs(epochMs: Long): Long =
+    java.util.TimeZone.getDefault().getOffset(epochMs).toLong()

@@ -86,8 +86,9 @@ fun DeadlinePickerField(
     }
 
     if (showTimePicker) {
-        val currentHour = ((locksAt.toEpochMilliseconds() % 86_400_000L) / 3_600_000L).toInt()
-        val currentMinute = ((locksAt.toEpochMilliseconds() % 3_600_000L) / 60_000L).toInt()
+        val localMs = locksAt.toEpochMilliseconds() + timezoneOffsetMs(locksAt.toEpochMilliseconds())
+        val currentHour = ((localMs % 86_400_000L) / 3_600_000L).toInt()
+        val currentMinute = ((localMs % 3_600_000L) / 60_000L).toInt()
         val timeState = rememberTimePickerState(
             initialHour = currentHour,
             initialMinute = currentMinute,
@@ -99,8 +100,9 @@ fun DeadlinePickerField(
             text = { TimePicker(state = timeState) },
             confirmButton = {
                 AppTextButton(onClick = {
-                    val offsetMs = (timeState.hour * 3600L + timeState.minute * 60L) * 1000L
-                    onLocksAtChange(Instant.fromEpochMilliseconds(pendingDateMillis + offsetMs))
+                    val localOffsetMs = (timeState.hour * 3600L + timeState.minute * 60L) * 1000L
+                    val candidateMs = pendingDateMillis + localOffsetMs
+                    onLocksAtChange(Instant.fromEpochMilliseconds(candidateMs - timezoneOffsetMs(candidateMs)))
                     showTimePicker = false
                 }) { Text(stringResource(Res.string.deadline_done)) }
             },

@@ -11,3 +11,8 @@ actual fun formatDeadline(instant: Instant): String {
     fmt.locale = NSLocale.currentLocale
     return fmt.stringFromDate(date)
 }
+
+actual fun timezoneOffsetMs(epochMs: Long): Long {
+    val date = NSDate.dateWithTimeIntervalSince1970(epochMs / 1000.0)
+    return NSTimeZone.localTimeZone.secondsFromGMTForDate(date) * 1000L
+}
