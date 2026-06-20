@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bragwise</string>
+
+    <string name="share_challenge_title">%1$s</string>
+    <string name="share_challenge_subject">%1$s på Bragwise</string>
+
+    <string name="error_network">Ingen nätverksanslutning. Försök igen.</string>
+    <string name="error_rate_limited">Lugna ner dig — försök igen om en minut.</string>
+    <string name="error_auth">Sessionen har gått ut. Logga in igen.</string>
+    <string name="error_email_unverified">Verifiera din e-post för att fortsätta spela.</string>
+    <string name="error_challenge_cap">Du kan ha upp till 30 aktiva utmaningar. Avsluta eller ta bort en först.</string>
+    <string name="error_no_access">Du har inte tillgång till den här utmaningen. Be skaparen att bjuda in dig.</string>
+    <string name="error_challenge_closed">Utmaningen är låst — tipsning är stängd.</string>
+    <string name="error_not_found">Den här utmaningen finns inte längre.</string>
+    <string name="error_already_friends">Du är redan vän med den här personen.</string>
+    <string name="error_request_already_sent">Du har redan skickat en vänförfrågan till den här personen.</string>
+    <string name="error_cannot_friend_self">Du kan inte lägga till dig själv som vän.</string>
+    <string name="error_handle_not_found">Ingen användare hittades med det användarnamnet.</string>
+    <string name="error_unknown">Något gick fel.</string>
+    <string name="error_dialog_dismiss">OK</string>
+
+    <string name="cl_section_mine">Mina utmaningar</string>
+    <string name="cl_section_promoted">Utvalda</string>
+    <string name="cl_section_from_friends">Från vänner</string>
+    <string name="cl_section_invites">Inbjudningar</string>
+    <string name="cl_empty">Inga utmaningar än</string>
+
+    <string name="cta_make_predictions">GÖR TIPSNINGAR</string>
+    <string name="cta_edit_predictions">REDIGERA TIPSNINGAR</string>
+    <string name="cta_save_predictions">SPARA TIPSNINGAR</string>
+    <string name="cta_publish">PUBLICERA</string>
+    <string name="cta_save_draft">Spara som utkast</string>
+    <string name="cta_post_results">PUBLICERA ALLA RESULTAT</string>
+    <string name="cta_share">Dela</string>
+
+    <string name="nav_back">Tillbaka</string>
+    <string name="nav_tab_challenges">Utmaningar</string>
+    <string name="nav_tab_results">Resultat</string>
+    <string name="nav_tab_me">Jag</string>
+
+    <string name="ranking_drop_here_hint">Släpp här</string>
+    <string name="ranking_slot_removed">Borttagen</string>
+    <string name="ranking_undo">Ångra</string>
+    <string name="ranking_a11y_move_to_slot">Flytta till plats %1$d</string>
+    <string name="ranking_a11y_return_to_pool">Återgå till listan</string>
+
+    <string name="auth_sign_in">Logga in</string>
+    <string name="auth_continue_guest">Fortsätt som gäst</string>
+    <string name="auth_guest_signin_failed">Kunde inte starta en gästsession. Du kan fortsätta använda appen, men logga in för hela upplevelsen.</string>
+    <string name="auth_email_label">E-post</string>
+    <string name="auth_password_label">Lösenord</string>
+    <string name="auth_google">Logga in med Google</string>
+    <string name="auth_apple">Logga in med Apple</string>
+
+    <string name="profile_unknown_player">Okänd spelare</string>
+    <string name="profile_former_participant">Tidigare deltagare</string>
+
+    <string name="me_logged_in">Inloggad</string>
+    <string name="me_section_account">Konto</string>
+    <string name="settings_section_title">Inställningar</string>
+    <string name="settings_about_title">Om</string>
+    <string name="settings_theme_title">Tema</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Ljust</string>
+    <string name="settings_theme_dark">Mörkt</string>
+    <string name="settings_notifications_title">Aviseringar</string>
+    <string name="settings_language_title">Språk</string>
+    <string name="settings_language_system">Systemstandard</string>
+
+    <string name="cc_title_field_label">Titel</string>
+    <string name="cc_who_can_join">Vem kan gå med</string>
+    <string name="cc_visibility_friends">Vänner</string>
+    <string name="cc_visibility_invite_only">Endast inbjudna</string>
+    <string name="cc_visibility_friends_hint">Vilken av dina vänner som helst kan gå med via länken.</string>
+    <string name="cc_visibility_invite_only_hint">Bara de du bjuder in direkt kan gå med.</string>
+    <string name="cc_pick_friends">Välj vänner</string>
+    <string name="cc_invited_summary">%1$d vänner inbjudna — Redigera</string>
+    <string name="cc_invite_dialog_title">Bjud in vänner</string>
+    <string name="cc_no_friends_yet">Inga vänner än — lägg till några först.</string>
+    <string name="cc_done">Klar</string>
+    <string name="cc_cancel">Avbryt</string>
+    <string name="cc_add_bet">+ Lägg till tips</string>
+    <string name="cc_add_bet_question">Fråga</string>
+    <string name="cc_bet_type_yes_no">Ja / Nej</string>
+    <string name="cc_bet_type_single_pick">Enstaka val</string>
+    <string name="cc_bet_type_ranking">Ranking</string>
+    <string name="cc_bet_remove">Ta bort tips</string>
+    <string name="cc_deadline_label">Deadline</string>
+    <string name="cc_deadline_hint">Tipsningar låses vid denna tid</string>
+    <string name="cc_save_draft">Spara utkast</string>
+    <string name="cc_publish">Publicera</string>
+
+    <string name="migration_failed_notice">%1$d gästtipsning(ar) kunde inte importeras — deadline hade passerat.</string>
+
+    <string name="welcome_tagline">Tipsa. Tävla. Skryt.</string>
+    <string name="welcome_sign_in">Logga in</string>
+
+    <string name="auth_sign_in_with_email">Logga in med e-post</string>
+    <string name="auth_send_link">Skicka inloggningslänk</string>
+    <string name="auth_sending">Skickar…</string>
+    <string name="auth_email_hint">Vi skickar en länk till din e-post. Tryck på den på den här enheten för att slutföra inloggningen.</string>
+    <string name="auth_check_inbox">Kolla din inkorg</string>
+    <string name="auth_sent_link_to">Vi skickade en inloggningslänk till:</string>
+    <string name="auth_tap_link_hint">Tryck på länken på den här enheten för att slutföra inloggningen.</string>
+    <string name="auth_use_different_email">Använd en annan e-post</string>
+    <string name="auth_resend">Skicka igen</string>
+
+    <string name="cd_no_challenge">Ingen utmaning</string>
+    <string name="cd_invite_only">Den här utmaningen är bara för inbjudna</string>
+    <string name="cd_invite_only_hint">Be skaparen att bjuda in dig.</string>
+    <string name="cd_your_rank">Din placering</string>
+    <string name="cd_predicted">Tipsat</string>
+    <string name="cd_not_predicted">Inte tipsat</string>
+    <string name="cd_participants">Deltagare</string>
+    <string name="cd_bets_hidden">Tips dolda</string>
+    <string name="cd_show_more">Visa fler (%1$d)</string>
+    <string name="cd_invite_friends">Bjud in vänner</string>
+    <string name="cd_results_posted">Resultat publicerade</string>
+    <string name="cd_post_results">Publicera resultat</string>
+    <string name="cd_delete_challenge">Ta bort utmaning</string>
+    <string name="cd_delete_challenge_title">Ta bort utmaning?</string>
+    <string name="cd_delete_challenge_body">Detta tar permanent bort utmaningen, alla tipsningar och inbjudningar. Det går inte att ångra.</string>
+    <string name="cd_delete">Ta bort</string>
+    <string name="cd_cancel">Avbryt</string>
+    <string name="cd_edit_predictions">Redigera tipsningar</string>
+    <string name="cd_make_predictions">Gör tipsningar</string>
+    <string name="cd_view_predictions">Visa tipsningar</string>
+    <string name="cd_snackbar_share_failed">Kunde inte dela utmaningen</string>
+    <string name="cd_snackbar_delete_failed">Borttagning misslyckades: %1$s</string>
+
+    <string name="cl_empty_create_first">Skapa din första utmaning</string>
+    <string name="cl_empty_body">Skapa en för att börja tipsa med vänner.</string>
+    <string name="cl_section_mine_title">Mina utmaningar</string>
+    <string name="cl_active_count_one">1 aktiv</string>
+    <string name="cl_active_count">%1$d aktiva</string>
+
+    <string name="results_are_in">Resultaten är inne!</string>
+    <string name="results_history">Historik</string>
+    <string name="results_new_count">%1$d nya</string>
+    <string name="results_finished_count">%1$d avslutade</string>
+    <string name="results_empty_title">Inga resultat än</string>
+    <string name="results_empty_body">Avslutade utmaningar visas här.</string>
+
+    <string name="predict_no_bets">Inga tips</string>
+    <string name="predict_yes">Ja</string>
+    <string name="predict_no">Nej</string>
+    <string name="predict_submitting">Skickar…</string>
+    <string name="predict_progress">Tipsa %1$d/%2$d</string>
+    <string name="predict_saving">Sparar tipsningar…</string>
+    <string name="predict_snackbar_save_failed">Kunde inte spara tipsningar — försök igen</string>
+
+    <string name="postresults_yes">Ja</string>
+    <string name="postresults_no">Nej</string>
+    <string name="postresults_posting">Publicerar…</string>
+    <string name="postresults_post_results">Publicera resultat</string>
+    <string name="postresults_post_results_title">Publicera resultat?</string>
+    <string name="postresults_post_results_body">Detta är slutgiltigt. Poäng beräknas och delas med alla deltagare.</string>
+    <string name="postresults_post">Publicera</string>
+    <string name="postresults_cancel">Avbryt</string>
+    <string name="postresults_posting_dialog">Publicerar resultat…</string>
+
+    <string name="summary_no_predictions">Inga tipsningar än</string>
+    <string name="summary_bets_count">Tips: %1$d</string>
+    <string name="summary_your_rank">Din placering: %1$s</string>
+    <string name="summary_top_score">Toppoäng: %1$d</string>
+    <string name="summary_edit_predictions">Redigera tipsningar</string>
+
+    <string name="friends_add_by_username">Lägg till via användarnamn</string>
+    <string name="friends_sending_request">Skickar förfrågan…</string>
+    <string name="friends_no_friends_title">Inga vänner än</string>
+    <string name="friends_empty_with_pending">Acceptera en väntande förfrågan ovan, eller lägg till vänner via deras @användarnamn.</string>
+    <string name="friends_empty_no_pending">Lägg till vänner via deras @användarnamn för att tävla i gemensamma utmaningar.</string>
+    <string name="friends_section_title">Vänner (%1$d)</string>
+    <string name="friends_pending_section">Väntande förfrågningar (%1$d)</string>
+    <string name="friends_requests_nav">Vänförfrågningar</string>
+    <string name="friends_add_dialog_title">Lägg till vän</string>
+    <string name="friends_add_dialog_body">Ange @användarnamnet på personen du vill lägga till.</string>
+    <string name="friends_username_label">Användarnamn</string>
+    <string name="friends_username_placeholder">@användarnamn</string>
+    <string name="friends_username_format_error">3–20 gemener, siffror eller understreck</string>
+    <string name="friends_send_request">Skicka förfrågan</string>
+    <string name="friends_cancel">Avbryt</string>
+    <string name="friends_decline">Avböj</string>
+    <string name="friends_accept">Acceptera</string>
+    <string name="friends_snackbar_request_sent">Vänförfrågan skickad till @%1$s</string>
+    <string name="friends_snackbar_already_friends">Du är redan vän med @%1$s</string>
+    <string name="friends_snackbar_request_already_sent">Du har redan skickat en förfrågan till @%1$s</string>
+    <string name="friends_snackbar_cannot_friend_self">Du kan inte lägga till dig själv</string>
+    <string name="friends_snackbar_handle_not_found">Ingen användare hittades med användarnamnet @%1$s</string>
+    <string name="friends_snackbar_request_unavailable">Den här förfrågan är inte längre tillgänglig</string>
+
+    <string name="freq_no_pending">Inga väntande förfrågningar</string>
+    <string name="freq_incoming">Inkommande (%1$d)</string>
+    <string name="freq_sent">Skickade (%1$d)</string>
+    <string name="freq_cancel">Avbryt</string>
+
+    <string name="edit_section_identity">Identitet</string>
+    <string name="edit_username_label">Användarnamn</string>
+    <string name="edit_username_hint">Unikt id för vänförfrågningar och inbjudningar. Gemener, siffror och _, 3–20 tecken.</string>
+    <string name="edit_display_name_label">Visningsnamn</string>
+    <string name="edit_display_name_hint">Visas i utmaningar och på leaderboard.</string>
+    <string name="edit_email_label">E-post</string>
+    <string name="edit_email_hint">Används för inloggning. Visas inte för andra.</string>
+    <string name="edit_section_avatar">Avatar</string>
+    <string name="edit_avatar_emoji">Emoji</string>
+    <string name="edit_avatar_flags">Flaggor</string>
+    <string name="edit_show_less">Visa mindre</string>
+    <string name="edit_show_all_flags">Visa alla %1$d flaggor</string>
+    <string name="edit_saving">Sparar…</string>
+    <string name="edit_save">Spara</string>
+    <string name="edit_saving_dialog">Sparar…</string>
+    <string name="edit_snackbar_avatar_error">Den avataren kan inte användas. Välj en annan.</string>
+    <string name="edit_error_username_taken">Det användarnamnet är redan taget</string>
+    <string name="edit_error_username_format">3–20 tecken: bara gemener, siffror och _</string>
+    <string name="edit_error_display_name_format">Visningsnamnet får vara högst 40 tecken</string>
+
+    <string name="player_not_found">Spelaren hittades inte</string>
+    <string name="player_head_to_head">Head to head</string>
+    <string name="player_no_shared_challenges">Inga gemensamma utmaningar än.</string>
+    <string name="player_head_to_head_record">Du: %1$d · De: %2$d · Oavgjort: %3$d</string>
+
+    <string name="me_guest_label">Gäst</string>
+    <string name="me_guest_body">Registrera dig för att behålla dina framsteg på alla enheter, gå med vänner och synas på leaderboards.</string>
+    <string name="me_sign_in_or_sign_up">Logga in eller registrera dig</string>
+    <string name="me_friends">Vänner</string>
+    <string name="me_edit_profile">Redigera profil</string>
+    <string name="me_sign_out">Logga ut</string>
+    <string name="me_delete_account">Ta bort konto</string>
+    <string name="me_delete_account_title">Ta bort konto?</string>
+    <string name="me_delete_account_body">Detta tar permanent bort ditt konto, tipsningar och vänner. Det går inte att ångra.</string>
+    <string name="me_delete">Ta bort</string>
+    <string name="me_cancel">Avbryt</string>
+    <string name="me_legal_section">Juridiskt</string>
+    <string name="me_terms_of_service">Användarvillkor</string>
+    <string name="me_privacy_policy">Integritetspolicy</string>
+    <string name="me_support">Support</string>
+
+    <string name="invite_pick_friends">Välj vänner att bjuda in</string>
+    <string name="invite_selected">%1$d valda</string>
+    <string name="invite_sending">Skickar…</string>
+    <string name="invite_button">Bjud in %1$d</string>
+    <string name="invite_no_friends">Inga vänner än — lägg till några först.</string>
+
+    <string name="about_section_title" translatable="false">Bragwise</string>
+    <string name="about_tagline">Tipsa. Tävla. Skryt.</string>
+    <string name="about_version">Version: %1$s</string>
+    <string name="about_open_source">Öppen källkod</string>
+    <string name="about_open_source_body">Byggt med Kotlin Multiplatform, Compose Multiplatform, Firebase och Koin.</string>
+
+    <string name="namegate_title">Välj ett namn</string>
+    <string name="namegate_label">Ditt namn</string>
+    <string name="namegate_placeholder">Så här ser vänner dig</string>
+    <string name="namegate_confirm">Fortsätt</string>
+    <string name="namegate_cancel">Avbryt</string>
+
+    <string name="deadline_pick_time_title">Välj tid</string>
+    <string name="deadline_next">Nästa</string>
+    <string name="deadline_cancel">Avbryt</string>
+    <string name="deadline_done">Klar</string>
+    <string name="deadline_locks_prefix">Låser: %1$s</string>
+    <string name="deadline_hint">Tipsningar låses vid denna tid</string>
+
+    <string name="country_clear_a11y">Rensa land</string>
+
+    <string name="cc_title_field">Titel</string>
+    <string name="cc_deadline_section">Deadline</string>
+    <string name="cc_who_can_join_section">Vem kan gå med</string>
+    <string name="cc_bets_visible_label">Tips synliga för andra</string>
+    <string name="cc_bets_visible_hint">Deltagare kan se varandras tipsningar</string>
+    <string name="cc_edit_bet_title">Redigera tips</string>
+    <string name="cc_add_bet_title">Lägg till tips</string>
+    <string name="cc_bet_cancel_a11y">Avbryt</string>
+    <string name="cc_custom_options">Egna alternativ</string>
+    <string name="cc_countries">Länder</string>
+    <string name="cc_question_label">Fråga</string>
+    <string name="cc_option_label">Alternativ %1$d</string>
+    <string name="cc_country_placeholder">Land %1$d</string>
+    <string name="cc_remove_bet_a11y">Ta bort tips</string>
+    <string name="cc_remove_option_a11y">Ta bort alternativ</string>
+    <string name="cc_add_option">+ Lägg till alternativ</string>
+    <string name="cc_add_country">+ Lägg till land</string>
+    <string name="cc_top_n_ranked">Topp N rankade</string>
+    <string name="cc_decrease_top_n_a11y">Minska topp N</string>
+    <string name="cc_increase_top_n_a11y">Öka topp N</string>
+    <string name="cc_save_bet">Spara tips</string>
+    <string name="cc_show_less">Visa mindre</string>
+    <string name="cc_show_more_options">… %1$d till · Tryck för att visa</string>
+    <string name="cc_saving_dialog">Sparar utmaning…</string>
+    <string name="cc_duplicate_options_error">Ta bort dubbletter innan du sparar</string>
+    <string name="cc_snackbar_nothing_to_save">Inget att spara än</string>
+    <string name="cc_snackbar_title_and_bet_required">Titel och minst ett tips krävs</string>
+    <string name="cc_snackbar_deadline_future">Deadline måste vara i framtiden</string>
+    <string name="cc_snackbar_no_reachable_invitees">Ingen av dina inbjudna vänner är nåbara — välj minst en</string>
+
+    <string name="nav_create_challenge_a11y">Skapa utmaning</string>
+</resources>
