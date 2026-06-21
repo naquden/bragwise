@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -146,7 +147,7 @@ private fun BetRow(
 ) {
     SectionCard(title = bet.title) {
         when (bet) {
-            is Bet.SinglePick -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            is Bet.SinglePick -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 bet.options.forEach { opt ->
                     val sel = (current as? PredictionPayload.SinglePick)?.optionId == opt.id
                     AppFilterChip(

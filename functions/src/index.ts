@@ -263,19 +263,12 @@ async function applyPredictions(
     throw new HttpsError('failed-precondition', 'challenge-locked');
   }
 
-  let friendEligible = false;
-  if (challenge.visibility === 'FRIENDS' && challenge.createdBy !== uid) {
-    const creatorSocial = await tx.get(
-      db.doc(`players/${challenge.createdBy}/private/social`),
-    );
-    friendEligible = creatorSocial.exists &&
-      (creatorSocial.data()!.friends ?? {})[uid] != null;
-  }
-
+  // FRIENDS and PROMOTED both use bearer-capability model: knowing the unguessable
+  // 20-char challenge ID is the share token. No friendship check needed.
   const isEligible =
     challenge.createdBy === uid ||
     challenge.visibility === 'PROMOTED' ||
-    friendEligible ||
+    challenge.visibility === 'FRIENDS' ||
     playerSnap.exists ||
     (await tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`))).exists;
 
