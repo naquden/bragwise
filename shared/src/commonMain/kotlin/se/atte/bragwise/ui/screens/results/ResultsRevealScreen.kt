@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -117,7 +118,7 @@ private fun ResultsRevealBody(
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             item {
@@ -147,7 +148,7 @@ private fun ResultsRevealBody(
                 Podium(
                     entries = data.leaderboard,
                     myUid = data.myUid,
-                    alreadySeen = false,
+                    alreadySeen = data.alreadySeen,
                     modifier = Modifier.fillMaxWidth().padding(
                         horizontal = standardPadding,
                         vertical = standardPadding,

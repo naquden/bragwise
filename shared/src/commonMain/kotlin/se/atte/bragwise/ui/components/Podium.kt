@@ -166,13 +166,13 @@ fun Podium(
             PodiumSlot(
                 entry = second,
                 plinthProgress = plinthProgress2.value,
-                plinthTargetHeight = baseHeight * 0.72f,
+                plinthTargetHeight = plinthHeightForRank(second.rank, baseHeight),
                 score = score2,
-                plinthColor = silverColor,
+                plinthColor = plinthColorForRank(second.rank),
                 myUid = myUid,
-                isWinner = false,
-                crownOffset = null,
-                glowAlpha = 0f,
+                isWinner = second.rank == 1,
+                crownOffset = if (second.rank == 1) crownOffset.value else null,
+                glowAlpha = if (second.rank == 1) glowAlpha.value else 0f,
             )
             Spacer(Modifier.width(8.dp))
         }
@@ -181,13 +181,13 @@ fun Podium(
             PodiumSlot(
                 entry = winner,
                 plinthProgress = plinthProgress1.value,
-                plinthTargetHeight = baseHeight,
+                plinthTargetHeight = plinthHeightForRank(winner.rank, baseHeight),
                 score = score1,
-                plinthColor = goldColor,
+                plinthColor = plinthColorForRank(winner.rank),
                 myUid = myUid,
-                isWinner = true,
-                crownOffset = crownOffset.value,
-                glowAlpha = glowAlpha.value,
+                isWinner = winner.rank == 1,
+                crownOffset = if (winner.rank == 1) crownOffset.value else null,
+                glowAlpha = if (winner.rank == 1) glowAlpha.value else 0f,
             )
         }
 
@@ -196,13 +196,13 @@ fun Podium(
             PodiumSlot(
                 entry = third,
                 plinthProgress = plinthProgress3.value,
-                plinthTargetHeight = baseHeight * 0.54f,
+                plinthTargetHeight = plinthHeightForRank(third.rank, baseHeight),
                 score = score3,
-                plinthColor = bronzeColor,
+                plinthColor = plinthColorForRank(third.rank),
                 myUid = myUid,
-                isWinner = false,
-                crownOffset = null,
-                glowAlpha = 0f,
+                isWinner = third.rank == 1,
+                crownOffset = if (third.rank == 1) crownOffset.value else null,
+                glowAlpha = if (third.rank == 1) glowAlpha.value else 0f,
             )
         }
     }
@@ -321,6 +321,18 @@ private fun PodiumSlot(
     }
 }
 
+private fun plinthColorForRank(rank: Int): Color = when (rank) {
+    1 -> goldColor
+    2 -> silverColor
+    else -> bronzeColor
+}
+
+private fun plinthHeightForRank(rank: Int, baseHeight: Dp): Dp = when (rank) {
+    1 -> baseHeight
+    2 -> baseHeight * 0.72f
+    else -> baseHeight * 0.54f
+}
+
 // region Previews
 
 @Preview
@@ -348,6 +360,22 @@ private fun Podium_Tie_Preview() {
                 LeaderboardEntry(uid = "u1", displayName = "Atte", avatarSeed = "a1", points = 92, rank = 1, isTied = true),
                 LeaderboardEntry(uid = "u2", displayName = "Alice", avatarSeed = "a3", points = 92, rank = 1, isTied = true),
                 LeaderboardEntry(uid = "u3", displayName = "Bob", avatarSeed = "a5", points = 65, rank = 3),
+            ),
+            myUid = "u1",
+            alreadySeen = true,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun Podium_AllTie_Preview() {
+    ThemePreview {
+        Podium(
+            entries = listOf(
+                LeaderboardEntry(uid = "u1", displayName = "Atte", avatarSeed = "a1", points = 0, rank = 1, isTied = true),
+                LeaderboardEntry(uid = "u2", displayName = "DiamanT HACker", avatarSeed = "a3", points = 0, rank = 1, isTied = true),
+                LeaderboardEntry(uid = "u3", displayName = "Aaron rik är bästa 100", avatarSeed = "a5", points = 0, rank = 1, isTied = true),
             ),
             myUid = "u1",
             alreadySeen = true,

@@ -18,11 +18,41 @@ There is no "not-yet-locked" gate in `postResults` (functions/src/index.ts),
 and the client enables the button for both `OPEN` and `LOCKED` status
 (`ChallengeDetailScreen.kt`).
 
-## Guests are restricted
+## Guests can have friends
 
-Guest accounts cannot create challenges and cannot have friends. These
-features require a non-guest (verified) account. Guests also cannot invite
-others or share challenges.
+Guest (anonymous) accounts have the **full friends feature**: they can send, accept,
+decline, withdraw, and unfriend. They can also reach the Friends screen from Me.
+
+Guests get a handle via `EnsureNamedAccount` → `claimHandle` (no verified-email gate),
+so they are discoverable by username and can receive friend requests from real accounts.
+
+All five friend callables (`sendFriendRequest`, `acceptFriendRequest`, `declineFriendRequest`,
+`withdrawFriendRequest`, `unfriend`) in `functions/src/index.ts` use only `requireAuth` +
+App Check + rate limits — NOT `requireVerifiedEmail`. Do not add that gate back.
+
+Guests still **cannot** create challenges, invite others, or share challenges. Those
+callables keep their `requireVerifiedEmail` gate.
+
+### How to verify this fix
+
+End-to-end steps on a real device (or emulator):
+
+1. **Setup:** sign in as user A (email-backed). Create a challenge. Have guest B join and
+   predict (guest picks a name on first action → gets a handle auto-assigned).
+2. **Send from A:** on the reveal screen (ParticipantBetsScreen), tap the add-friend icon
+   next to guest B. Confirm A sees "request sent" snackbar.
+3. **Guest receives notification:** device/emulator running as guest B should receive an
+   FCM push notification "New friend request".
+4. **Accept from guest:** as guest B, open Me → Friends (should open without redirecting
+   to sign-in). Tap Accept on A's incoming request. Confirm both A and B now list each
+   other as friends.
+5. **Guest send:** as guest B, tap "Add by username", enter A's handle. Confirm request
+   is sent. As A, accept. Both friends lists update.
+6. **Cleanup:** delete guest B's account (Settings → Delete account, or simulate
+   `purgeStaleGuests` 90-day path). After deletion:
+   - A's friends list no longer shows B.
+   - Firestore: no `friendships/{pairId}` doc containing B's uid should remain
+     (check console or emulator UI).
 
 ## Bet visibility
 

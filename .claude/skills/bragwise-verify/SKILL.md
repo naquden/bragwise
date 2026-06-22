@@ -311,13 +311,59 @@ Run sequentially. After each scenario, take a screenshot to `/tmp/ast-screenshot
 1. Tap `Continue as guest` → expect `Challenges` tab.
 2. Verify empty state (`No challenges yet`, `Create your first challenge`).
 3. Tap `Me` tab → expect `Guest` header.
-4. Tap `Friends` row → expect `Friends` screen, empty state.
+4. Tap `Friends` row → expect **`Friends` screen, empty state** (NOT a redirect to sign-in). This verifies the guest-friends nav fix — `AppNav.kt:343` now navigates all users directly to `RouteFriends`.
 5. Tap bottom `Add friend` → expect `Add a local friend` editor.
 6. Fill `Display name` = `Test Friend A`, tap `Save` → expect to return to `Friends` with `Local (1)` card.
 7. Tap the local row → expect `Local friend` alert dialog.
 8. Tap `Edit` → expect editor in edit mode (`Edit friend` title, `Remove friend` button present).
 9. Tap `Cancel` → back to `Friends`.
 10. Press back via `adb shell input keyevent KEYCODE_BACK` until at tabs; tap `Challenges` tab.
+
+### S1b — Guest prediction → challenge appears in list
+
+Verifies the fix in `PredictViewModel.submitNow()` that bootstraps an anonymous Firebase account at submit time so the cloud player doc is created and the challenge shows up in the list.
+
+**Pre-condition:** at least one PROMOTED challenge must exist (visible without sign-in). If there are no promoted challenges, mark S1b `BLOCKED — no promoted challenge` and skip.
+
+**Steps**
+
+1. From `Challenges` tab (guest, `SignedOut`), confirm a promoted challenge card is visible under `Promoted`.
+2. Tap the promoted challenge → `Challenge Detail`. Record the challenge title for step 8.
+3. Tap `Make predictions`.
+4. If the `NameGateDialog` appears (`needsName == true`), tap **Cancel** (the dismiss button). This exercises the dismissed-name-gate path.
+5. Fill all bets (any valid values), then tap `Save predictions`. Confirm the button label cycles through `Predict X/Y` → `Save predictions` → `Submitting…`.
+6. **Logcat assertions** — `Grep` `/tmp/bragwise-verify/logcat.txt` for `BRAGWISE_PRED_9c95cf`:
+   - Confirm `submit.start challengeId=<id> drafts=<n>` line is present (hit cloud path, not local).
+   - Confirm `submit.success challengeId=<id>` line is present.
+   - Confirm **no** `submit.local` line (that would mean local-only fallback fired instead).
+7. App pops back to `Challenge Detail`. Confirm the bottom button now reads `Edit predictions` (player doc exists on cloud, user is joined).
+8. Navigate to `Challenges` tab. Confirm the predicted challenge now appears under **`My Challenges`** (not only under `Promoted`). Match by the title recorded in step 2.
+9. **Me tab check:** tap `Me` tab → confirm header is still `Guest` (anonymous user, not fully authed). This confirms the bootstrap created an anonymous account, not a full account.
+10. Take screenshot `s1b-challenges-list.png`. Confirm both `My Challenges` section (with the predicted challenge) and `Promoted` section are visible.
+
+**PASS criteria (all must hold):** `submit.success` in logs, no `submit.local` in logs, challenge appears under `My Challenges`, `Me` tab shows `Guest`.
+
+**FAIL escalation:** check `BRAGWISE_PRED_9c95cf submit.*` logs first. If `submit.local` fired, `continueAsGuest()` failed (likely network/offline) — check `auth.continueAsGuest().isFailure` branch (`PredictViewModel.kt`). If `submit.start` never appears (local path took over before the new bootstrap), re-read `PredictViewModel.submitNow()` for the `isLocalOnly` check. If challenge doesn't appear in the list after `submit.success`, check `observeJoined` / `BRAGWISE_DBG_9c95cf joined.value` in logs for whether the collectionGroup query emitted.
+
+### S1c — Guest can accept a friend request
+
+Verifies that an anonymous guest can receive and accept a friend request from a real (email-backed) account. Requires two app sessions: signed-in user A on the device, guest B on an emulator (or vice-versa). If a second device/emulator is not available, mark S1c `BLOCKED — single device` and skip.
+
+**Pre-condition:** S1b completed (guest B has a handle from `EnsureNamedAccount`). User A is signed in.
+
+**Steps**
+
+1. **As A** — open the reveal/participant-bets screen for the challenge guest B participated in. Confirm B's row shows the add-friend icon (not `FRIENDS` or `REQUESTED`). Tap it. Confirm snackbar `Friend request sent`.
+2. **As B (guest device)** — wait for FCM push notification `New friend request`. If no notification after 15 s, proceed anyway (notifications may be suppressed in test).
+3. **As B** — `Me` tab → `Friends`. Confirm `Friends` screen opens (not sign-in redirect). Confirm an incoming request from A appears (pending section or inline chip depending on current screen layout).
+4. **As B** — tap `Accept` on A's request. Confirm B's Friends screen now shows A under `Friends (1)`.
+5. **As A** — navigate to `Friends` screen. Confirm B now appears under `Friends (1)`.
+6. **As B (guest)** — tap `Add by username` (or `Add friend`), enter A's handle. Confirm snackbar `Friend request sent`. (This tests guest → real account direction via `sendFriendRequest`.)
+7. **As A** — accept B's request (already friends — expect `already-friends` error snackbar or no-op, since step 4 made them friends). If they are not yet shown as friends on A's side due to eventual-consistency delay, wait 3 s and refresh.
+
+**PASS criteria (all must hold):** B's Friends screen opens without sign-in redirect; B can accept A's request; both sides show the friendship; B can initiate a friend request by username without a `email_unverified` error.
+
+**FAIL escalation:** if B sees `email_unverified` error on accept → `acceptFriendRequest` callable still has `requireVerifiedEmail` — check `functions/src/index.ts`. If Friends screen redirects B to sign-in → `AppNav.kt:343` reverted — check the nav gate. If B's Friends screen shows no incoming request → Firestore `onFriendshipWritten` trigger didn't project; check the `requestsIn` entry in B's `players/{uid}/private/social`.
 
 ### S2 — Email sign-in via Gmail (validates App Check + Auth + App Links)
 
@@ -373,6 +419,54 @@ For each case below: from `Challenges`, tap `+`, fill `Title`, choose visibility
 | C4 | `Friends` | 1 × Yes/No: `Will I win?` AND 1 × Single pick (3 opts): `Pick a fruit` → `Apple`, `Banana`, `Cherry` | `No` + `Cherry` |
 | C5 | `Friends` | 1 × Yes/No: `Save-draft probe` | (skip Publish — tap `Save draft` instead) → return to `Challenges`, verify the new draft appears under `My Challenges` and that opening it shows the same bet |
 
+### S5 — Podium tie rendering
+
+Verifies the fix where equal-points participants all get gold plinths + crown instead of one arbitrary winner.
+
+**Pre-condition:** a finished challenge must exist where every participant has the same final points (e.g. all 0 pts). If none exists, create a challenge, have 2+ test accounts join and make predictions on a bet with no correct answer resolved yet, then resolve without marking any outcome — or locate any challenge whose leaderboard shows all-#1 ranks.
+
+**Steps**
+
+1. Navigate to a finished challenge's result screen (Challenge Detail → tap the result / leaderboard flow that shows the podium).
+2. Take screenshot `s5-01-podium.png`.
+3. **Podium assertions (all must pass):**
+   - Every participant with `rank == 1` (shown as `#1` in the "All results" list) must appear on a **gold plinth** (same height as the tallest slot).
+   - Every rank-#1 slot must have a crown 👑 above the avatar. If `isTied = true`, expect 👑👑.
+   - No rank-#1 participant may be on a silver or bronze plinth.
+   - Lower-rank participants (rank > 1) must still have shorter silver/bronze plinths.
+4. Scroll down to "All results" list. Confirm every entry that is on a gold plinth above also shows `#1` in the list — not `#2` or `#3`.
+5. Confirm "You won!" banner appears for the current user if they are rank #1.
+6. Take screenshot `s5-02-allresults.png`. Confirm the ranks in the list match the plinth colors above.
+
+**PASS criteria (all must hold):** gold plinths for all rank-#1 entries, crown on every rank-#1 slot, "All results" list matches.
+
+**FAIL escalation:** plinth color/height/crown derive from `entry.rank` in `Podium.kt` (helpers `plinthColorForRank` / `plinthHeightForRank`, `isWinner = entry.rank == 1`). If a rank-#1 entry shows silver/bronze, the wrong slot is still getting the position-based styling — re-read `Podium()` (lines ~165–207) and confirm each `PodiumSlot` call passes rank-derived args, not hard-coded ones.
+
+### S5 — Display name propagation
+
+Verifies the dirty-flag + hourly sweep fix: a renamed user's new name eventually appears in challenge participant rows on other devices, and immediately on their own device.
+
+**Pre-condition:** user must be signed in (S2 passed). At least one challenge must exist where the signed-in user is a participant (any C1–C4 challenge from S4 qualifies). If none exist, mark S5 `BLOCKED — no joined challenge` and skip.
+
+**Steps**
+
+1. Navigate to `Me` tab. Record the current `displayName` shown as the header (e.g. `Alice`).
+2. Tap `Settings` row (leading `⚙`) → navigate to Edit profile screen. Confirm the `Display name` field shows the current name.
+3. Clear the field, type a new name (e.g. `Alice Renamed`), tap `Save`.
+4. **Firestore assertion — dirty flag set:** check `players/{uid}.participantSyncPending` in Firebase console (or emulator). Confirm the field equals `true`. If not set, the `updateProfile` change is missing — enter bug-pause.
+5. **Own-device immediate update:** navigate to a challenge from S4 that this user joined. Open `Challenge Detail`. Confirm the current user's participant row shows `Alice Renamed` (live override from `ChallengeDetailViewModel`). Do **not** wait for the sweep.
+6. Take screenshot `s5-01-own-device.png` showing the participant row with the new name.
+7. **Trigger the sweep manually** (Firebase console → Functions → `syncParticipantSnapshots` → Run now). Wait ~5 s.
+8. **Firestore assertion — flag cleared:** confirm `players/{uid}.participantSyncPending` no longer exists (field deleted).
+9. **Firestore assertion — snapshot updated:** confirm `challenges/{challengeId}.participants.{uid}.displayName` equals `Alice Renamed`.
+10. Take screenshot `s5-02-after-sweep.png` (Challenge Detail participant row still showing new name).
+11. **Leaderboard unaffected:** tap `Leaderboard` on the same challenge. Confirm the name shown there is also `Alice Renamed` (live `publicProfiles` lookup — should have been correct even before the sweep).
+12. **Rename back** to the original name via Edit profile to leave state clean. Confirm `participantSyncPending` is set again, trigger sweep again, confirm flag clears.
+
+**PASS criteria (all must hold):** `participantSyncPending == true` after rename, own device shows new name immediately (step 5), flag cleared after sweep (step 8), `challenges.participants.{uid}.displayName` updated (step 9), leaderboard correct throughout.
+
+**FAIL escalation:** if `participantSyncPending` not set → check `updateProfile` in `functions/src/index.ts` (`playerUpdates.participantSyncPending = true` block). If own device shows old name → check `ChallengeDetailViewModel.kt` `hasEntry` branch that replaces the self-participant. If sweep runs but flag not cleared → check `syncParticipantSnapshots` in `functions/src/triggers.ts`.
+
 ### Known gaps (record in the final report, do not attempt)
 
 The Create UI currently exposes only `Yes / No` and `Single pick (NONE)` ([`CreateChallengeScreen.kt:188–201`](../../../shared/src/commonMain/kotlin/se/atte/bragwise/ui/screens/create/CreateChallengeScreen.kt)). The following exist in the domain + Predict but are **not creatable from the UI**:
@@ -394,7 +488,7 @@ When a step fails (assertion didn't match, app crashed, screen got stuck, log in
 - Run `Grep` over `/tmp/ast-logcat.txt` for:
   - ` E ` (errors)
   - `AndroidRuntime` (crashes)
-  - `BRAGWISE_` (project debug tags — currently `BRAGWISE_SIGNIN_DBG_cf7943` is the only one)
+  - `BRAGWISE_` (project debug tags — `BRAGWISE_SIGNIN_DBG_cf7943` for auth, `BRAGWISE_PRED_9c95cf` for predict submit, `BRAGWISE_DBG_9c95cf` for challenge list/joined)
   - exact scenario keywords (e.g. the title used in C2)
 
 ### 2. Diagnose
@@ -408,7 +502,11 @@ Cross-reference log evidence with the source. Start narrow — `Grep` for the sp
 | Create button disabled when it shouldn't be | [`CreateChallengeScreen.kt:251–268`](../../../shared/src/commonMain/kotlin/se/atte/bragwise/ui/screens/create/CreateChallengeScreen.kt) — confirm validation rules |
 | Publish fails / snackbar `Title and at least one bet required` | [`CreateChallengeViewModel.kt:115–120`](../../../shared/src/commonMain/kotlin/se/atte/bragwise/ui/screens/create/CreateChallengeViewModel.kt), backend Zod schema [`functions/src/schemas.ts`](../../../functions/src/schemas.ts) |
 | Predict submit blocked / wrong label | [`PredictScreen.kt:115–127`](../../../shared/src/commonMain/kotlin/se/atte/bragwise/ui/screens/predict/PredictScreen.kt) (requires `drafts.size == bets.size`) |
+| Guest prediction goes local-only (`submit.local` in logs, S1b) | `PredictViewModel.submitNow()` — `continueAsGuest()` failed (offline?) or `authState.first { signedInUid != null }` timed out; cloud player doc not created → challenge invisible in list |
+| Guest prediction succeeds but challenge missing from list (S1b) | Check `BRAGWISE_DBG_9c95cf joined.value size=` in logs; if size=0, player doc wasn't created server-side or collectionGroup query on `players` blocked — check Firestore rules and `players.uid` COLLECTION_GROUP index in `firebase/firestore.indexes.json` |
 | Backend `auth-required` after sign-in | [`functions/src/lib/middleware.ts:12–16`](../../../functions/src/lib/middleware.ts); confirm `Firebase.auth.currentUser` in `BRAGWISE_SIGNIN_DBG_cf7943 completeSignInWithLink.result` log line |
+| Guest → `Friends` screen redirects to sign-in | `AppNav.kt:343` — should be `navController.navigate(RouteFriends)` unconditionally, not gated on `isFullyAuthed` |
+| Guest friend callable returns `email_unverified` | `functions/src/index.ts` — confirm `requireVerifiedEmail(req)` line is absent from `acceptFriendRequest`, `sendFriendRequest`, `declineFriendRequest`, `withdrawFriendRequest`, `unfriend` |
 
 ### 3. Apply a minimal fix
 

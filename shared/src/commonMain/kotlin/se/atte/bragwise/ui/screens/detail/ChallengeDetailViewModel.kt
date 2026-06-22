@@ -82,20 +82,29 @@ class ChallengeDetailViewModel(
             profile.observeMe(),
         ) { detail, authState, me ->
             val uid = (authState as? AuthState.SignedIn)?.uid
-            val updatedDetail = if (uid != null && me != null &&
-                detail.myPredictions.isNotEmpty() &&
-                !detail.challenge.participants.any { it.uid == uid }
-            ) {
+            val updatedDetail = if (uid != null && me != null) {
+                val hasEntry = detail.challenge.participants.any { it.uid == uid }
+                val needsAdd = !hasEntry && detail.myPredictions.isNotEmpty()
                 val selfParticipant = se.atte.bragwise.domain.ParticipantInfo(
                     uid = uid,
                     displayName = me.displayName,
                     avatarSeed = me.avatarSeed,
                 )
-                detail.copy(
-                    challenge = detail.challenge.copy(
-                        participants = detail.challenge.participants + selfParticipant,
-                    ),
-                )
+                when {
+                    needsAdd -> detail.copy(
+                        challenge = detail.challenge.copy(
+                            participants = detail.challenge.participants + selfParticipant,
+                        ),
+                    )
+                    hasEntry -> detail.copy(
+                        challenge = detail.challenge.copy(
+                            participants = detail.challenge.participants.map {
+                                if (it.uid == uid) selfParticipant else it
+                            },
+                        ),
+                    )
+                    else -> detail
+                }
             } else {
                 detail
             }

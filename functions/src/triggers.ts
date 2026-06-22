@@ -610,6 +610,66 @@ export const purgeStaleGuests = onSchedule('every 24 hours', async () => {
   }
 });
 
+// ─── syncParticipantSnapshots ─────────────────────────────────────────────────
+
+/**
+ * Hourly. Propagates display name / avatar changes to the denormalized
+ * `participants.{uid}` snapshot on every challenge the user has joined.
+ *
+ * `updateProfile` marks the player doc with `participantSyncPending: true`
+ * when displayName or avatarSeed changes. This sweep processes only those
+ * docs, keeping costs near-zero when no one has renamed.
+ *
+ * Idempotent: re-delivery rewrites the same values and re-clears the flag.
+ */
+export const syncParticipantSnapshots = onSchedule('every 60 minutes', async () => {
+  for (;;) {
+    const snap = await db
+      .collection('players')
+      .where('participantSyncPending', '==', true)
+      .limit(200)
+      .get();
+    if (snap.empty) break;
+
+    await Promise.allSettled(
+      snap.docs.map(async (playerDoc) => {
+        const uid = playerDoc.id;
+        const data = playerDoc.data();
+        const displayName: string = data.displayName ?? 'Someone';
+        const avatarSeed: string = data.avatarSeed ?? uid;
+
+        const playerDocs = await db.collectionGroup('players').where('uid', '==', uid).get();
+        const challengeIds = [
+          ...new Set(
+            playerDocs.docs
+              .map((d) => d.ref.parent.parent?.id)
+              .filter((id): id is string => id != null),
+          ),
+        ];
+
+        for (const ids of chunk(challengeIds, 499)) {
+          const batch = db.batch();
+          for (const cid of ids) {
+            batch.update(db.doc(`challenges/${cid}`), {
+              [`participants.${uid}.displayName`]: displayName,
+              [`participants.${uid}.avatarSeed`]: avatarSeed,
+            });
+          }
+          batch.update(playerDoc.ref, { participantSyncPending: FieldValue.delete() });
+          await batch.commit();
+        }
+
+        // If the user has no joined challenges, just clear the flag.
+        if (challengeIds.length === 0) {
+          await playerDoc.ref.update({ participantSyncPending: FieldValue.delete() });
+        }
+      }),
+    );
+
+    if (snap.size < 200) break;
+  }
+});
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function chunk<T>(arr: T[], size: number): T[][] {

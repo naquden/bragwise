@@ -118,12 +118,17 @@ export const updateProfile = onCall(async (req: CallableRequest<unknown>) => {
 
   if (Object.keys(updates).length <= 1) return;
 
+  const playerUpdates = { ...updates };
+  if (payload.displayName !== undefined || payload.avatarSeed !== undefined) {
+    playerUpdates.participantSyncPending = true;
+  }
+
   await db.runTransaction(async (tx) => {
     if (payload.handle !== undefined) {
       await applyHandleChange(tx, uid, payload.handle, profileRef);
     }
     tx.set(profileRef, updates, { merge: true });
-    tx.set(playerRef, updates, { merge: true });
+    tx.set(playerRef, playerUpdates, { merge: true });
   });
 });
 
