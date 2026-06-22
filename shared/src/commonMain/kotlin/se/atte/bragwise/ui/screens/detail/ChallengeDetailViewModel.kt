@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.ChallengeGoneException
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.shareUrlForChallenge
@@ -19,6 +20,7 @@ import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
+import kotlin.concurrent.Volatile
 
 /**
  * CH-01 Challenge Detail. Worked example from plan §5. ViewModel never
@@ -35,6 +37,15 @@ class ChallengeDetailViewModel(
 ) : ScreenViewModel<ChallengeDetailViewModel.State, ChallengeDetailViewModel.Intent, ChallengeDetailViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
+
+    @Volatile
+    private var deletedEmitted = false
+    private fun emitDeleted() {
+        if (!deletedEmitted) {
+            deletedEmitted = true
+            emitEffect(Effect.Deleted)
+        }
+    }
 
     data class State(
         val ui: UiState<ChallengeDetail>,
@@ -118,8 +129,14 @@ class ChallengeDetailViewModel(
         }
             .distinctUntilChanged()
             .catch { e ->
-                update { it.copy(ui = UiState.Failed(e.toCause())) }
-                errorReporter.report(e)
+                if (e is ChallengeGoneException ||
+                    (e is FirebaseFunctionsException && e.code == FunctionsExceptionCode.NOT_FOUND)
+                ) {
+                    emitDeleted()
+                } else {
+                    update { it.copy(ui = UiState.Failed(e.toCause())) }
+                    errorReporter.report(e)
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -137,10 +154,10 @@ class ChallengeDetailViewModel(
             Intent.ConfirmDelete -> viewModelScope.launch {
                 update { it.copy(confirmingDelete = false) }
                 challenges.deleteChallenge(challengeId)
-                    .onSuccess { emitEffect(Effect.Deleted) }
+                    .onSuccess { emitDeleted() }
                     .onFailure { e ->
                         if (e is FirebaseFunctionsException && e.code == FunctionsExceptionCode.NOT_FOUND) {
-                            emitEffect(Effect.Deleted)
+                            emitDeleted()
                         } else {
                             errorReporter.report(e)
                         }

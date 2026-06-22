@@ -8,7 +8,10 @@ import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.functions.FirebaseFunctions
 import dev.gitlive.firebase.functions.functions
+import dev.gitlive.firebase.firestore.FirebaseFirestoreException
+import dev.gitlive.firebase.firestore.FirestoreExceptionCode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
@@ -28,6 +31,9 @@ import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.scoring.competitionRanks
+
+/** Thrown when a Firestore PERMISSION_DENIED indicates the challenge no longer exists for this user. */
+class ChallengeGoneException : Exception("challenge-gone")
 
 class ChallengeRemoteDataSource(
     private val db: FirebaseFirestore = Firebase.firestore,
@@ -81,9 +87,12 @@ class ChallengeRemoteDataSource(
                     if (ids.isEmpty()) return@flatMapLatest flowOf(emptyList())
                     combine(
                         ids.map { challengeId ->
-                            db.document("challenges/$challengeId").snapshots.map { snap ->
-                                runCatching { if (snap.exists) snap.toChallenge() else null }.getOrNull()
-                            }
+                            db.document("challenges/$challengeId").snapshots
+                                .map { snap -> runCatching { if (snap.exists) snap.toChallenge() else null }.getOrNull() }
+                                .catch { e ->
+                                    if (e is FirebaseFirestoreException && e.code == FirestoreExceptionCode.PERMISSION_DENIED) emit(null)
+                                    else throw e
+                                }
                         },
                     ) { challenges -> challenges.filterNotNull() }
                 },
@@ -107,6 +116,13 @@ class ChallengeRemoteDataSource(
     fun observeChallengeDetail(challengeId: String, myUid: String): Flow<ChallengeDetail> = flow {
         val challengeFlow = db.document("challenges/$challengeId").snapshots
             .map { snap -> snap.toChallenge() }
+            .catch { e ->
+                if (e is FirebaseFirestoreException && e.code == FirestoreExceptionCode.PERMISSION_DENIED) {
+                    // Challenge was deleted — rethrow as a recognisable sentinel so the
+                    // detail screen navigates away instead of showing an error.
+                    throw ChallengeGoneException()
+                } else throw e
+            }
         val playerFlow = if (myUid.isEmpty()) {
             flowOf(emptyMap<String, se.atte.bragwise.domain.PredictionPayload>())
         } else {
