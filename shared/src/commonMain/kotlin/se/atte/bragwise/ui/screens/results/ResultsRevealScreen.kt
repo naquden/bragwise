@@ -223,7 +223,6 @@ private fun ResultsRevealBody(
                     LeaderboardRow(
                         entry = entry,
                         isMe = entry.uid == data.myUid,
-                        animationDelay = index * 60,
                         onClick = { onParticipantClick(entry.uid) },
                     )
                 }
@@ -231,7 +230,7 @@ private fun ResultsRevealBody(
                 data.myEntryOutsideField?.let { pinnedEntry ->
                     item(key = "pinned_self") {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = standardPadding))
-                        LeaderboardRow(entry = pinnedEntry, isMe = true, animationDelay = 0, onClick = { onParticipantClick(pinnedEntry.uid) })
+                        LeaderboardRow(entry = pinnedEntry, isMe = true, onClick = { onParticipantClick(pinnedEntry.uid) })
                     }
                 }
             }
@@ -297,47 +296,32 @@ private fun YourResultBanner(
 }
 
 @Composable
-private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, animationDelay: Int, onClick: () -> Unit) {
-    var visible by remember { mutableStateOf(animationDelay == 0) }
-    LaunchedEffect(entry.uid) {
-        if (animationDelay > 0) {
-            delay(animationDelay.toLong())
-            visible = true
-        }
-    }
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(animationSpec = tween(durationMillis = 200)) + slideInVertically(
-            animationSpec = tween(durationMillis = 200),
-            initialOffsetY = { it / 3 },
-        ),
+private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, onClick: () -> Unit) {
+    val backgroundModifier = if (isMe) {
+        Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
+    } else Modifier
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(backgroundModifier)
+            .clickable(onClick = onClick)
+            .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(standardPadding),
     ) {
-        val backgroundModifier = if (isMe) {
-            Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
-        } else Modifier
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(backgroundModifier)
-                .clickable(onClick = onClick)
-                .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(standardPadding),
-        ) {
-            RankChip(rank = entry.rank)
-            AvatarBubble(
-                displayName = entry.displayName,
-                avatarSeed = entry.avatarSeed,
-                size = 36.dp,
-                isHighlighted = isMe,
-            )
-            Text(
-                text = if (isMe) "${entry.displayName} (you)" else entry.displayName,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-            PointsPill(points = entry.points)
-        }
+        RankChip(rank = entry.rank)
+        AvatarBubble(
+            displayName = entry.displayName,
+            avatarSeed = entry.avatarSeed,
+            size = 36.dp,
+            isHighlighted = isMe,
+        )
+        Text(
+            text = if (isMe) "${entry.displayName} (you)" else entry.displayName,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        PointsPill(points = entry.points)
     }
 }
 
@@ -393,6 +377,35 @@ private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
                 friendUids = setOf("u2"),
                 alreadySeen = true,
                 iAmCreator = true,
+            ),
+            friendsOnly = false,
+            onToggleFriendsFilter = {},
+            onParticipantClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewTie() {
+    val entries = listOf(
+        LeaderboardEntry(uid = "u1", displayName = "Atte", avatarSeed = "a1", points = 92, rank = 1),
+        LeaderboardEntry(uid = "u2", displayName = "Alice", avatarSeed = "a3", points = 92, rank = 1),
+        LeaderboardEntry(uid = "u4", displayName = "Carol", avatarSeed = "a7", points = 92, rank = 1),
+        LeaderboardEntry(uid = "u3", displayName = "Bob", avatarSeed = "a5", points = 76, rank = 4),
+    )
+    ThemePreview {
+        ResultsRevealBody(
+            data = ResultsRevealViewModel.RevealData(
+                challengeTitle = "Champions League Final",
+                leaderboard = entries,
+                allLeaderboard = entries,
+                myUid = "u1",
+                myRank = 1,
+                myPoints = 92,
+                participantCount = 4,
+                friendUids = setOf("u2", "u3"),
+                alreadySeen = true,
             ),
             friendsOnly = false,
             onToggleFriendsFilter = {},
