@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.isFullyAuthed
+import se.atte.bragwise.data.signedInUid
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
@@ -37,6 +39,7 @@ class EditProfileViewModel(
         val usernameError: UiText? = null,
         val displayNameError: UiText? = null,
         val email: String? = null,
+        val isFullyAuthed: Boolean = false,
     )
 
     sealed interface Intent {
@@ -70,9 +73,17 @@ class EditProfileViewModel(
 
         auth.authState
             .onEach { authState ->
-                val signedIn = authState is AuthState.SignedIn
                 val email = (authState as? AuthState.SignedIn)?.email
-                update { it.copy(email = email, initialised = it.initialised || signedIn) }
+                val fullyAuthed = authState.isFullyAuthed
+                update {
+                    it.copy(
+                        email = email,
+                        isFullyAuthed = fullyAuthed,
+                        // Always mark initialised once auth state resolves (including SignedOut/guest),
+                        // so the Save button is enabled for browsing guests who want to name themselves.
+                        initialised = it.initialised || authState !is AuthState.Loading,
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -94,6 +105,13 @@ class EditProfileViewModel(
                 viewModelScope.launch {
                     update { it.copy(saving = true) }
                     val s = state.value
+                    if (auth.authState.value.signedInUid == null) {
+                        auth.continueAsGuest().onFailure {
+                            errorReporter.report(it)
+                            update { st -> st.copy(saving = false) }
+                            return@launch
+                        }
+                    }
                     val usernameChanged = s.username != s.originalUsername && s.username.isNotBlank()
                     profiles.updateProfile(
                         displayName = s.displayName.takeIf { it.isNotBlank() },

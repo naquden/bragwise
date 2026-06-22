@@ -110,7 +110,8 @@ fun MeScreen(
         else -> MeContent(
             player = state.player,
             email = state.email,
-            isSignedIn = state.isSignedIn,
+            hasAccount = state.hasAccount,
+            isFullyAuthed = state.isFullyAuthed,
             themeMode = state.themeMode,
             language = state.language,
             notificationsEnabled = state.notificationsEnabled,
@@ -154,7 +155,8 @@ fun MeScreen(
 private fun MeContent(
     player: Player?,
     email: String?,
-    isSignedIn: Boolean,
+    hasAccount: Boolean,
+    isFullyAuthed: Boolean,
     themeMode: ThemeMode,
     language: AppLanguage,
     notificationsEnabled: Boolean,
@@ -177,11 +179,32 @@ private fun MeContent(
             .padding(standardPadding),
     ) {
         SectionCard {
-            if (!isSignedIn) {
+            if (player != null) {
+                Text(text = player.displayName, style = MaterialTheme.typography.headlineLarge)
                 Text(
-                    text = player?.displayName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.me_guest_label),
+                    text = "@${player.username}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            } else if (isFullyAuthed) {
+                Text(
+                    text = stringResource(Res.string.me_logged_in),
                     style = MaterialTheme.typography.headlineLarge,
                 )
+                Text(
+                    text = email ?: "",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            } else {
+                Text(
+                    text = stringResource(Res.string.me_guest_label),
+                    style = MaterialTheme.typography.headlineLarge,
+                )
+            }
+            if (!isFullyAuthed) {
                 Text(
                     text = stringResource(Res.string.me_guest_body),
                     style = MaterialTheme.typography.bodyLarge,
@@ -194,25 +217,6 @@ private fun MeContent(
                         .padding(top = standardPadding),
                     onClick = onSignIn,
                 ) { Text(stringResource(Res.string.me_sign_in_or_sign_up)) }
-            } else if (player != null) {
-                Text(text = player.displayName, style = MaterialTheme.typography.headlineLarge)
-                Text(
-                    text = "@${player.username}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            } else {
-                Text(
-                    text = stringResource(Res.string.me_logged_in),
-                    style = MaterialTheme.typography.headlineLarge,
-                )
-                Text(
-                    text = email ?: "",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
             }
         }
 
@@ -225,10 +229,8 @@ private fun MeContent(
                 leadingIcon = { Icon(imageVector = Lucide.UsersRound, contentDescription = null) },
                 onClick = onFriends,
             )
-            if (isSignedIn) {
-                ListGroupDivider()
-                ListRow(title = stringResource(Res.string.me_edit_profile), onClick = onEditProfile)
-            }
+            ListGroupDivider()
+            ListRow(title = stringResource(Res.string.me_edit_profile), onClick = onEditProfile)
         }
 
         SectionGap()
@@ -240,7 +242,7 @@ private fun MeContent(
             ThemePickerRow(current = themeMode, onSelect = onSetTheme)
             ListGroupDivider()
             LanguagePickerRow(current = language, onSelect = onSetLanguage)
-            if (isSignedIn) {
+            if (hasAccount) {
                 ListGroupDivider()
                 NotificationToggleRow(enabled = notificationsEnabled, onToggle = onSetNotifications)
             }
@@ -266,7 +268,7 @@ private fun MeContent(
             )
         }
 
-        if (isSignedIn) {
+        if (hasAccount) {
             SectionGap()
             ListGroup {
                 ListRow(
@@ -376,12 +378,44 @@ private fun ThemePickerRow(current: ThemeMode, onSelect: (ThemeMode) -> Unit) {
 
 @Preview
 @Composable
-private fun MeContent_Guest_Preview() {
+private fun MeContent_BrowsingGuest_Preview() {
     ThemePreview {
         MeContent(
             player = null,
             email = null,
-            isSignedIn = false,
+            hasAccount = false,
+            isFullyAuthed = false,
+            themeMode = ThemeMode.System,
+            language = AppLanguage.System,
+            notificationsEnabled = true,
+            onFriends = {},
+            onEditProfile = {},
+            onAbout = {},
+            onSignOut = {},
+            onSignIn = {},
+            onSetTheme = {},
+            onSetLanguage = {},
+            onSetNotifications = {},
+            onRequestDelete = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun MeContent_NamedGuest_Preview() {
+    ThemePreview {
+        MeContent(
+            player = Player(
+                uid = "u1",
+                username = "bravefox821",
+                displayName = "Alex",
+                avatarSeed = "😎",
+                createdAt = Instant.fromEpochSeconds(0),
+            ),
+            email = null,
+            hasAccount = true,
+            isFullyAuthed = false,
             themeMode = ThemeMode.System,
             language = AppLanguage.System,
             notificationsEnabled = true,
@@ -411,7 +445,8 @@ private fun MeContent_SignedIn_Preview() {
                 createdAt = Instant.fromEpochSeconds(0),
             ),
             email = "atte@example.com",
-            isSignedIn = true,
+            hasAccount = true,
+            isFullyAuthed = true,
             themeMode = ThemeMode.System,
             language = AppLanguage.System,
             notificationsEnabled = true,

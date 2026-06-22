@@ -29,6 +29,7 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.edit_error_username_taken
+import bragwise.shared.generated.resources.edit_guest_note
 import bragwise.shared.generated.resources.edit_avatar_emoji
 import bragwise.shared.generated.resources.edit_avatar_flags
 import bragwise.shared.generated.resources.edit_display_name_hint
@@ -112,6 +113,15 @@ private fun EditProfileContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (!state.isFullyAuthed) {
+                item {
+                    Text(
+                        text = stringResource(Res.string.edit_guest_note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             item {
                 SectionCard(title = stringResource(Res.string.edit_section_identity)) {
                     OutlinedTextField(

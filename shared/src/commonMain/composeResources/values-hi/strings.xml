@@ -212,6 +212,7 @@
     <string name="edit_error_username_taken">यह उपयोगकर्ता नाम पहले से लिया गया है</string>
     <string name="edit_error_username_format">3–20 वर्ण: केवल छोटे अक्षर, संख्या और _</string>
     <string name="edit_error_display_name_format">प्रदर्शन नाम 40 वर्ण या कम होना चाहिए</string>
+    <string name="edit_guest_note">अपना खाता सुरक्षित करने, चैलेंज बनाने और दोस्त जोड़ने के लिए साइन अप करें</string>
 
     <string name="player_not_found">खिलाड़ी नहीं मिला</string>
     <string name="player_head_to_head">आमने-सामने</string>
@@ -248,7 +249,7 @@
     <string name="namegate_confirm">जारी रखें</string>
     <string name="namegate_cancel">रद्द करें</string>
 
-    <string name="deadline_pick_time_title">समय चुनें (UTC)</string>
+    <string name="deadline_pick_time_title">समय चुनें</string>
     <string name="deadline_next">अगला</string>
     <string name="deadline_cancel">रद्द करें</string>
     <string name="deadline_done">हो गया</string>

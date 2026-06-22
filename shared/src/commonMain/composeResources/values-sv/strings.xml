@@ -214,6 +214,7 @@
     <string name="edit_error_username_taken">Det användarnamnet är redan taget</string>
     <string name="edit_error_username_format">3–20 tecken: bara gemener, siffror och _</string>
     <string name="edit_error_display_name_format">Visningsnamnet får vara högst 40 tecken</string>
+    <string name="edit_guest_note">Registrera dig för att säkerhetskopiera ditt konto, skapa utmaningar och lägga till vänner</string>
 
     <string name="player_not_found">Spelaren hittades inte</string>
     <string name="player_head_to_head">Head to head</string>

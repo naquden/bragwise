@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AppLanguage
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.LanguagePrefs
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.ThemePrefs
@@ -28,19 +29,16 @@ class MeViewModel(
 ) {
 
     /**
-     * Auth-aware Me state. `isSignedIn` is the canonical session signal
-     * (sourced from `AuthRepository.authState`); `player` is the optional
-     * Firestore profile that may lag behind auth (or never arrive if the
-     * `updateProfile` callable hasn't been called yet).
+     * Auth-aware Me state.
      *
      * Rendering rules:
-     *   - `isLoading`                 -> spinner
-     *   - `!isSignedIn`               -> Guest UI
-     *   - `isSignedIn && player==null`-> spinner (profile loading)
-     *   - `isSignedIn && player!=null`-> full signed-in UI
+     *   - `isLoading`    -> spinner
+     *   - `hasAccount`   -> show notifications / sign-out / delete-account rows
+     *   - `isFullyAuthed`-> hide the sign-up upgrade CTA
      */
     data class State(
-        val isSignedIn: Boolean = false,
+        val hasAccount: Boolean = false,
+        val isFullyAuthed: Boolean = false,
         val isLoading: Boolean = true,
         val player: Player? = null,
         val email: String? = null,
@@ -76,27 +74,22 @@ class MeViewModel(
         combine(auth.authState, profile.observeMe()) { authState, player ->
             when (authState) {
                 AuthState.Loading -> StateAuth(
-                    isSignedIn = false,
+                    hasAccount = false,
+                    isFullyAuthed = false,
                     isLoading = true,
                     player = null,
                     email = null,
                 )
                 AuthState.SignedOut -> StateAuth(
-                    isSignedIn = false,
+                    hasAccount = false,
+                    isFullyAuthed = false,
                     isLoading = false,
                     player = null,
                     email = null,
                 )
-                is AuthState.SignedIn -> if (authState.isAnonymous) StateAuth(
-                    // Anonymous guest: render the Guest UI (sign-up CTA), not the
-                    // full account UI with edit-profile / delete-account.
-                    // Pass the player through so the name is shown when available.
-                    isSignedIn = false,
-                    isLoading = false,
-                    player = player,
-                    email = null,
-                ) else StateAuth(
-                    isSignedIn = true,
+                is AuthState.SignedIn -> StateAuth(
+                    hasAccount = true,
+                    isFullyAuthed = authState.isFullyAuthed,
                     isLoading = false,
                     player = player,
                     email = authState.email,
@@ -106,7 +99,8 @@ class MeViewModel(
             .onEach { s ->
                 update {
                     it.copy(
-                        isSignedIn = s.isSignedIn,
+                        hasAccount = s.hasAccount,
+                        isFullyAuthed = s.isFullyAuthed,
                         isLoading = s.isLoading,
                         player = s.player,
                         email = s.email,
@@ -163,7 +157,8 @@ class MeViewModel(
     }
 
     private data class StateAuth(
-        val isSignedIn: Boolean,
+        val hasAccount: Boolean,
+        val isFullyAuthed: Boolean,
         val isLoading: Boolean,
         val player: Player?,
         val email: String?,

@@ -241,6 +241,7 @@
     <string name="edit_error_username_taken">That username is already taken</string>
     <string name="edit_error_username_format">3–20 characters: lowercase letters, numbers and _ only</string>
     <string name="edit_error_display_name_format">Display name must be 40 characters or fewer</string>
+    <string name="edit_guest_note">Sign up to back up your account, create challenges, and add friends.</string>
 
     <!-- Player profile screen. -->
     <string name="player_not_found">Player not found</string>
@@ -287,7 +288,7 @@
     <string name="namegate_cancel">Cancel</string>
 
     <!-- DeadlinePicker component. -->
-    <string name="deadline_pick_time_title">Pick time (UTC)</string>
+    <string name="deadline_pick_time_title">Pick time</string>
     <string name="deadline_next">Next</string>
     <string name="deadline_cancel">Cancel</string>
     <string name="deadline_done">Done</string>

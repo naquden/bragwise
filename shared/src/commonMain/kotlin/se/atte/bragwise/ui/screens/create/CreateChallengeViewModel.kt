@@ -26,6 +26,7 @@ import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.mvi.ScreenViewModel
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /** Single-screen challenge creator/editor — title, visibility and bets all on one form. */
@@ -48,7 +49,7 @@ class CreateChallengeViewModel(
         val title: String = "",
         val category: String = "Other",
         val visibility: Visibility = Visibility.FRIENDS,
-        val locksAt: Instant = Clock.System.now() + 7.days,
+        val locksAt: Instant = Clock.System.now() + 1.hours,
         val bets: List<Bet> = emptyList(),
         val betSeq: Int = 0,
         val invitedUids: Set<String> = emptySet(),

@@ -212,6 +212,7 @@
     <string name="edit_error_username_taken">Ese nombre de usuario ya está en uso</string>
     <string name="edit_error_username_format">3–20 caracteres: solo letras minúsculas, números y _</string>
     <string name="edit_error_display_name_format">El nombre para mostrar debe tener 40 caracteres o menos</string>
+    <string name="edit_guest_note">Regístrate para guardar tu cuenta, crear desafíos y añadir amigos</string>
 
     <string name="player_not_found">Jugador no encontrado</string>
     <string name="player_head_to_head">Uno contra uno</string>
@@ -248,7 +249,7 @@
     <string name="namegate_confirm">Continuar</string>
     <string name="namegate_cancel">Cancelar</string>
 
-    <string name="deadline_pick_time_title">Elige hora (UTC)</string>
+    <string name="deadline_pick_time_title">Elige hora</string>
     <string name="deadline_next">Siguiente</string>
     <string name="deadline_cancel">Cancelar</string>
     <string name="deadline_done">Hecho</string>
