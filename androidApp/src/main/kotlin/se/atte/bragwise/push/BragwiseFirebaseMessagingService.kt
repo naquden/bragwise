@@ -6,6 +6,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import se.atte.bragwise.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import org.koin.android.ext.android.inject
@@ -40,7 +42,9 @@ class BragwiseFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setColor(ContextCompat.getColor(this, R.color.ic_launcher_background))
+            .setColorized(false)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
