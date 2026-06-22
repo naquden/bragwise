@@ -116,7 +116,7 @@ private fun ResultsRevealBody(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(0.dp),

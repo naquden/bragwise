@@ -6,7 +6,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -22,6 +21,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
 import kotlin.random.Random
+import se.atte.bragwise.theme.LocalIsDark
 import se.atte.bragwise.theme.ThemePreview
 
 private data class Sparkle(
@@ -49,7 +49,7 @@ private fun generateSparkles(count: Int, seed: Int): List<Sparkle> {
 
 @Composable
 fun PlatinumBackground(modifier: Modifier = Modifier) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDark.current
     val seed = remember { 0x5A1A } // deterministic field (avoids Math.random in script)
     val sparkles = remember(seed) { generateSparkles(count = 34, seed = seed) }
 

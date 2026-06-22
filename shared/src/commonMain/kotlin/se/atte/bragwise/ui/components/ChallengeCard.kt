@@ -2,7 +2,6 @@ package se.atte.bragwise.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +26,7 @@ import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.theme.Elevation
+import se.atte.bragwise.theme.LocalIsDark
 import se.atte.bragwise.theme.appShadow
 
 /**
@@ -45,7 +45,7 @@ fun ChallengeCard(
     surfaceColor: Color = Unspecified,
     modifier: Modifier = Modifier,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDark.current
     val shape = MaterialTheme.shapes.medium
     val accentBorder = if (accent) {
         Modifier.border(2.dp, MaterialTheme.colorScheme.secondary, shape)

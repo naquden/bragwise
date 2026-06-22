@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -32,6 +31,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import se.atte.bragwise.theme.LocalIsDark
 
 /**
  * Duolingo-style "pressed-up" primary CTA button. Uses tertiary (green) as
@@ -52,7 +52,7 @@ fun AppButton(
     role: AppButtonRole = AppButtonRole.Primary,
     content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDark.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 

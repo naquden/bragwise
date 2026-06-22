@@ -2,7 +2,6 @@ package se.atte.bragwise.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.theme.Elevation
+import se.atte.bragwise.theme.LocalIsDark
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.theme.appShadow
@@ -51,7 +51,7 @@ fun SectionCard(
         androidx.compose.foundation.layout.PaddingValues(standardPadding),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDark.current
     val shape = MaterialTheme.shapes.medium
     Surface(
         modifier = modifier
@@ -86,7 +86,7 @@ fun ListGroup(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDark.current
     val shape = MaterialTheme.shapes.medium
     Surface(
         modifier = modifier

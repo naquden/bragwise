@@ -1,7 +1,7 @@
 package se.atte.bragwise.ui.screens.challenges
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import se.atte.bragwise.theme.LocalIsDark
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -230,7 +230,7 @@ private fun ChallengesContent(
 
 @Composable
 private fun InvitationRow(invitation: Invitation, onClick: (String) -> Unit, surfaceColor: Color) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDark.current
     val shape = MaterialTheme.shapes.medium
     Surface(
         modifier = Modifier
