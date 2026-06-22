@@ -454,6 +454,7 @@ fun AppNav() {
                     val route = entry.toRoute<RouteParticipantBets>()
                     ParticipantBetsScreen(
                         viewModel = koinViewModel<ParticipantBetsViewModel> { parametersOf(route.challengeId, route.uid) },
+                        snackbarHostState = snackbarHostState,
                     )
                 }
                 composable<RouteInvite> { entry ->
@@ -490,6 +491,9 @@ fun AppNav() {
                     val route = entry.toRoute<RouteResultsReveal>()
                     ResultsRevealScreen(
                         viewModel = koinViewModel<ResultsRevealViewModel> { parametersOf(route.challengeId) },
+                        onParticipantClick = { uid ->
+                            navController.navigate(RouteParticipantBets(challengeId = route.challengeId, uid = uid))
+                        },
                     )
                 }
                 composable<RouteWelcome> {

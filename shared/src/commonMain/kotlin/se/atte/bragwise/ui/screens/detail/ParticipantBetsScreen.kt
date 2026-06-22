@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,10 +25,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.pb_add_friend
+import bragwise.shared.generated.resources.pb_already_friends
+import bragwise.shared.generated.resources.pb_friend_requested
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.components.AvatarBubble
@@ -39,8 +48,19 @@ import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 
 @Composable
-fun ParticipantBetsScreen(viewModel: ParticipantBetsViewModel) {
+fun ParticipantBetsScreen(
+    viewModel: ParticipantBetsViewModel,
+    snackbarHostState: SnackbarHostState,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    ObserveEffects(effects = viewModel.effects) { effect ->
+        when (effect) {
+            is ParticipantBetsViewModel.Effect.Snackbar ->
+                snackbarHostState.showSnackbar(getString(effect.message.res, *effect.message.args.toTypedArray()))
+        }
+    }
+
     when (val ui = state.ui) {
         UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -55,12 +75,18 @@ fun ParticipantBetsScreen(viewModel: ParticipantBetsViewModel) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        is UiState.Ready -> ParticipantBetsContent(data = ui.data)
+        is UiState.Ready -> ParticipantBetsContent(
+            data = ui.data,
+            onAddFriend = { viewModel.onIntent(ParticipantBetsViewModel.Intent.SendFriendRequest) },
+        )
     }
 }
 
 @Composable
-private fun ParticipantBetsContent(data: ParticipantBetsViewModel.Data) {
+private fun ParticipantBetsContent(
+    data: ParticipantBetsViewModel.Data,
+    onAddFriend: () -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(standardPadding),
@@ -69,6 +95,7 @@ private fun ParticipantBetsContent(data: ParticipantBetsViewModel.Data) {
         item {
             SectionCard {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -77,10 +104,41 @@ private fun ParticipantBetsContent(data: ParticipantBetsViewModel.Data) {
                         avatarSeed = data.participant.avatarSeed,
                         size = 40.dp,
                     )
-                    Text(
-                        text = data.participant.displayName,
-                        style = MaterialTheme.typography.headlineSmall,
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = data.participant.displayName,
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+                        if (!data.username.isNullOrBlank()) {
+                            Text(
+                                text = "@${data.username}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    when (data.friendState) {
+                        ParticipantBetsViewModel.FriendState.CAN_ADD -> {
+                            Button(onClick = onAddFriend) {
+                                Text(stringResource(Res.string.pb_add_friend))
+                            }
+                        }
+                        ParticipantBetsViewModel.FriendState.REQUESTED -> {
+                            Button(onClick = {}, enabled = false) {
+                                Text(stringResource(Res.string.pb_friend_requested))
+                            }
+                        }
+                        ParticipantBetsViewModel.FriendState.FRIENDS -> {
+                            Text(
+                                text = stringResource(Res.string.pb_already_friends),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = standardPaddingSmall),
+                            )
+                        }
+                        ParticipantBetsViewModel.FriendState.SELF,
+                        ParticipantBetsViewModel.FriendState.NOT_FRIENDABLE -> Unit
+                    }
                 }
             }
         }
@@ -157,7 +215,10 @@ private fun ParticipantBets_Preview() {
                 bets = bets,
                 predictions = predictions,
                 results = mapOf("b1" to PredictionPayload.BooleanProp(true)),
+                username = "alice",
+                friendState = ParticipantBetsViewModel.FriendState.CAN_ADD,
             ),
+            onAddFriend = {},
         )
     }
 }

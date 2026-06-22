@@ -93,6 +93,9 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             uid = params.get<String>(),
             challenges = get(),
+            profiles = get(),
+            social = get(),
+            auth = get(),
             errorReporter = get(),
         )
     }

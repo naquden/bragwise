@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,7 +59,10 @@ import se.atte.bragwise.ui.components.PointsPill
 import se.atte.bragwise.ui.components.RankChip
 
 @Composable
-fun ResultsRevealScreen(viewModel: ResultsRevealViewModel) {
+fun ResultsRevealScreen(
+    viewModel: ResultsRevealViewModel,
+    onParticipantClick: (uid: String) -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showConfetti by remember { mutableStateOf(false) }
     ObserveEffects(effects = viewModel.effects) { effect ->
@@ -85,6 +89,7 @@ fun ResultsRevealScreen(viewModel: ResultsRevealViewModel) {
                 data = ui.data,
                 friendsOnly = state.friendsOnly,
                 onToggleFriendsFilter = { viewModel.onIntent(ResultsRevealViewModel.Intent.ToggleFriendsFilter) },
+                onParticipantClick = onParticipantClick,
             )
         }
         if (showConfetti) Confetti(modifier = Modifier.fillMaxSize())
@@ -96,6 +101,7 @@ private fun ResultsRevealBody(
     data: ResultsRevealViewModel.RevealData,
     friendsOnly: Boolean,
     onToggleFriendsFilter: () -> Unit,
+    onParticipantClick: (uid: String) -> Unit,
 ) {
     var showBanner by remember { mutableStateOf(data.alreadySeen) }
     var showField by remember { mutableStateOf(data.alreadySeen) }
@@ -217,13 +223,14 @@ private fun ResultsRevealBody(
                         entry = entry,
                         isMe = entry.uid == data.myUid,
                         animationDelay = index * 60,
+                        onClick = { onParticipantClick(entry.uid) },
                     )
                 }
 
                 data.myEntryOutsideField?.let { pinnedEntry ->
                     item(key = "pinned_self") {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = standardPadding))
-                        LeaderboardRow(entry = pinnedEntry, isMe = true, animationDelay = 0)
+                        LeaderboardRow(entry = pinnedEntry, isMe = true, animationDelay = 0, onClick = { onParticipantClick(pinnedEntry.uid) })
                     }
                 }
             }
@@ -289,7 +296,7 @@ private fun YourResultBanner(
 }
 
 @Composable
-private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, animationDelay: Int) {
+private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, animationDelay: Int, onClick: () -> Unit) {
     var visible by remember { mutableStateOf(animationDelay == 0) }
     LaunchedEffect(entry.uid) {
         if (animationDelay > 0) {
@@ -311,6 +318,7 @@ private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, animationDela
             modifier = Modifier
                 .fillMaxWidth()
                 .then(backgroundModifier)
+                .clickable(onClick = onClick)
                 .padding(horizontal = standardPadding, vertical = standardPaddingSmall),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(standardPadding),
@@ -358,6 +366,7 @@ private fun ResultsRevealBody_Preview() {
             ),
             friendsOnly = false,
             onToggleFriendsFilter = {},
+            onParticipantClick = {},
         )
     }
 }
@@ -386,6 +395,7 @@ private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
             ),
             friendsOnly = false,
             onToggleFriendsFilter = {},
+            onParticipantClick = {},
         )
     }
 }

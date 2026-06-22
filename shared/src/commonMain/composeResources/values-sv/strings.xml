@@ -294,4 +294,11 @@
     <string name="cc_snackbar_no_reachable_invitees">Ingen av dina inbjudna vänner är nåbara — välj minst en</string>
 
     <string name="nav_create_challenge_a11y">Skapa utmaning</string>
+
+    <!-- Participant bets screen (pb_). -->
+    <string name="pb_add_friend">Lägg till vän</string>
+    <string name="pb_friend_requested">Förfrågan skickad</string>
+    <string name="pb_already_friends">Vänner</string>
+    <string name="pb_snackbar_request_sent">Vänförfrågan skickad till @%1$s</string>
+    <string name="pb_snackbar_request_failed">Kunde inte skicka förfrågan — försök igen</string>
 </resources>

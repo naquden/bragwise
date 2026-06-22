@@ -330,4 +330,11 @@
 
     <!-- AppNav. -->
     <string name="nav_create_challenge_a11y">Create challenge</string>
+
+    <!-- Participant bets screen (pb_). -->
+    <string name="pb_add_friend">Add friend</string>
+    <string name="pb_friend_requested">Requested</string>
+    <string name="pb_already_friends">Friends</string>
+    <string name="pb_snackbar_request_sent">Friend request sent to @%1$s</string>
+    <string name="pb_snackbar_request_failed">Couldn\'t send request — try again</string>
 </resources>
