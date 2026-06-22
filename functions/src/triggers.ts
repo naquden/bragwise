@@ -274,6 +274,7 @@ async function processDeleteChecklist(uid: string): Promise<void> {
       steps: {
         handles: 'pending',
         friend_refs: 'pending',
+        friendships: 'pending',
         players_subs: 'pending',
         players_subcoll: 'pending',
         invitations: 'pending',
@@ -341,6 +342,21 @@ async function processDeleteChecklist(uid: string): Promise<void> {
     }
   }
   await tick('friend_refs');
+
+  // Step 2b: delete canonical friendships/{pairId} docs that include this uid.
+  for (;;) {
+    const fsSnap = await db
+      .collection('friendships')
+      .where('members', 'array-contains', uid)
+      .limit(500)
+      .get();
+    if (fsSnap.empty) break;
+    const batch = db.batch();
+    for (const doc of fsSnap.docs) batch.delete(doc.ref);
+    await batch.commit();
+    if (fsSnap.size < 500) break;
+  }
+  await tick('friendships');
 
   // Step 3: private subcollections
   const privateDocs = await db.collection(`players/${uid}/private`).listDocuments();

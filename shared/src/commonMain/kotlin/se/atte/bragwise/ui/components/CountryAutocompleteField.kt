@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import se.atte.bragwise.ui.standardPadding
+import se.atte.bragwise.ui.InputLimits
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.searchCountries
 import org.jetbrains.compose.resources.stringResource
@@ -65,8 +66,10 @@ fun CountryAutocompleteField(
         OutlinedTextField(
             value = value.label,
             onValueChange = { text ->
-                // Typing always clears the country lock — user must re-select
-                onChange(value.copy(label = text, countryCode = null))
+                if (text.length <= InputLimits.BET_OPTION) {
+                    // Typing always clears the country lock — user must re-select
+                    onChange(value.copy(label = text, countryCode = null))
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,

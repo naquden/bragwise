@@ -514,7 +514,6 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
 export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'sendFriendRequest', 86400, 50);
   const { handle } = validate(SendFriendRequestSchema, req.data);
 
@@ -543,7 +542,6 @@ export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) =>
 export const acceptFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'acceptFriendRequest', 3600, 100);
   const { requesterUid } = validate(FriendRequestActionSchema, req.data);
 
@@ -557,7 +555,6 @@ export const acceptFriendRequest = onCall(async (req: CallableRequest<unknown>) 
 export const declineFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'declineFriendRequest', 3600, 100);
   const { requesterUid } = validate(FriendRequestActionSchema, req.data);
 
@@ -571,7 +568,6 @@ export const declineFriendRequest = onCall(async (req: CallableRequest<unknown>)
 export const withdrawFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'withdrawFriendRequest', 3600, 100);
   const { otherUid } = validate(WithdrawFriendRequestSchema, req.data);
 
@@ -585,7 +581,6 @@ export const withdrawFriendRequest = onCall(async (req: CallableRequest<unknown>
 export const unfriend = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'unfriend', 3600, 50);
   const { otherUid } = validate(UnfriendSchema, req.data);
 
@@ -611,6 +606,7 @@ export const deleteAccount = onCall(async (req: CallableRequest<unknown>) => {
     steps: {
       handles: 'pending',
       friend_refs: 'pending',
+      friendships: 'pending',
       players_subs: 'pending',
       players_subcoll: 'pending',
       invitations: 'pending',

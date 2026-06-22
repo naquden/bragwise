@@ -76,6 +76,7 @@ import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.ui.components.LoadingDialog
 import se.atte.bragwise.ui.components.NameGateDialog
+import se.atte.bragwise.ui.InputLimits
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -213,7 +214,7 @@ fun CreateChallengeScreen(
                 SectionCard {
                     OutlinedTextField(
                         value = state.title,
-                        onValueChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetTitle(it)) },
+                        onValueChange = { if (it.length <= InputLimits.CHALLENGE_TITLE) viewModel.onIntent(CreateChallengeViewModel.Intent.SetTitle(it)) },
                         label = { Text(stringResource(Res.string.cc_title_field)) },
                         modifier = Modifier.fillMaxWidth().testTag("create_title"),
                         singleLine = true,
@@ -530,7 +531,7 @@ private fun BetEditor(
         }
         OutlinedTextField(
             value = question,
-            onValueChange = onQuestionChange,
+            onValueChange = { if (it.length <= InputLimits.BET_TITLE) onQuestionChange(it) },
             label = { Text(stringResource(Res.string.cc_question_label)) },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_bet_question"),
             singleLine = true,
@@ -700,7 +701,9 @@ private fun OptionsEditor(
                 OutlinedTextField(
                     value = value,
                     onValueChange = { updated ->
-                        onOptionsChange(options.toMutableList().also { it[index] = updated })
+                        if (updated.length <= InputLimits.BET_OPTION) {
+                            onOptionsChange(options.toMutableList().also { it[index] = updated })
+                        }
                     },
                     label = { Text(stringResource(Res.string.cc_option_label, index + 1)) },
                     modifier = Modifier.weight(1f),

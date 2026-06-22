@@ -62,6 +62,7 @@ import se.atte.bragwise.ui.components.FlagImage
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.components.allFlagCodes
 import se.atte.bragwise.ui.components.emojiAvatars
+import se.atte.bragwise.ui.InputLimits
 import se.atte.bragwise.ui.components.flagSeed
 
 @Composable
@@ -126,7 +127,7 @@ private fun EditProfileContent(
                 SectionCard(title = stringResource(Res.string.edit_section_identity)) {
                     OutlinedTextField(
                         value = state.username,
-                        onValueChange = onSetUsername,
+                        onValueChange = { if (it.length <= InputLimits.HANDLE) onSetUsername(it) },
                         label = { Text(stringResource(Res.string.edit_username_label)) },
                         prefix = { Text("@") },
                         enabled = !state.saving,
@@ -141,7 +142,7 @@ private fun EditProfileContent(
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.displayName,
-                        onValueChange = onSetDisplayName,
+                        onValueChange = { if (it.length <= InputLimits.DISPLAY_NAME) onSetDisplayName(it) },
                         label = { Text(stringResource(Res.string.edit_display_name_label)) },
                         enabled = !state.saving,
                         isError = state.displayNameError != null,

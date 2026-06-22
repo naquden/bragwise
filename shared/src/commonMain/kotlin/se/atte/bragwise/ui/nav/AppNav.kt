@@ -340,7 +340,7 @@ fun AppNav() {
                         viewModel = koinViewModel<MeViewModel>(),
                         snackbarHostState = snackbarHostState,
                         onNavigateToFriends = {
-                            if (authState.isFullyAuthed) navController.navigate(RouteFriends) else navController.navigate(RouteSignIn)
+                            navController.navigate(RouteFriends)
                         },
                         onNavigateToSignIn = { navController.navigate(RouteSignIn) },
                         onNavigateToEditProfile = { navController.navigate(RouteEditProfile) },

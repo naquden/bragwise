@@ -17,8 +17,7 @@ import bragwise.shared.generated.resources.namegate_confirm
 import bragwise.shared.generated.resources.namegate_label
 import bragwise.shared.generated.resources.namegate_placeholder
 import bragwise.shared.generated.resources.namegate_title
-
-private const val MAX_DISPLAY_NAME = 40
+import se.atte.bragwise.ui.InputLimits
 
 /**
  * Just-in-time name capture dialog. Shown the first time a user tries to
@@ -41,7 +40,7 @@ fun NameGateDialog(
         text = {
             OutlinedTextField(
                 value = name,
-                onValueChange = { if (it.length <= MAX_DISPLAY_NAME) name = it },
+                onValueChange = { if (it.length <= InputLimits.DISPLAY_NAME) name = it },
                 label = { Text(stringResource(Res.string.namegate_label)) },
                 placeholder = { Text(stringResource(Res.string.namegate_placeholder)) },
                 singleLine = true,

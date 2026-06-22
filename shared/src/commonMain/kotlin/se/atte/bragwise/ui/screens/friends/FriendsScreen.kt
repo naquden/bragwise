@@ -61,6 +61,7 @@ import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingLarge
 import se.atte.bragwise.ui.standardPaddingSmall
+import se.atte.bragwise.ui.InputLimits
 import kotlin.time.Instant
 
 @Composable
@@ -278,7 +279,7 @@ private fun AddFriendDialog(
                 Spacer(Modifier.height(standardPadding))
                 OutlinedTextField(
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = { if (it.length <= InputLimits.HANDLE) username = it },
                     label = { Text(stringResource(Res.string.friends_username_label)) },
                     placeholder = { Text(stringResource(Res.string.friends_username_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
