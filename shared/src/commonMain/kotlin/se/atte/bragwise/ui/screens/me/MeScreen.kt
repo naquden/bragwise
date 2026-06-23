@@ -1,12 +1,13 @@
 package se.atte.bragwise.ui.screens.me
 
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -341,16 +342,17 @@ private fun LanguagePickerRow(current: AppLanguage, onSelect: (AppLanguage) -> U
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },
-            modifier = Modifier.heightIn(max = 280.dp),
         ) {
-            AppLanguage.entries.forEach { lang ->
-                DropdownMenuItem(
-                    text = { Text(lang.label()) },
-                    onClick = {
-                        onSelect(lang)
-                        open = false
-                    },
-                )
+            LazyColumn {
+                items(AppLanguage.entries) { lang ->
+                    DropdownMenuItem(
+                        text = { Text(lang.label()) },
+                        onClick = {
+                            onSelect(lang)
+                            open = false
+                        },
+                    )
+                }
             }
         }
     }
