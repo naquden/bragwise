@@ -54,6 +54,11 @@ class EnsureNamedAccount(
         runCatching { claimGeneratedUsername(trimmed) }
     }
 
+    /** Best-effort: auto-claims a username derived from [displayName] when the user has none. */
+    suspend fun ensureUsername(displayName: String) {
+        runCatching { claimGeneratedUsername(displayName) }
+    }
+
     private suspend fun claimGeneratedUsername(displayName: String) {
         val base = UsernameGenerator.base(displayName)
         val candidates = UsernameGenerator.candidates(base)

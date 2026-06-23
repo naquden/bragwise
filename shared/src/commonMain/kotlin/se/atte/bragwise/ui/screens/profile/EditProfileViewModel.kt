@@ -8,6 +8,7 @@ import bragwise.shared.generated.resources.edit_snackbar_avatar_error
 import androidx.lifecycle.viewModelScope
 import dev.gitlive.firebase.functions.FirebaseFunctionsException
 import dev.gitlive.firebase.functions.FunctionsExceptionCode
+import dev.gitlive.firebase.functions.code
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -15,6 +16,8 @@ import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.signedInUid
+import se.atte.bragwise.data.EnsureNamedAccount
+import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
@@ -23,6 +26,8 @@ import se.atte.bragwise.mvi.UiText
 class EditProfileViewModel(
     private val profiles: ProfileRepository,
     private val auth: AuthRepository,
+    private val ensureNamedAccount: EnsureNamedAccount,
+    private val onboardingPrefs: OnboardingPrefs,
     private val errorReporter: ErrorReporter,
 ) : ScreenViewModel<EditProfileViewModel.State, EditProfileViewModel.Intent, EditProfileViewModel.Effect>(
     initialState = State(),
@@ -117,7 +122,16 @@ class EditProfileViewModel(
                         displayName = s.displayName.takeIf { it.isNotBlank() },
                         username = if (usernameChanged) s.username else null,
                         avatarSeed = s.avatarSeed.takeIf { it.isNotBlank() },
-                    ).onSuccess { emitEffect(Effect.Saved) }
+                    ).onSuccess {
+                        val trimmedName = s.displayName.trim().takeIf { it.isNotBlank() }
+                        if (trimmedName != null) {
+                            onboardingPrefs.chosenName = trimmedName
+                            if (s.originalUsername.isBlank()) {
+                                ensureNamedAccount.ensureUsername(trimmedName)
+                            }
+                        }
+                        emitEffect(Effect.Saved)
+                    }
                         .onFailure { error ->
                             val msg = (error as? FirebaseFunctionsException)?.message ?: error.message ?: ""
                             val code = (error as? FirebaseFunctionsException)?.code
