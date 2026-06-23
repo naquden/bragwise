@@ -5,7 +5,6 @@ import bragwise.shared.generated.resources.predict_snackbar_save_failed
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -138,9 +137,6 @@ class PredictViewModel(
                 saveLocally()
                 return
             }
-            // authState is async (Firebase authStateChanged); await the transition
-            // before continuing so signedInUid is non-null when we read it below.
-            auth.authState.first { it.signedInUid != null }
         }
         // If we have no bets at all it means Firestore's security rules blocked the
         // bets field — the user does not have access to this challenge.  Surface a

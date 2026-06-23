@@ -155,6 +155,7 @@ class FirebaseAuthRepository(
         remote.signOut()
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
+        localPredictions.clear()
     }
 
     override suspend fun deleteAccount(): Result<Unit> = runCatching {
