@@ -185,7 +185,9 @@ fun AppNav() {
             val deepLink = parseDeepLink(url) ?: return@collect
             pushNotifications.markDeepLinkConsumed()
             when (deepLink) {
-                is DeepLink.Challenge -> navController.navigate(RouteChallengeDetail(deepLink.id))
+                is DeepLink.Challenge -> navController.navigate(RouteChallengeDetail(deepLink.id)) {
+                    launchSingleTop = true
+                }
             }
         }
     }
