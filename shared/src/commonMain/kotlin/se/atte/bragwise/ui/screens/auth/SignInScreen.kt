@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -97,6 +98,7 @@ private fun SignInContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
             .padding(16.dp),
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {

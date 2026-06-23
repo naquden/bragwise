@@ -10,5 +10,6 @@ enum class AppLanguage(val tag: String, val nativeName: String?) {
     Italian("it", "Italiano"),
     Portuguese("pt", "Português"),
     Russian("ru", "Русский"),
+    Swedish("sv", "Svenska"),
     ChineseSimplified("zh-CN", "中文（简体）"),
 }

@@ -87,5 +87,6 @@ fun Throwable.toCause(): Cause = when {
     message?.contains("cannot-friend-self", ignoreCase = true) == true -> Cause.CannotFriendSelf
     message?.contains("handle-not-found", ignoreCase = true) == true -> Cause.HandleNotFound
     message?.contains("not-found", ignoreCase = true) == true -> Cause.NotFound
+    message?.contains("email_unverified", ignoreCase = true) == true -> Cause.EmailUnverified
     else -> Cause.Unknown(message)
 }

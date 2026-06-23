@@ -3,12 +3,14 @@ package se.atte.bragwise.ui.screens.friends
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -80,8 +82,10 @@ private fun FriendRequestsContent(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding(),
+        contentPadding = PaddingValues(standardPadding),
         verticalArrangement = Arrangement.spacedBy(standardPadding),
     ) {
         if (incoming.isNotEmpty()) {

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -337,7 +338,11 @@ private fun LanguagePickerRow(current: AppLanguage, onSelect: (AppLanguage) -> U
             trailing = current.label(),
             onClick = { open = true },
         )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            modifier = Modifier.heightIn(max = 280.dp),
+        ) {
             AppLanguage.entries.forEach { lang ->
                 DropdownMenuItem(
                     text = { Text(lang.label()) },

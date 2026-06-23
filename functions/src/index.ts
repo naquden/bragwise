@@ -466,7 +466,6 @@ export const recomputeLeaderboard = onCall(async (req: CallableRequest<unknown>)
 export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
   verifyAppCheck(req);
   const uid = requireAuth(req);
-  requireVerifiedEmail(req);
   await rateLimit(uid, 'inviteFriends', 3600, 30);
   const { challengeId, uids } = validate(InviteFriendsSchema, req.data);
 
