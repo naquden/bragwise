@@ -33,6 +33,30 @@ If yes, create the account on demand. If no, defer.
 
 **Verification:** Check `PredictViewModel` and `EnsureNamedAccount` for the bootstrap pattern.
 
+## Dead users and stale data cleanup
+
+**Dead users and orphaned data must be cleaned up aggressively.** Every deleted user cascades a 10-step cleanup:
+
+1. `handles/{handle}` — claimed handles
+2. Friend references — removed from all friends' social docs and head-to-head records
+3. `friendships/{pairId}` — all canonical friendship docs involving user
+4. `players/{uid}/private/*` — all private subcollections (social, preferences, counters, etc.)
+5. `challenges/{challengeId}/players/{uid}` — all challenge membership; leaderboards recomputed if results posted
+6. `challenges/{challengeId}/invitations/{uid}` — all stale invitations to user
+7. Push tokens — all registered `players/{uid}/pushTokens/*`
+8. Public profile — `publicProfiles/{uid}`
+9. Root player doc — `players/{uid}`
+10. Firebase Auth user (already deleted, trigger fires from this)
+
+**Stale friend requests and invitations are cleaned up with the user**, not orphaned.
+
+**Scheduled cleanup jobs** (functions/src/triggers.ts):
+- **`purgeStaleGuests`** (daily): Delete anonymous accounts inactive >90 days → triggers full 10-step cascade
+- **`purgeOldChallenges`** (daily): Delete challenges with results posted >90 days old, or created >90 days ago with no results yet
+- **`reconcileDeletions`** (hourly): Resume any deletions still pending after 24h (idempotent resumable pattern)
+
+Why: Firestore doesn't cascade-delete subcollections; all cleanup is explicit. Idempotent pattern allows resumable deletions on failure. Aggressive TTLs (90 days) prevent dead data from accumulating. Reference: `functions/src/triggers.ts:253-611` and `functions/src/index.ts:596-626`.
+
 ## Bet visibility
 
 Bets are visible to other users when the challenge has the "show all bets"
