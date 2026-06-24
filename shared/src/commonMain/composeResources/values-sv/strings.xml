@@ -141,6 +141,8 @@
     <string name="results_finished_count">%1$d avslutade</string>
     <string name="results_empty_title">Inga resultat än</string>
     <string name="results_empty_body">Avslutade utmaningar visas här.</string>
+    <string name="results_menu_archive">Arkivera</string>
+    <string name="results_menu_mark_unseen">Markera som osedd</string>
 
     <string name="predict_no_bets">Inga tips</string>
     <string name="predict_yes">Ja</string>

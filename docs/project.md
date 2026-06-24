@@ -177,6 +177,19 @@ There is no "not-yet-locked" gate in `postResults` (functions/src/index.ts),
 and the client enables the button for both `OPEN` and `LOCKED` status
 (`ChallengeDetailScreen.kt`).
 
+## Head-to-head (H2H) records: friend timing matters
+
+**H2H records are created when a challenge resolves between friends, not retroactively.**
+
+If two users become friends AFTER a resolved challenge they both participated in:
+- They **will not** get an H2H record for that past challenge
+- H2H only generates for NEW challenges that resolve after they're friends
+- No `onFriendshipWritten` trigger recomputes old challenges (keeps change small and avoids expensive retroactive work)
+
+If the gap matters later, the backfill can be re-run to retroactively compute H2H for all past resolved challenges between friends.
+
+Why: Retroactively recomputing H2H for all past challenges on every friendship write is expensive. Users mainly care about ongoing H2H tracking; historical backfill is an opt-in operation.
+
 ---
 
 # Platform & Infrastructure

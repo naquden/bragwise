@@ -162,6 +162,8 @@
     <string name="results_finished_count">%1$d finished</string>
     <string name="results_empty_title">No results yet</string>
     <string name="results_empty_body">Finished challenges will appear here.</string>
+    <string name="results_menu_archive">Archive</string>
+    <string name="results_menu_mark_unseen">Mark as unseen</string>
 
     <!-- Predict screen. -->
     <string name="predict_no_bets">No bets</string>

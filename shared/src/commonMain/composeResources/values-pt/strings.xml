@@ -139,6 +139,8 @@
     <string name="results_finished_count">%1$d concluído</string>
     <string name="results_empty_title">Sem resultados ainda</string>
     <string name="results_empty_body">Desafios concluídos aparecerão aqui.</string>
+    <string name="results_menu_archive">Arquivar</string>
+    <string name="results_menu_mark_unseen">Marcar como não visto</string>
 
     <string name="predict_no_bets">Sem apostas</string>
     <string name="predict_yes">Sim</string>

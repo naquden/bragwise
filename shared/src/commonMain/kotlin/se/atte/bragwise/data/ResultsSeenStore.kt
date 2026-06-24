@@ -16,7 +16,18 @@ class ResultsSeenStore(
     val seenIds: Flow<Set<String>> =
         queries.seenResultAll().asFlow().mapToList(dispatcher).map { it.toSet() }
 
+    val archivedIds: Flow<Set<String>> =
+        queries.archivedResultAll().asFlow().mapToList(dispatcher).map { it.toSet() }
+
     fun markSeen(challengeId: String) {
         queries.seenResultInsert(challengeId)
+    }
+
+    fun markUnseen(challengeId: String) {
+        queries.seenResultDelete(challengeId)
+    }
+
+    fun archive(challengeId: String) {
+        queries.archivedResultInsert(challengeId)
     }
 }

@@ -139,6 +139,8 @@
     <string name="results_finished_count">%1$d beendet</string>
     <string name="results_empty_title">Noch keine Ergebnisse</string>
     <string name="results_empty_body">Abgeschlossene Herausforderungen werden hier angezeigt.</string>
+    <string name="results_menu_archive">Archivieren</string>
+    <string name="results_menu_mark_unseen">Als ungesehen markieren</string>
 
     <string name="predict_no_bets">Keine Wetten</string>
     <string name="predict_yes">Ja</string>

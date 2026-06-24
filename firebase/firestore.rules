@@ -114,6 +114,10 @@ service cloud.firestore {
       allow write: if false;          // friend callables + onFriendshipWritten trigger
     }
 
+    match /adminJobs/{id} {
+      allow read, write: if false;    // server-only; trigger via Firebase Console
+    }
+
     match /deletionRequests/{uid} {
       allow read, write: if false;    // server-only checklist
     }

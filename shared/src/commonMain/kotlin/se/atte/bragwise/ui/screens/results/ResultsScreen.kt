@@ -1,6 +1,5 @@
 package se.atte.bragwise.ui.screens.results
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +13,16 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,6 +43,8 @@ import bragwise.shared.generated.resources.results_empty_body
 import bragwise.shared.generated.resources.results_empty_title
 import bragwise.shared.generated.resources.results_finished_count
 import bragwise.shared.generated.resources.results_history
+import bragwise.shared.generated.resources.results_menu_archive
+import bragwise.shared.generated.resources.results_menu_mark_unseen
 import bragwise.shared.generated.resources.results_new_count
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Trophy
@@ -63,13 +69,18 @@ fun ResultsScreen(viewModel: ResultsViewModel, onNavigateToReveal: (challengeId:
     ResultsBody(
         state = state,
         onChallenge = { viewModel.onIntent(ResultsViewModel.Intent.OpenReveal(challengeId = it)) },
+        onArchive = { viewModel.onIntent(ResultsViewModel.Intent.Archive(challengeId = it)) },
+        onMarkUnseen = { viewModel.onIntent(ResultsViewModel.Intent.MarkUnseen(challengeId = it)) },
     )
 }
 
 @Composable
-private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> Unit) {
-    // Platinum backdrop spans every state (loading/empty/failed/ready) so the
-    // living animation is always visible, not just when results exist.
+private fun ResultsBody(
+    state: ResultsViewModel.State,
+    onChallenge: (String) -> Unit,
+    onArchive: (String) -> Unit,
+    onMarkUnseen: (String) -> Unit,
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         PlatinumBackground(modifier = Modifier.matchParentSize())
         when (val ui = state.ui) {
@@ -108,13 +119,23 @@ private fun ResultsBody(state: ResultsViewModel.State, onChallenge: (String) -> 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            is UiState.Ready -> ResultsContent(sections = ui.data, onChallenge = onChallenge)
+            is UiState.Ready -> ResultsContent(
+                sections = ui.data,
+                onChallenge = onChallenge,
+                onArchive = onArchive,
+                onMarkUnseen = onMarkUnseen,
+            )
         }
     }
 }
 
 @Composable
-private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (String) -> Unit) {
+private fun ResultsContent(
+    sections: ResultsViewModel.Sections,
+    onChallenge: (String) -> Unit,
+    onArchive: (String) -> Unit,
+    onMarkUnseen: (String) -> Unit,
+) {
     val sc = LocalSectionColors.current
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -132,11 +153,14 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
                     topInset = true,
                 ) {
                     sections.unseen.forEach { challenge ->
-                        ChallengeCard(
+                        ResultCardWithMenu(
                             challenge = challenge,
                             rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                            onClick = { onChallenge(challenge.id) },
                             surfaceColor = sc.resultsCardFrost,
+                            showMarkUnseen = false,
+                            onClick = { onChallenge(challenge.id) },
+                            onArchive = { onArchive(challenge.id) },
+                            onMarkUnseen = { onMarkUnseen(challenge.id) },
                         )
                     }
                 }
@@ -153,17 +177,63 @@ private fun ResultsContent(sections: ResultsViewModel.Sections, onChallenge: (St
                     topInset = sections.unseen.isEmpty(),
                 ) {
                     sections.history.forEach { challenge ->
-                        ChallengeCard(
+                        ResultCardWithMenu(
                             challenge = challenge,
                             rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                            onClick = { onChallenge(challenge.id) },
                             surfaceColor = sc.resultsCardFrost,
+                            showMarkUnseen = true,
+                            onClick = { onChallenge(challenge.id) },
+                            onArchive = { onArchive(challenge.id) },
+                            onMarkUnseen = { onMarkUnseen(challenge.id) },
                         )
                     }
                 }
             }
 
             Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun ResultCardWithMenu(
+    challenge: Challenge,
+    rank: Int?,
+    surfaceColor: androidx.compose.ui.graphics.Color,
+    showMarkUnseen: Boolean,
+    onClick: () -> Unit,
+    onArchive: () -> Unit,
+    onMarkUnseen: () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        ChallengeCard(
+            challenge = challenge,
+            rank = rank,
+            surfaceColor = surfaceColor,
+            onClick = onClick,
+            onLongClick = { menuOpen = true },
+        )
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.results_menu_archive)) },
+                onClick = {
+                    onArchive()
+                    menuOpen = false
+                },
+            )
+            if (showMarkUnseen) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.results_menu_mark_unseen)) },
+                    onClick = {
+                        onMarkUnseen()
+                        menuOpen = false
+                    },
+                )
+            }
         }
     }
 }
@@ -205,6 +275,8 @@ private fun ResultsContent_Preview() {
                 myUid = "u1",
             ),
             onChallenge = {},
+            onArchive = {},
+            onMarkUnseen = {},
         )
     }
 }

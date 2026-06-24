@@ -1,7 +1,9 @@
 package se.atte.bragwise.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,12 +37,14 @@ import se.atte.bragwise.theme.appShadow
  * when `predicted = true` (current user has submitted predictions). Real shadow
  * per plan §4 elevation rules.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChallengeCard(
     challenge: Challenge,
     rank: Int? = null,
     predicted: Boolean = false,
     onClick: () -> Unit = {},
+    onLongClick: (() -> Unit)? = null,
     accent: Boolean = false,
     surfaceColor: Color = Unspecified,
     modifier: Modifier = Modifier,
@@ -58,7 +62,12 @@ fun ChallengeCard(
             .appShadow(Elevation.Card, isDark = isDark, shape = shape)
             .then(accentBorder)
             .testTag("challenge_card_${challenge.id}")
-            .clickable(onClick = onClick),
+            .then(
+                if (onLongClick != null)
+                    Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                else
+                    Modifier.clickable(onClick = onClick)
+            ),
         color = resolvedColor,
         shape = shape,
     ) {

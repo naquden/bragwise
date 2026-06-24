@@ -84,6 +84,7 @@ class ResultsRevealViewModel(
     }
 
     private var confettiEmitted = false
+    private var alreadySeenAtEntry: Boolean? = null
     private val friendsOnlyState = MutableStateFlow(false)
 
     override fun onIntent(intent: Intent) {
@@ -107,12 +108,15 @@ class ResultsRevealViewModel(
                         friends.filterIsInstance<CloudFriend>().map { it.id }.toSet()
                     },
                     friendsOnlyState,
-                ) { detail, leaderboard, seenAtEntry, friendUids, friendsOnly ->
+                ) { detail, leaderboard, seenIds, friendUids, friendsOnly ->
                     val myEntry = leaderboard.firstOrNull { it.uid == myUid }
                     val displayLeaderboard = if (friendsOnly) {
                         leaderboard.filter { it.uid in friendUids || it.uid == myUid }
                     } else {
                         leaderboard
+                    }
+                    val seenAtEntry = alreadySeenAtEntry ?: (challengeId in seenIds).also {
+                        alreadySeenAtEntry = it
                     }
                     RevealData(
                         challengeTitle = detail.challenge.title,
@@ -123,7 +127,7 @@ class ResultsRevealViewModel(
                         myPoints = myEntry?.points ?: detail.challenge.leaderboard?.get(myUid),
                         participantCount = maxOf(detail.challenge.joinedCount, leaderboard.size),
                         friendUids = friendUids,
-                        alreadySeen = challengeId in seenAtEntry,
+                        alreadySeen = seenAtEntry,
                         iAmCreator = detail.challenge.createdBy == myUid,
                     )
                 }

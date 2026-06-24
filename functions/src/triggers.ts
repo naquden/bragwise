@@ -701,6 +701,125 @@ export const syncParticipantSnapshots = onSchedule('every 60 minutes', async () 
   }
 });
 
+// ─── onBackfillH2hRequested ───────────────────────────────────────────────────
+
+/**
+ * Triggered by creating `adminJobs/backfillH2h` in the Firebase Console.
+ * Iterates all ACCEPTED friendship pairs and recomputes head-to-head records
+ * for each across their shared resolved challenges. Idempotent — safe to re-run
+ * by deleting and re-creating the doc.
+ *
+ * Updates the trigger doc with { status: 'done', processed, errors } when done.
+ */
+export const onBackfillH2hRequested = onDocumentCreated(
+  'adminJobs/backfillH2h',
+  async (event) => {
+    const jobRef = event.data?.ref;
+    let processed = 0;
+    let errors = 0;
+
+    for (;;) {
+      const snap = await db
+        .collection('friendships')
+        .where('state', '==', 'ACCEPTED')
+        .limit(50)
+        .get();
+
+      if (snap.empty) break;
+
+      await Promise.allSettled(
+        snap.docs.map(async (doc) => {
+          const members = doc.data().members as [string, string] | undefined;
+          if (!members || members.length !== 2) return;
+          const [a, b] = members;
+          try {
+            await recomputeH2hForPair(a, b);
+            processed++;
+          } catch (e) {
+            errors++;
+            console.error(`recomputeH2hForPair(${a}, ${b}) failed:`, e);
+          }
+        }),
+      );
+
+      if (snap.size < 50) break;
+    }
+
+    console.log(`onBackfillH2hRequested: processed=${processed} errors=${errors}`);
+    await jobRef?.set({ status: 'done', processed, errors }, { merge: true });
+  },
+);
+
+// ─── h2h helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * For two users, finds all resolved challenges where both participated and
+ * writes/corrects the head-to-head records. Idempotent via upsertByChallengeVs.
+ *
+ * Queries challenges directly via leaderboard map sub-field rather than the
+ * players collectionGroup uid field — older player docs lack the uid field so
+ * the collectionGroup query silently skipped them.
+ */
+async function recomputeH2hForPair(uidA: string, uidB: string): Promise<void> {
+  const challengeSnaps = await db
+    .collection('challenges')
+    .where(`leaderboard.${uidA}`, '>=', 0)
+    .get();
+
+  await Promise.allSettled(
+    challengeSnaps.docs.map(async (challengeSnap) => {
+      const data = challengeSnap.data();
+      if (!data.resultsPostedAt) return;
+
+      const leaderboard: Record<string, number> = data.leaderboard ?? {};
+      if (!(uidB in leaderboard)) return;
+
+      const challengeId = challengeSnap.id;
+      const ptsA = leaderboard[uidA];
+      const ptsB = leaderboard[uidB];
+      const outcomeA: 'win' | 'loss' | 'tie' = ptsA > ptsB ? 'win' : ptsA < ptsB ? 'loss' : 'tie';
+      const outcomeB: 'win' | 'loss' | 'tie' = ptsB > ptsA ? 'win' : ptsB < ptsA ? 'loss' : 'tie';
+
+      await Promise.all([
+        upsertByChallengeVs(uidA, challengeId, uidB, outcomeA),
+        upsertByChallengeVs(uidB, challengeId, uidA, outcomeB),
+      ]);
+    }),
+  );
+}
+
+/**
+ * Idempotent diff-transaction: reads existing byChallenge vs entry, compares
+ * to newOutcome, applies FieldValue.increment delta to root aggregate only when
+ * changed. Re-running with the same outcome = zero delta, no writes.
+ */
+async function upsertByChallengeVs(
+  uid: string,
+  challengeId: string,
+  opponentUid: string,
+  newOutcome: 'win' | 'loss' | 'tie',
+): Promise<void> {
+  const byChallRef = db.doc(`players/${uid}/private/headToHead/byChallenge/${challengeId}`);
+  const rootRef = db.doc(`players/${uid}/private/headToHead`);
+
+  await db.runTransaction(async (tx) => {
+    const prevSnap = await tx.get(byChallRef);
+    const prevVs: Record<string, 'win' | 'loss' | 'tie'> = prevSnap.exists
+      ? ((prevSnap.data()?.vs ?? {}) as Record<string, 'win' | 'loss' | 'tie'>)
+      : {};
+
+    const prevOutcome = prevVs[opponentUid] ?? null;
+    if (prevOutcome === newOutcome) return;
+
+    const rootPatch: Record<string, FirebaseFirestore.FieldValue> = {};
+    if (prevOutcome) rootPatch[`vs.${opponentUid}.${prevOutcome}s`] = FieldValue.increment(-1);
+    rootPatch[`vs.${opponentUid}.${newOutcome}s`] = FieldValue.increment(1);
+
+    tx.set(byChallRef, { vs: { ...prevVs, [opponentUid]: newOutcome } }, { merge: true });
+    tx.set(rootRef, rootPatch, { merge: true });
+  });
+}
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function chunk<T>(arr: T[], size: number): T[][] {

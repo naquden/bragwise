@@ -8,6 +8,20 @@ CREATE TABLE LocalPrediction (
     PRIMARY KEY (challengeId, betId)
 );
 
+CREATE TABLE SeenResult (
+    challengeId TEXT NOT NULL PRIMARY KEY
+);
+
+CREATE TABLE LocalDraft (
+    id TEXT NOT NULL PRIMARY KEY,
+    json TEXT NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+CREATE TABLE ArchivedResult (
+    challengeId TEXT NOT NULL PRIMARY KEY
+);
+
 predictionsAll:
 SELECT * FROM LocalPrediction;
 
@@ -23,24 +37,23 @@ DELETE FROM LocalPrediction WHERE challengeId = ?;
 predictionClear:
 DELETE FROM LocalPrediction;
 
-CREATE TABLE SeenResult (
-    challengeId TEXT NOT NULL PRIMARY KEY
-);
-
 seenResultInsert:
 INSERT OR IGNORE INTO SeenResult VALUES (?);
 
 seenResultContains:
 SELECT COUNT(*) FROM SeenResult WHERE challengeId = ?;
 
+seenResultDelete:
+DELETE FROM SeenResult WHERE challengeId = ?;
+
 seenResultAll:
 SELECT challengeId FROM SeenResult;
 
-CREATE TABLE LocalDraft (
-    id TEXT NOT NULL PRIMARY KEY,
-    json TEXT NOT NULL,
-    updatedAt INTEGER NOT NULL
-);
+archivedResultInsert:
+INSERT OR IGNORE INTO ArchivedResult VALUES (?);
+
+archivedResultAll:
+SELECT challengeId FROM ArchivedResult;
 
 draftUpsert:
 INSERT OR REPLACE INTO LocalDraft VALUES (?, ?, ?);

@@ -139,6 +139,8 @@
     <string name="results_finished_count">%1$d 个已完成</string>
     <string name="results_empty_title">还没有结果</string>
     <string name="results_empty_body">已完成的挑战将出现在这里。</string>
+    <string name="results_menu_archive">归档</string>
+    <string name="results_menu_mark_unseen">标记为未看</string>
 
     <string name="predict_no_bets">没有投注</string>
     <string name="predict_yes">是</string>

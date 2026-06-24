@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
@@ -34,6 +35,8 @@ class ResultsViewModel(
 
     sealed interface Intent {
         data class OpenReveal(val challengeId: String) : Intent
+        data class Archive(val challengeId: String) : Intent
+        data class MarkUnseen(val challengeId: String) : Intent
     }
 
     sealed interface Effect {
@@ -45,10 +48,12 @@ class ResultsViewModel(
             challenges.observeFinished(),
             auth.authState.map { state -> (state as? AuthState.SignedIn)?.uid ?: "" },
             seenStore.seenIds,
-        ) { finished, myUid, seenIds ->
+            seenStore.archivedIds,
+        ) { finished, myUid, seenIds, archivedIds ->
+            val visible = finished.filter { it.id !in archivedIds }
             Sections(
-                unseen = finished.filter { it.id !in seenIds },
-                history = finished.filter { it.id in seenIds },
+                unseen = visible.filter { it.id !in seenIds },
+                history = visible.filter { it.id in seenIds },
                 myUid = myUid,
             )
         }
@@ -66,6 +71,8 @@ class ResultsViewModel(
     override fun onIntent(intent: Intent) {
         when (intent) {
             is Intent.OpenReveal -> emitEffect(Effect.GoToReveal(challengeId = intent.challengeId))
+            is Intent.Archive -> viewModelScope.launch { seenStore.archive(intent.challengeId) }
+            is Intent.MarkUnseen -> viewModelScope.launch { seenStore.markUnseen(intent.challengeId) }
         }
     }
 }

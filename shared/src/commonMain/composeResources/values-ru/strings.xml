@@ -139,6 +139,8 @@
     <string name="results_finished_count">%1$d завершено</string>
     <string name="results_empty_title">Результатов нет</string>
     <string name="results_empty_body">Завершённые испытания будут показаны здесь.</string>
+    <string name="results_menu_archive">Архивировать</string>
+    <string name="results_menu_mark_unseen">Отметить как непросмотренное</string>
 
     <string name="predict_no_bets">Нет ставок</string>
     <string name="predict_yes">Да</string>
