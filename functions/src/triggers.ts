@@ -55,24 +55,47 @@ export const onResultsPosted = onDocumentUpdated(
       }),
     );
 
-    // 2. Head-to-head — idempotent per-challenge set, best-effort.
+    // 2. Head-to-head — diff-based aggregation. Re-fire safe: computes delta
+    //    between previous byChallenge doc and new outcome so a re-delivered event
+    //    produces zero delta and cannot double-count.
     await Promise.allSettled(
       participants.map(async (pid) => {
         const socialSnap = await db.doc(`players/${pid}/private/social`).get();
         if (!socialSnap.exists) return;
         const friends: Record<string, unknown> = socialSnap.data()!.friends ?? {};
         const myPoints = leaderboard[pid];
-        const vs: Record<string, 'win' | 'loss' | 'tie'> = {};
+        const newVs: Record<string, 'win' | 'loss' | 'tie'> = {};
         for (const fid of Object.keys(friends)) {
           if (!(fid in leaderboard)) continue;
           const theirPoints = leaderboard[fid];
-          vs[fid] = myPoints > theirPoints ? 'win' : myPoints < theirPoints ? 'loss' : 'tie';
+          newVs[fid] = myPoints > theirPoints ? 'win' : myPoints < theirPoints ? 'loss' : 'tie';
         }
-        if (Object.keys(vs).length > 0) {
-          await db
-            .doc(`players/${pid}/private/headToHead/byChallenge/${challengeId}`)
-            .set({ vs });
-        }
+        if (Object.keys(newVs).length === 0) return;
+
+        const byChallRef = db.doc(`players/${pid}/private/headToHead/byChallenge/${challengeId}`);
+        const rootRef = db.doc(`players/${pid}/private/headToHead`);
+
+        await db.runTransaction(async (tx) => {
+          const prevSnap = await tx.get(byChallRef);
+          const prevVs: Record<string, 'win' | 'loss' | 'tie'> = prevSnap.exists
+            ? ((prevSnap.data()?.vs ?? {}) as Record<string, 'win' | 'loss' | 'tie'>)
+            : {};
+
+          const rootPatch: Record<string, FirebaseFirestore.FieldValue> = {};
+          const allFids = new Set([...Object.keys(prevVs), ...Object.keys(newVs)]);
+          for (const fid of allFids) {
+            const prev = prevVs[fid] ?? null;
+            const next = newVs[fid] ?? null;
+            if (prev === next) continue;
+            if (prev) rootPatch[`vs.${fid}.${prev}s`] = FieldValue.increment(-1);
+            if (next) rootPatch[`vs.${fid}.${next}s`] = FieldValue.increment(1);
+          }
+
+          tx.set(byChallRef, { vs: newVs });
+          if (Object.keys(rootPatch).length > 0) {
+            tx.set(rootRef, rootPatch, { merge: true });
+          }
+        });
       }),
     );
   },
@@ -323,18 +346,26 @@ async function processDeleteChecklist(uid: string): Promise<void> {
       await batch.commit();
     }
 
-    // Head-to-head: delete per-challenge docs where this uid appeared.
-    // New path: players/{fid}/private/headToHead/byChallenge/{challengeId} = { vs: { [uid]: ... } }
-    // We scrub the uid key from each byChallenge doc across all friends.
+    // Head-to-head: scrub the deleted uid from each friend's byChallenge docs
+    // and decrement the corresponding root aggregate counters (re-fire safe via
+    // transaction diff — if vs.{uid} is already gone, delta is zero).
     for (const c of chunk(friendUids, 50)) {
       await Promise.allSettled(
         c.map(async (fid) => {
           const byChallengeDocs = await db
             .collection(`players/${fid}/private/headToHead/byChallenge`)
             .listDocuments();
+          const rootRef = db.doc(`players/${fid}/private/headToHead`);
           await Promise.allSettled(
             byChallengeDocs.map((ref) =>
-              ref.update({ [`vs.${uid}`]: FieldValue.delete() }),
+              db.runTransaction(async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists) return;
+                const outcome = (snap.data()?.vs as Record<string, string>)?.[uid];
+                if (!outcome) return;
+                tx.update(ref, { [`vs.${uid}`]: FieldValue.delete() });
+                tx.set(rootRef, { [`vs.${uid}.${outcome}s`]: FieldValue.increment(-1) }, { merge: true });
+              }),
             ),
           );
         }),

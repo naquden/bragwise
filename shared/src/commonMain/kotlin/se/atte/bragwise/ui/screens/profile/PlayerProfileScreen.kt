@@ -3,9 +3,7 @@ package se.atte.bragwise.ui.screens.profile
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,17 +16,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.player_head_to_head
+import bragwise.shared.generated.resources.player_no_shared_challenges
+import bragwise.shared.generated.resources.player_not_found
+import org.jetbrains.compose.resources.stringResource
 import se.atte.bragwise.domain.HeadToHead
+import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
+import se.atte.bragwise.ui.components.HeadToHeadPodium
 import se.atte.bragwise.ui.components.SectionCard
-import org.jetbrains.compose.resources.stringResource
-import bragwise.shared.generated.resources.Res
-import bragwise.shared.generated.resources.player_head_to_head
-import bragwise.shared.generated.resources.player_head_to_head_record
-import bragwise.shared.generated.resources.player_no_shared_challenges
-import bragwise.shared.generated.resources.player_not_found
 
 /**
  * LB-04 Player profile — public view of another user. Identity card +
@@ -75,9 +74,12 @@ private fun PlayerProfileContent(data: PlayerProfileViewModel.Data) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
-                    Text(
-                        stringResource(Res.string.player_head_to_head_record, rec.wins, rec.losses, rec.ties),
-                        style = MaterialTheme.typography.bodyMedium,
+                    HeadToHeadPodium(
+                        myDisplayName = data.me?.displayName ?: "You",
+                        myAvatarSeed = data.me?.avatarSeed ?: "",
+                        theirDisplayName = data.profile.displayName,
+                        theirAvatarSeed = data.profile.avatarSeed,
+                        record = rec,
                     )
                 }
             }
@@ -87,6 +89,14 @@ private fun PlayerProfileContent(data: PlayerProfileViewModel.Data) {
 
 // region Previews
 
+private val previewMe = Player(
+    uid = "u1",
+    username = "me",
+    displayName = "You",
+    avatarSeed = "me",
+    createdAt = kotlin.time.Instant.DISTANT_PAST,
+)
+
 @Preview
 @Composable
 private fun PlayerProfile_Preview() {
@@ -94,6 +104,7 @@ private fun PlayerProfile_Preview() {
         PlayerProfileContent(
             data = PlayerProfileViewModel.Data(
                 profile = PublicProfile(uid = "u2", username = "alice", displayName = "Alice", avatarSeed = "alice"),
+                me = previewMe,
                 head = HeadToHead.Record(wins = 3, losses = 1, ties = 2),
             ),
         )
@@ -107,6 +118,7 @@ private fun PlayerProfile_NoHistory_Preview() {
         PlayerProfileContent(
             data = PlayerProfileViewModel.Data(
                 profile = PublicProfile(uid = "u3", username = "bob", displayName = "Bob", avatarSeed = "bob"),
+                me = previewMe,
                 head = null,
             ),
         )

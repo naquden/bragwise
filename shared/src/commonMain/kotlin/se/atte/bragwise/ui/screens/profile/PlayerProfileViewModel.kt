@@ -4,10 +4,11 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.HeadToHead
+import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.ProfileResolution
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.resolve
@@ -26,17 +27,26 @@ class PlayerProfileViewModel(
 ) {
     data class Data(
         val profile: PublicProfile,
+        val me: Player?,
         val head: HeadToHead.Record?,
     )
 
     data class State(val ui: UiState<Data>)
 
     init {
-        combine(profiles.observePublicProfile(uid), social.observeHeadToHead()) { p, h ->
+        // Head-to-head is a private self-doc read; isolate its failures so a
+        // PERMISSION_DENIED (e.g. rules not yet deployed) degrades to an empty
+        // record instead of failing the whole profile with a misleading
+        // "no access to challenge" message.
+        val headFlow = social.observeHeadToHead()
+            .catch { emit(HeadToHead(emptyMap())) }
+            .onStart { emit(HeadToHead(emptyMap())) }
+
+        combine(profiles.observePublicProfile(uid), profiles.observeMe(), headFlow) { p, me, h ->
             when (val resolution = p.resolve()) {
                 is ProfileResolution.NotFound -> update { it.copy(ui = UiState.Empty()) }
                 is ProfileResolution.Loaded -> update {
-                    it.copy(ui = UiState.Ready(Data(profile = resolution.profile, head = h.vs[uid])))
+                    it.copy(ui = UiState.Ready(Data(profile = resolution.profile, me = me, head = h.vs[uid])))
                 }
             }
         }

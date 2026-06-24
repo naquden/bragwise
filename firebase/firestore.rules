@@ -25,6 +25,10 @@ service cloud.firestore {
       match /private/{doc=**} {
         allow read, write: if false;  // self-only via callable; FCM/email never client-writable
       }
+      match /private/headToHead {
+        allow read: if isSelf(uid);
+        allow write: if false;        // onResultsPosted trigger only
+      }
       match /private/headToHead/byChallenge/{challengeId} {
         allow read: if isSelf(uid);
         allow write: if false;        // onResultsPosted trigger only
