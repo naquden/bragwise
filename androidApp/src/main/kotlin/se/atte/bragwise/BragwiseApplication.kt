@@ -1,6 +1,7 @@
 package se.atte.bragwise
 
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import com.google.firebase.Firebase
@@ -13,11 +14,16 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.logger.Level
 import se.atte.bragwise.di.initKoin
+import se.atte.bragwise.push.BragwiseFirebaseMessagingService
 
 class BragwiseApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        BragwiseFirebaseMessagingService.createAllChannels(
+            getSystemService(NOTIFICATION_SERVICE) as NotificationManager,
+        )
 
         if (!BuildConfig.USE_MOCK_DATA) {
             // App Check MUST be installed before any Firebase API that attaches

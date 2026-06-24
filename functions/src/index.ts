@@ -1,7 +1,7 @@
 import { onCall, CallableRequest } from 'firebase-functions/v2/https';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2';
-import { sendToUser, CHANNEL_SOCIAL, CHANNEL_CHALLENGES } from './push';
+import { sendToUser, CHANNEL_SOCIAL, CHANNEL_CHALLENGES, CHANNEL_INVITES } from './push';
 
 // Co-locate all 2nd-gen functions with Firestore (europe-west1). Without this,
 // onCall + onSchedule default to us-central1 — every callable would do a
@@ -229,7 +229,7 @@ export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
         sendToUser(targetUid, {
           title: "You're invited!",
           body: `${inviterName} invited you to ${challengeTitle}`,
-          channel: CHANNEL_CHALLENGES,
+          channel: CHANNEL_INVITES,
           deepLink: `https://bragwise.firebaseapp.com/c/${ref.id}`,
         }).catch(() => {}),
       ),
@@ -506,7 +506,7 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
       sendToUser(targetUid, {
         title: "You're invited!",
         body: `${inviterName} invited you to ${challengeTitle}`,
-        channel: CHANNEL_CHALLENGES,
+        channel: CHANNEL_INVITES,
         deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}`,
       }).catch(() => {}),
     ),
@@ -692,12 +692,17 @@ export const setNotificationPref = onCall(async (req: CallableRequest<unknown>) 
   verifyAppCheck(req);
   const uid = requireAuth(req);
   await rateLimit(uid, 'setNotificationPref', 3600, 50);
-  const { enabled } = validate(SetNotificationPrefSchema, req.data);
+  const { enabled, categories } = validate(SetNotificationPrefSchema, req.data);
 
-  await db.doc(`players/${uid}/private/preferences`).set(
-    { notifications: enabled, updatedAt: FieldValue.serverTimestamp() },
-    { merge: true },
-  );
+  const patch: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+  if (enabled !== undefined) patch['notifications'] = enabled;
+  if (categories) {
+    for (const [key, value] of Object.entries(categories)) {
+      patch[`categories.${key}`] = value;
+    }
+  }
+
+  await db.doc(`players/${uid}/private/preferences`).set(patch, { merge: true });
   return { ok: true };
 });
 

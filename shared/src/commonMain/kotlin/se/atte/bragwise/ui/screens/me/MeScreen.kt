@@ -1,5 +1,6 @@
 package se.atte.bragwise.ui.screens.me
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.platform.LocalDensity
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -55,14 +57,21 @@ import bragwise.shared.generated.resources.settings_about_title
 import bragwise.shared.generated.resources.settings_language_system
 import bragwise.shared.generated.resources.settings_language_title
 import bragwise.shared.generated.resources.settings_notifications_title
+import bragwise.shared.generated.resources.settings_notifications_friend_requests
+import bragwise.shared.generated.resources.settings_notifications_results
+import bragwise.shared.generated.resources.settings_notifications_participations
+import bragwise.shared.generated.resources.settings_notifications_invites
 import bragwise.shared.generated.resources.settings_section_title
 import bragwise.shared.generated.resources.settings_theme_dark
 import bragwise.shared.generated.resources.settings_theme_light
 import bragwise.shared.generated.resources.settings_theme_system
 import bragwise.shared.generated.resources.settings_theme_title
 import androidx.compose.material3.Icon
+import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.UsersRound
+import se.atte.bragwise.data.NotificationPrefs
 import org.jetbrains.compose.resources.stringResource
 import se.atte.bragwise.data.AppLanguage
 import se.atte.bragwise.domain.Player
@@ -117,7 +126,8 @@ fun MeScreen(
             isFullyAuthed = state.isFullyAuthed,
             themeMode = state.themeMode,
             language = state.language,
-            notificationsEnabled = state.notificationsEnabled,
+            notificationPrefs = state.notificationPrefs,
+            notificationCategoriesExpanded = state.notificationCategoriesExpanded,
             onFriends = { viewModel.onIntent(MeViewModel.Intent.OpenFriends) },
             onEditProfile = { viewModel.onIntent(MeViewModel.Intent.OpenEditProfile) },
             onAbout = { viewModel.onIntent(MeViewModel.Intent.OpenAbout) },
@@ -126,6 +136,8 @@ fun MeScreen(
             onSetTheme = { viewModel.onIntent(MeViewModel.Intent.SetTheme(it)) },
             onSetLanguage = { viewModel.onIntent(MeViewModel.Intent.SetLanguage(it)) },
             onSetNotifications = { viewModel.onIntent(MeViewModel.Intent.SetNotifications(it)) },
+            onToggleNotificationCategories = { viewModel.onIntent(MeViewModel.Intent.ToggleNotificationCategories) },
+            onSetNotificationCategory = { key, enabled -> viewModel.onIntent(MeViewModel.Intent.SetNotificationCategory(key, enabled)) },
             onRequestDelete = { viewModel.onIntent(MeViewModel.Intent.RequestDelete) },
         )
     }
@@ -162,7 +174,8 @@ private fun MeContent(
     isFullyAuthed: Boolean,
     themeMode: ThemeMode,
     language: AppLanguage,
-    notificationsEnabled: Boolean,
+    notificationPrefs: NotificationPrefs,
+    notificationCategoriesExpanded: Boolean,
     onFriends: () -> Unit,
     onEditProfile: () -> Unit,
     onAbout: () -> Unit,
@@ -171,6 +184,8 @@ private fun MeContent(
     onSetTheme: (ThemeMode) -> Unit,
     onSetLanguage: (AppLanguage) -> Unit,
     onSetNotifications: (Boolean) -> Unit,
+    onToggleNotificationCategories: () -> Unit,
+    onSetNotificationCategory: (String, Boolean) -> Unit,
     onRequestDelete: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -247,7 +262,41 @@ private fun MeContent(
             LanguagePickerRow(current = language, onSelect = onSetLanguage)
             if (hasAccount) {
                 ListGroupDivider()
-                NotificationToggleRow(enabled = notificationsEnabled, onToggle = onSetNotifications)
+                NotificationMasterRow(
+                    enabled = notificationPrefs.master,
+                    expanded = notificationCategoriesExpanded,
+                    onToggle = onSetNotifications,
+                    onExpandToggle = onToggleNotificationCategories,
+                )
+                AnimatedVisibility(visible = notificationCategoriesExpanded) {
+                    Column {
+                        val masterEnabled = notificationPrefs.master
+                        NotificationCategoryRow(
+                            label = stringResource(Res.string.settings_notifications_friend_requests),
+                            enabled = masterEnabled && notificationPrefs.social,
+                            checkable = masterEnabled,
+                            onToggle = { onSetNotificationCategory("social", it) },
+                        )
+                        NotificationCategoryRow(
+                            label = stringResource(Res.string.settings_notifications_results),
+                            enabled = masterEnabled && notificationPrefs.results,
+                            checkable = masterEnabled,
+                            onToggle = { onSetNotificationCategory("results", it) },
+                        )
+                        NotificationCategoryRow(
+                            label = stringResource(Res.string.settings_notifications_participations),
+                            enabled = masterEnabled && notificationPrefs.participations,
+                            checkable = masterEnabled,
+                            onToggle = { onSetNotificationCategory("participations", it) },
+                        )
+                        NotificationCategoryRow(
+                            label = stringResource(Res.string.settings_notifications_invites),
+                            enabled = masterEnabled && notificationPrefs.invites,
+                            checkable = masterEnabled,
+                            onToggle = { onSetNotificationCategory("invites", it) },
+                        )
+                    }
+                }
             }
         }
 
@@ -312,7 +361,12 @@ private fun ThemeMode.label(): String = stringResource(
 )
 
 @Composable
-private fun NotificationToggleRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+private fun NotificationMasterRow(
+    enabled: Boolean,
+    expanded: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onExpandToggle: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -323,8 +377,44 @@ private fun NotificationToggleRow(enabled: Boolean, onToggle: (Boolean) -> Unit)
         Text(
             text = stringResource(Res.string.settings_notifications_title),
             style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
         )
+        androidx.compose.material3.IconButton(onClick = onExpandToggle) {
+            Icon(
+                imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+        }
         Switch(checked = enabled, onCheckedChange = onToggle)
+    }
+}
+
+@Composable
+private fun NotificationCategoryRow(
+    label: String,
+    enabled: Boolean,
+    checkable: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = standardPadding * 2, end = standardPadding, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (checkable) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(
+            checked = enabled,
+            onCheckedChange = onToggle,
+            enabled = checkable,
+        )
     }
 }
 
@@ -400,7 +490,8 @@ private fun MeContent_BrowsingGuest_Preview() {
             isFullyAuthed = false,
             themeMode = ThemeMode.System,
             language = AppLanguage.System,
-            notificationsEnabled = true,
+            notificationPrefs = NotificationPrefs.DEFAULT,
+            notificationCategoriesExpanded = false,
             onFriends = {},
             onEditProfile = {},
             onAbout = {},
@@ -409,6 +500,8 @@ private fun MeContent_BrowsingGuest_Preview() {
             onSetTheme = {},
             onSetLanguage = {},
             onSetNotifications = {},
+            onToggleNotificationCategories = {},
+            onSetNotificationCategory = { _, _ -> },
             onRequestDelete = {},
         )
     }
@@ -431,7 +524,8 @@ private fun MeContent_NamedGuest_Preview() {
             isFullyAuthed = false,
             themeMode = ThemeMode.System,
             language = AppLanguage.System,
-            notificationsEnabled = true,
+            notificationPrefs = NotificationPrefs.DEFAULT,
+            notificationCategoriesExpanded = false,
             onFriends = {},
             onEditProfile = {},
             onAbout = {},
@@ -440,6 +534,8 @@ private fun MeContent_NamedGuest_Preview() {
             onSetTheme = {},
             onSetLanguage = {},
             onSetNotifications = {},
+            onToggleNotificationCategories = {},
+            onSetNotificationCategory = { _, _ -> },
             onRequestDelete = {},
         )
     }
@@ -462,7 +558,8 @@ private fun MeContent_SignedIn_Preview() {
             isFullyAuthed = true,
             themeMode = ThemeMode.System,
             language = AppLanguage.System,
-            notificationsEnabled = true,
+            notificationPrefs = NotificationPrefs(master = true, social = true, results = false, participations = true, invites = true),
+            notificationCategoriesExpanded = true,
             onFriends = {},
             onEditProfile = {},
             onAbout = {},
@@ -471,6 +568,8 @@ private fun MeContent_SignedIn_Preview() {
             onSetTheme = {},
             onSetLanguage = {},
             onSetNotifications = {},
+            onToggleNotificationCategories = {},
+            onSetNotificationCategory = { _, _ -> },
             onRequestDelete = {},
         )
     }

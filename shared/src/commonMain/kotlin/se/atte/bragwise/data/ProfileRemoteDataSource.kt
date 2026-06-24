@@ -10,6 +10,18 @@ import kotlinx.coroutines.flow.map
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 
+data class NotificationPrefs(
+    val master: Boolean = true,
+    val social: Boolean = true,
+    val results: Boolean = true,
+    val participations: Boolean = true,
+    val invites: Boolean = true,
+) {
+    companion object {
+        val DEFAULT = NotificationPrefs()
+    }
+}
+
 class ProfileRemoteDataSource(
     private val db: dev.gitlive.firebase.firestore.FirebaseFirestore = Firebase.firestore,
     private val functions: dev.gitlive.firebase.functions.FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
@@ -30,18 +42,28 @@ class ProfileRemoteDataSource(
         )
     }
 
-    /** Notifications-enabled pref. Defaults to true when the doc/field is absent. */
-    fun observeNotificationsEnabled(uid: String): Flow<Boolean> = flow {
+    fun observeNotificationPrefs(uid: String): Flow<NotificationPrefs> = flow {
         emitAll(
             db.document("players/$uid/private/preferences").snapshots.map { snap ->
-                if (!snap.exists) return@map true
-                snap.boolOrNull("notifications") ?: true
+                if (!snap.exists) return@map NotificationPrefs.DEFAULT
+                val cats = runCatching { snap.get<Map<String, Boolean>>("categories") }.getOrNull() ?: emptyMap()
+                NotificationPrefs(
+                    master = snap.boolOrNull("notifications") ?: true,
+                    social = cats["social"] ?: true,
+                    results = cats["results"] ?: true,
+                    participations = cats["participations"] ?: true,
+                    invites = cats["invites"] ?: true,
+                )
             },
         )
     }
 
-    suspend fun setNotificationsEnabled(enabled: Boolean) {
+    suspend fun setMasterNotification(enabled: Boolean) {
         functions.httpsCallable("setNotificationPref")(hashMapOf("enabled" to enabled))
+    }
+
+    suspend fun setCategoryNotification(key: String, enabled: Boolean) {
+        functions.httpsCallable("setNotificationPref")(hashMapOf("categories" to hashMapOf(key to enabled)))
     }
 
     suspend fun recordActivity() {

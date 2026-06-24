@@ -19,15 +19,16 @@ interface ProfileRepository {
      */
     fun observeMe(): Flow<Player?>
     fun observePublicProfile(uid: String): Flow<PublicProfile?>
-    /** Notifications-enabled pref for the signed-in user. Emits true when signed out. */
-    fun observeNotificationsEnabled(): Flow<Boolean>
+    /** Notification prefs for the signed-in user. Emits defaults when signed out. */
+    fun observeNotificationPrefs(): Flow<NotificationPrefs>
     suspend fun claimUsername(username: String): Result<Unit>
     suspend fun updateProfile(
         displayName: String? = null,
         username: String? = null,
         avatarSeed: String? = null,
     ): Result<Unit>
-    suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit>
+    suspend fun setMasterNotification(enabled: Boolean): Result<Unit>
+    suspend fun setCategoryNotification(key: String, enabled: Boolean): Result<Unit>
 
     /**
      * Heartbeat: stamps `lastSeen` (and the anonymous flag) on the player doc
@@ -53,11 +54,11 @@ class FirebaseProfileRepository(
     override fun observePublicProfile(uid: String): Flow<PublicProfile?> =
         remote.observePublicProfile(uid)
 
-    override fun observeNotificationsEnabled(): Flow<Boolean> =
+    override fun observeNotificationPrefs(): Flow<NotificationPrefs> =
         auth.authState.flatMapLatest { state ->
             when (state) {
-                is AuthState.SignedIn -> remote.observeNotificationsEnabled(state.uid).catch { emit(true) }
-                else -> flowOf(true)
+                is AuthState.SignedIn -> remote.observeNotificationPrefs(state.uid).catch { emit(NotificationPrefs.DEFAULT) }
+                else -> flowOf(NotificationPrefs.DEFAULT)
             }
         }
 
@@ -65,8 +66,12 @@ class FirebaseProfileRepository(
         remote.claimUsername(username)
     }
 
-    override suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit> = runCatching {
-        remote.setNotificationsEnabled(enabled)
+    override suspend fun setMasterNotification(enabled: Boolean): Result<Unit> = runCatching {
+        remote.setMasterNotification(enabled)
+    }
+
+    override suspend fun setCategoryNotification(key: String, enabled: Boolean): Result<Unit> = runCatching {
+        remote.setCategoryNotification(key, enabled)
     }
 
     override suspend fun updateProfile(

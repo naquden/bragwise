@@ -79,6 +79,10 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_friend_requests">Friend requests</string>
+    <string name="settings_notifications_results">Challenge results</string>
+    <string name="settings_notifications_participations">Participations</string>
+    <string name="settings_notifications_invites">Challenge invites</string>
     <string name="settings_language_title">Language</string>
     <string name="settings_language_system">System default</string>
 

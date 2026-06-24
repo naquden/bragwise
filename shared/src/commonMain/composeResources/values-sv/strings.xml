@@ -65,6 +65,10 @@
     <string name="settings_theme_light">Ljust</string>
     <string name="settings_theme_dark">Mörkt</string>
     <string name="settings_notifications_title">Aviseringar</string>
+    <string name="settings_notifications_friend_requests">Vänförfrågningar</string>
+    <string name="settings_notifications_results">Utmaningsresultat</string>
+    <string name="settings_notifications_participations">Deltaganden</string>
+    <string name="settings_notifications_invites">Utmaningsinbjudningar</string>
     <string name="settings_language_title">Språk</string>
     <string name="settings_language_system">Systemstandard</string>
 

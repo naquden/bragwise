@@ -65,6 +65,10 @@
     <string name="settings_theme_light">浅色</string>
     <string name="settings_theme_dark">深色</string>
     <string name="settings_notifications_title">通知</string>
+    <string name="settings_notifications_friend_requests">好友请求</string>
+    <string name="settings_notifications_results">挑战结果</string>
+    <string name="settings_notifications_participations">参与情况</string>
+    <string name="settings_notifications_invites">挑战邀请</string>
 
     <string name="cc_title_field_label">标题</string>
     <string name="cc_who_can_join">谁可以加入</string>

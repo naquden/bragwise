@@ -189,9 +189,17 @@ export const RegisterPushTokenSchema = z.object({
   platform: z.enum(['fcm', 'apns']),
 });
 
-export const SetNotificationPrefSchema = z.object({
-  enabled: z.boolean(),
-});
+export const NOTIFICATION_CATEGORY_KEYS = ['social', 'results', 'participations', 'invites'] as const;
+export type NotificationCategoryKey = typeof NOTIFICATION_CATEGORY_KEYS[number];
+
+export const SetNotificationPrefSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    categories: z.record(z.enum(NOTIFICATION_CATEGORY_KEYS), z.boolean()).optional(),
+  })
+  .refine((d) => d.enabled !== undefined || (d.categories && Object.keys(d.categories).length > 0), {
+    message: 'at-least-one-field-required',
+  });
 
 export const DeleteChallengeSchema = z.object({
   challengeId: z.string().min(1),

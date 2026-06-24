@@ -65,6 +65,10 @@
     <string name="settings_theme_light">Hell</string>
     <string name="settings_theme_dark">Dunkel</string>
     <string name="settings_notifications_title">Benachrichtigungen</string>
+    <string name="settings_notifications_friend_requests">Freundschaftsanfragen</string>
+    <string name="settings_notifications_results">Challenge-Ergebnisse</string>
+    <string name="settings_notifications_participations">Teilnahmen</string>
+    <string name="settings_notifications_invites">Challenge-Einladungen</string>
 
     <string name="cc_title_field_label">Titel</string>
     <string name="cc_who_can_join">Wer kann beitreten</string>

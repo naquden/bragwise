@@ -4,6 +4,14 @@ import { db, messaging } from './lib/admin';
 export const CHANNEL_SOCIAL = 'bragwise_social';
 export const CHANNEL_CHALLENGES = 'bragwise_challenges';
 export const CHANNEL_RESULTS = 'bragwise_results';
+export const CHANNEL_INVITES = 'bragwise_invites';
+
+const CHANNEL_TO_CATEGORY: Record<string, string> = {
+  [CHANNEL_SOCIAL]: 'social',
+  [CHANNEL_CHALLENGES]: 'participations',
+  [CHANNEL_RESULTS]: 'results',
+  [CHANNEL_INVITES]: 'invites',
+};
 
 interface PushPayload {
   title: string;
@@ -21,10 +29,16 @@ export async function sendToUser(uid: string, payload: PushPayload): Promise<voi
   if (tokensSnap.empty) return;
 
   const notifPrefsSnap = await db.doc(`players/${uid}/private/preferences`).get();
-  const notifEnabled = notifPrefsSnap.exists
-    ? (notifPrefsSnap.data()?.notifications ?? true)
-    : true;
-  if (!notifEnabled) return;
+  const prefsData = notifPrefsSnap.exists ? notifPrefsSnap.data() : null;
+  const masterEnabled = prefsData?.notifications ?? true;
+  if (!masterEnabled) return;
+
+  const categoryKey = CHANNEL_TO_CATEGORY[payload.channel];
+  if (categoryKey !== undefined) {
+    const categories = prefsData?.categories ?? {};
+    const categoryEnabled = categories[categoryKey] ?? true;
+    if (!categoryEnabled) return;
+  }
 
   // Keep doc refs aligned with the token array so stale ones can be reaped
   // by ref (the doc ID is the token, but deleting by ref avoids any

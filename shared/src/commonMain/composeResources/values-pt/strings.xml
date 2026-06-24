@@ -65,6 +65,10 @@
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Escuro</string>
     <string name="settings_notifications_title">Notificações</string>
+    <string name="settings_notifications_friend_requests">Pedidos de amizade</string>
+    <string name="settings_notifications_results">Resultados do desafio</string>
+    <string name="settings_notifications_participations">Participações</string>
+    <string name="settings_notifications_invites">Convites para desafios</string>
 
     <string name="cc_title_field_label">Título</string>
     <string name="cc_who_can_join">Quem pode participar</string>

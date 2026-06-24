@@ -11,6 +11,7 @@ import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.LanguagePrefs
+import se.atte.bragwise.data.NotificationPrefs
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.domain.Player
@@ -44,7 +45,8 @@ class MeViewModel(
         val email: String? = null,
         val themeMode: ThemeMode = ThemeMode.System,
         val language: AppLanguage = AppLanguage.System,
-        val notificationsEnabled: Boolean = true,
+        val notificationPrefs: NotificationPrefs = NotificationPrefs.DEFAULT,
+        val notificationCategoriesExpanded: Boolean = false,
         val confirmingDelete: Boolean = false,
     )
 
@@ -56,6 +58,8 @@ class MeViewModel(
         data class SetTheme(val mode: ThemeMode) : Intent
         data class SetLanguage(val language: AppLanguage) : Intent
         data class SetNotifications(val enabled: Boolean) : Intent
+        data class SetNotificationCategory(val key: String, val enabled: Boolean) : Intent
+        data object ToggleNotificationCategories : Intent
         data object RequestDelete : Intent
         data object CancelDelete : Intent
         data object ConfirmDelete : Intent
@@ -118,8 +122,8 @@ class MeViewModel(
             .onEach { l -> update { it.copy(language = l) } }
             .launchIn(viewModelScope)
 
-        profile.observeNotificationsEnabled()
-            .onEach { enabled -> update { it.copy(notificationsEnabled = enabled) } }
+        profile.observeNotificationPrefs()
+            .onEach { prefs -> update { it.copy(notificationPrefs = prefs) } }
             .catch { /* keep last known */ }
             .launchIn(viewModelScope)
     }
@@ -136,14 +140,32 @@ class MeViewModel(
             is Intent.SetTheme -> themePrefs.set(intent.mode)
             is Intent.SetLanguage -> languagePrefs.set(intent.language)
             is Intent.SetNotifications -> viewModelScope.launch {
-                // Optimistic: reflect immediately; the observe flow corrects on
-                // server confirmation, and we revert + snackbar on failure.
-                update { it.copy(notificationsEnabled = intent.enabled) }
-                profile.setNotificationsEnabled(intent.enabled)
+                val prev = state.value.notificationPrefs
+                update { it.copy(notificationPrefs = it.notificationPrefs.copy(master = intent.enabled)) }
+                profile.setMasterNotification(intent.enabled)
                     .onFailure {
-                        update { s -> s.copy(notificationsEnabled = !intent.enabled) }
+                        update { s -> s.copy(notificationPrefs = prev) }
                         errorReporter.report(it)
                     }
+            }
+            is Intent.SetNotificationCategory -> viewModelScope.launch {
+                val prev = state.value.notificationPrefs
+                val updated = when (intent.key) {
+                    "social" -> prev.copy(social = intent.enabled)
+                    "results" -> prev.copy(results = intent.enabled)
+                    "participations" -> prev.copy(participations = intent.enabled)
+                    "invites" -> prev.copy(invites = intent.enabled)
+                    else -> prev
+                }
+                update { it.copy(notificationPrefs = updated) }
+                profile.setCategoryNotification(intent.key, intent.enabled)
+                    .onFailure {
+                        update { s -> s.copy(notificationPrefs = prev) }
+                        errorReporter.report(it)
+                    }
+            }
+            Intent.ToggleNotificationCategories -> update {
+                it.copy(notificationCategoriesExpanded = !it.notificationCategoriesExpanded)
             }
             Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }
             Intent.CancelDelete -> update { it.copy(confirmingDelete = false) }

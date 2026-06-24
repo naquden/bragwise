@@ -63,15 +63,7 @@ class BragwiseFirebaseMessagingService : FirebaseMessagingService() {
     private fun ensureChannel(channelId: String) {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (nm.getNotificationChannel(channelId) != null) return
-        val name = when (channelId) {
-            CHANNEL_SOCIAL -> "Friends"
-            CHANNEL_CHALLENGES -> "Challenges"
-            CHANNEL_RESULTS -> "Results"
-            else -> "Bragwise"
-        }
-        nm.createNotificationChannel(
-            NotificationChannel(channelId, name, NotificationManager.IMPORTANCE_DEFAULT),
-        )
+        nm.createNotificationChannel(buildChannel(channelId))
     }
 
     companion object {
@@ -79,7 +71,24 @@ class BragwiseFirebaseMessagingService : FirebaseMessagingService() {
         const val CHANNEL_SOCIAL = "bragwise_social"
         const val CHANNEL_CHALLENGES = "bragwise_challenges"
         const val CHANNEL_RESULTS = "bragwise_results"
+        const val CHANNEL_INVITES = "bragwise_invites"
 
         private val TRUSTED_HOSTS = setOf("bragwise.firebaseapp.com", "bragwise.app")
+
+        internal fun buildChannel(channelId: String): NotificationChannel {
+            val name = when (channelId) {
+                CHANNEL_SOCIAL -> "Friends"
+                CHANNEL_CHALLENGES -> "Challenges"
+                CHANNEL_RESULTS -> "Results"
+                CHANNEL_INVITES -> "Invitations"
+                else -> "Bragwise"
+            }
+            return NotificationChannel(channelId, name, NotificationManager.IMPORTANCE_DEFAULT)
+        }
+
+        fun createAllChannels(nm: NotificationManager) {
+            listOf(CHANNEL_DEFAULT, CHANNEL_SOCIAL, CHANNEL_CHALLENGES, CHANNEL_RESULTS, CHANNEL_INVITES)
+                .forEach { id -> nm.createNotificationChannel(buildChannel(id)) }
+        }
     }
 }

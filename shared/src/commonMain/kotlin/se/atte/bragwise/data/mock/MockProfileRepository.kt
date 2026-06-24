@@ -4,24 +4,38 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import se.atte.bragwise.data.NotificationPrefs
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 
 class MockProfileRepository : ProfileRepository {
     private val _player = MutableStateFlow(mockPlayer)
-    private val _notificationsEnabled = MutableStateFlow(true)
+    private val _notificationPrefs = MutableStateFlow(NotificationPrefs.DEFAULT)
 
     override fun observeMe(): Flow<Player?> = _player.asStateFlow()
 
-    override fun observeNotificationsEnabled(): Flow<Boolean> = _notificationsEnabled.asStateFlow()
+    override fun observeNotificationPrefs(): Flow<NotificationPrefs> = _notificationPrefs.asStateFlow()
 
     override fun observePublicProfile(uid: String): Flow<PublicProfile?> = flowOf(
         when (uid) {
             MOCK_UID -> mockPublicProfile
-            "uid-alice" -> mockCloudFriends[0].player.let { PublicProfile(uid = it.uid, username = it.username, displayName = it.displayName, avatarSeed = it.avatarSeed) }
-            "uid-bob" -> mockCloudFriends[1].player.let { PublicProfile(uid = it.uid, username = it.username, displayName = it.displayName, avatarSeed = it.avatarSeed) }
+            "uid-alice" -> mockCloudFriends[0].player.let {
+                PublicProfile(
+                    uid = it.uid,
+                    username = it.username,
+                    displayName = it.displayName,
+                    avatarSeed = it.avatarSeed
+                )
+            }
+            "uid-bob" -> mockCloudFriends[1].player.let {
+                PublicProfile(
+                    uid = it.uid,
+                    username = it.username,
+                    displayName = it.displayName,
+                    avatarSeed = it.avatarSeed
+                )
+            }
             else -> null
         },
     )
@@ -44,8 +58,19 @@ class MockProfileRepository : ProfileRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit> {
-        _notificationsEnabled.value = enabled
+    override suspend fun setMasterNotification(enabled: Boolean): Result<Unit> {
+        _notificationPrefs.value = _notificationPrefs.value.copy(master = enabled)
+        return Result.success(Unit)
+    }
+
+    override suspend fun setCategoryNotification(key: String, enabled: Boolean): Result<Unit> {
+        _notificationPrefs.value = when (key) {
+            "social" -> _notificationPrefs.value.copy(social = enabled)
+            "results" -> _notificationPrefs.value.copy(results = enabled)
+            "participations" -> _notificationPrefs.value.copy(participations = enabled)
+            "invites" -> _notificationPrefs.value.copy(invites = enabled)
+            else -> _notificationPrefs.value
+        }
         return Result.success(Unit)
     }
 
