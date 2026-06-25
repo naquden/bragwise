@@ -52,6 +52,8 @@ class LocalPredictionStore(db: BragwiseDatabase) {
             else json.decodeFromString(ListSerializer(serializer()), orderedOptionIds)
         )
         "BOOLEAN_PROP" -> boolValue?.let { PredictionPayload.BooleanProp(value = it != 0L) }
+        // Guess value stored as stringified Long in the optionId TEXT column (no schema migration needed).
+        "GUESS" -> optionId?.toLongOrNull()?.let { PredictionPayload.Guess(value = it) }
         else -> null
     }
 
@@ -83,6 +85,12 @@ class LocalPredictionStore(db: BragwiseDatabase) {
             optionId = null,
             orderedOptionIds = "",
             boolValue = if (value) 1L else 0L,
+        )
+        is PredictionPayload.Guess -> Columns(
+            kind = "GUESS",
+            optionId = value.toString(),
+            orderedOptionIds = "",
+            boolValue = null,
         )
     }
 }

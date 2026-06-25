@@ -87,6 +87,12 @@
     <string name="cc_bet_type_yes_no">Sim / Não</string>
     <string name="cc_bet_type_single_pick">Escolha única</string>
     <string name="cc_bet_type_ranking">Classificação</string>
+    <string name="cc_bet_type_time">Time</string>
+    <string name="cc_bet_type_day">Day</string>
+    <string name="cc_guess_scoring_closest">Closest wins</string>
+    <string name="cc_guess_scoring_exact">Exact match</string>
+    <string name="cc_guess_pick_time_title">Pick a time</string>
+    <string name="cc_guess_pick_day_title">Pick a day</string>
     <string name="cc_bet_remove">Remover aposta</string>
     <string name="cc_deadline_label">Prazo</string>
     <string name="cc_deadline_hint">Previsões se fecham neste momento</string>

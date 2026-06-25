@@ -10,6 +10,7 @@ import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.util.randomUuid
@@ -82,6 +83,8 @@ class LocalDraftStore(db: BragwiseDatabase) {
         val optionType: String = "NONE",
         val options: List<BetOptionDtoLocal> = emptyList(),
         val topN: Int = 1,
+        val granularity: String? = null,
+        val closest: Boolean = true,
     )
 
     @Serializable
@@ -120,6 +123,7 @@ class LocalDraftStore(db: BragwiseDatabase) {
             topN = topN,
         )
         is Bet.BooleanProp -> BetDtoLocal(kind = "BOOLEAN_PROP", id = id, title = title)
+        is Bet.Guess -> BetDtoLocal(kind = "GUESS", id = id, title = title, granularity = granularity.name, closest = closest)
     }
 
     private fun DraftDto.toDomain(): Challenge = Challenge(
@@ -148,6 +152,12 @@ class LocalDraftStore(db: BragwiseDatabase) {
         return when (kind) {
             "SINGLE_PICK" -> Bet.SinglePick(id = id, title = title, optionType = ot, options = opts)
             "RANKING" -> Bet.Ranking(id = id, title = title, optionType = ot, topN = topN, options = opts)
+            "GUESS" -> Bet.Guess(
+                id = id,
+                title = title,
+                granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
+                closest = closest,
+            )
             else -> Bet.BooleanProp(id = id, title = title)
         }
     }

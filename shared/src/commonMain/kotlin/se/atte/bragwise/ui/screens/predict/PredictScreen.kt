@@ -58,6 +58,7 @@ import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.ui.components.GuessPickerField
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.LocalSnackbarHost
@@ -127,6 +128,9 @@ fun PredictScreen(
             onRanking = { betId, orderedIds ->
                 viewModel.onIntent(PredictViewModel.Intent.SetRanking(betId, orderedIds))
             },
+            onGuess = { betId, value ->
+                viewModel.onIntent(PredictViewModel.Intent.SetGuess(betId, value))
+            },
             onSubmit = { viewModel.onIntent(PredictViewModel.Intent.Submit) },
         )
     }
@@ -140,6 +144,7 @@ private fun PredictContent(
     onSinglePick: (String, String) -> Unit,
     onBoolean: (String, Boolean) -> Unit,
     onRanking: (String, List<String>) -> Unit,
+    onGuess: (String, Long) -> Unit,
     onSubmit: () -> Unit,
 ) {
     LaunchedEffect(bets) {
@@ -178,6 +183,7 @@ private fun PredictContent(
                         onSinglePick = onSinglePick,
                         onBoolean = onBoolean,
                         onRanking = onRanking,
+                        onGuess = onGuess,
                     )
                 }
             }
@@ -216,6 +222,7 @@ private fun BetCard(
     onSinglePick: (String, String) -> Unit,
     onBoolean: (String, Boolean) -> Unit,
     onRanking: (String, List<String>) -> Unit,
+    onGuess: (String, Long) -> Unit,
 ) {
     SectionCard(title = bet.title) {
         when (bet) {
@@ -266,6 +273,11 @@ private fun BetCard(
                 orderedOptionIds = (draft as? PredictionPayload.Ranking)?.orderedOptionIds ?: emptyList(),
                 showFlag = bet.optionType == OptionType.COUNTRY,
                 onReorder = { ids -> onRanking(bet.id, ids) },
+            )
+            is Bet.Guess -> GuessPickerField(
+                granularity = bet.granularity,
+                value = (draft as? PredictionPayload.Guess)?.value,
+                onValueChange = { v -> onGuess(bet.id, v) },
             )
         }
     }
@@ -397,6 +409,7 @@ private fun Predict_Ready_Empty_Preview() {
                 onSinglePick = { _, _ -> },
                 onBoolean = { _, _ -> },
                 onRanking = { _, _ -> },
+                onGuess = { _, _ -> },
                 onSubmit = {},
             )
         }
@@ -415,6 +428,7 @@ private fun Predict_Ready_Partial_Preview() {
                 onSinglePick = { _, _ -> },
                 onBoolean = { _, _ -> },
                 onRanking = { _, _ -> },
+                onGuess = { _, _ -> },
                 onSubmit = {},
             )
         }
@@ -436,6 +450,7 @@ private fun Predict_Ranking_Active_Preview() {
                 onSinglePick = { _, _ -> },
                 onBoolean = { _, _ -> },
                 onRanking = { _, _ -> },
+                onGuess = { _, _ -> },
                 onSubmit = {},
             )
         }

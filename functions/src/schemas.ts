@@ -29,6 +29,7 @@ export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('SINGLE_PICK'), optionId: z.string().min(1) }),
   z.object({ kind: z.literal('RANKING'), orderedOptionIds: z.array(z.string().min(1)) }),
   z.object({ kind: z.literal('BOOLEAN_PROP'), value: z.boolean() }),
+  z.object({ kind: z.literal('GUESS'), guessValue: z.number().int() }),
 ]);
 
 // Phase 1.5: option shape extended with optional countryCode.
@@ -62,6 +63,13 @@ export const BetSchema = z.discriminatedUnion('kind', [
     kind: z.literal('BOOLEAN_PROP'),
     id: z.string().min(1),
     title: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal('GUESS'),
+    id: z.string().min(1),
+    title: z.string().min(1),
+    granularity: z.enum(['TIME', 'DAY']),
+    closest: z.boolean().default(true),
   }),
 ]);
 
@@ -99,7 +107,7 @@ function validateRankingTopN(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z
 // Prevents ambiguous predictions and unresolvable results.
 function validateNoDuplicateOptions(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z.RefinementCtx) {
   data.bets.forEach((bet, betIndex) => {
-    if (bet.kind === 'BOOLEAN_PROP') return;
+    if (bet.kind === 'BOOLEAN_PROP' || bet.kind === 'GUESS') return;
     const seen = new Set<string>();
     bet.options.forEach((option, optionIndex) => {
       const key = option.countryCode ?? option.label.trim().toLowerCase();

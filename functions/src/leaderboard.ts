@@ -13,14 +13,39 @@ export function computeLeaderboard(
 ): Record<string, number> {
   const board: Record<string, number> = {};
   for (const p of players) {
-    let total = 0;
-    for (const bet of bets) {
-      const pred = p.predictions[bet.id];
-      const result = results[bet.id];
-      if (pred && result) total += score(bet, pred, result);
-    }
-    board[p.uid] = total;
+    board[p.uid] = 0;
   }
+
+  for (const bet of bets) {
+    const result = results[bet.id];
+    if (!result) continue;
+
+    if (bet.kind === 'GUESS' && bet.closest) {
+      // Cross-player closest-wins pass: award 1 point to every player whose
+      // guess is closest to the actual result (ties → all tied players score).
+      if (result.kind !== 'GUESS') continue;
+      const actualValue = result.guessValue;
+      let bestDiff = Infinity;
+      const diffs: Array<{ uid: string; diff: number }> = [];
+      for (const p of players) {
+        const pred = p.predictions[bet.id];
+        if (!pred || pred.kind !== 'GUESS') continue;
+        const diff = Math.abs(pred.guessValue - actualValue);
+        diffs.push({ uid: p.uid, diff });
+        if (diff < bestDiff) bestDiff = diff;
+      }
+      for (const { uid, diff } of diffs) {
+        if (diff === bestDiff) board[uid] = (board[uid] ?? 0) + 1;
+      }
+    } else {
+      // Pairwise path for all other bets (including GUESS with closest=false).
+      for (const p of players) {
+        const pred = p.predictions[bet.id];
+        if (pred && result) board[p.uid] = (board[p.uid] ?? 0) + score(bet, pred, result);
+      }
+    }
+  }
+
   return board;
 }
 

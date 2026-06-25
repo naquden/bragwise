@@ -29,6 +29,16 @@ export function validatePayloadAgainstBet(bet: Bet, payload: PredictionPayload):
       }
       break;
     }
+    case 'GUESS': {
+      const p = payload as { kind: 'GUESS'; guessValue: number };
+      if (typeof p.guessValue !== 'number' || !Number.isInteger(p.guessValue)) {
+        throw invalid('guess-value-not-integer');
+      }
+      if (bet.granularity === 'TIME' && (p.guessValue < 0 || p.guessValue > 1439)) {
+        throw invalid('guess-time-out-of-range');
+      }
+      break;
+    }
   }
 }
 

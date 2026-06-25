@@ -7,6 +7,11 @@ import se.atte.bragwise.domain.PredictionPayload
  * Phase 1 scoring is uniform: 1 point per correct.
  * Mirrored as a TypeScript port in Cloud Functions for authoritative scoring;
  * fixture-driven parity test enforces agreement.
+ *
+ * NOTE: Bet.Guess with closest=true is NOT scored here — it requires all players'
+ * predictions and is handled by the leaderboard aggregator (computeLeaderboard in
+ * leaderboard.ts / the Kotlin equivalent). This function returns 0 for such bets
+ * so the aggregator can handle them without double-counting.
  */
 object ScoringEngine {
     fun score(
@@ -28,6 +33,16 @@ object ScoringEngine {
             val p = (prediction as PredictionPayload.Ranking).orderedOptionIds
             val r = (result as PredictionPayload.Ranking).orderedOptionIds
             p.zip(r).count { (a, b) -> a == b }
+        }
+        is Bet.Guess -> {
+            if (bet.closest) {
+                // Closest-wins is cross-player; scored by leaderboard aggregator, not here.
+                0
+            } else {
+                val p = prediction as PredictionPayload.Guess
+                val r = result as PredictionPayload.Guess
+                if (p.value == r.value) 1 else 0
+            }
         }
     }
 }

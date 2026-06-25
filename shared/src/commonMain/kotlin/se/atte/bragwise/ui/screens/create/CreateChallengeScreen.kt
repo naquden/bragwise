@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,9 +38,13 @@ import bragwise.shared.generated.resources.cc_add_country
 import bragwise.shared.generated.resources.cc_add_option
 import bragwise.shared.generated.resources.cc_bet_cancel_a11y
 import bragwise.shared.generated.resources.cc_bet_remove
+import bragwise.shared.generated.resources.cc_bet_type_day
 import bragwise.shared.generated.resources.cc_bet_type_ranking
 import bragwise.shared.generated.resources.cc_bet_type_single_pick
+import bragwise.shared.generated.resources.cc_bet_type_time
 import bragwise.shared.generated.resources.cc_bet_type_yes_no
+import bragwise.shared.generated.resources.cc_guess_scoring_closest
+import bragwise.shared.generated.resources.cc_guess_scoring_exact
 import bragwise.shared.generated.resources.cc_bets_visible_hint
 import bragwise.shared.generated.resources.cc_bets_visible_label
 import bragwise.shared.generated.resources.cc_cancel
@@ -91,6 +96,7 @@ import com.composables.icons.lucide.X
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.theme.ThemePreview
@@ -145,6 +151,7 @@ fun CreateChallengeScreen(
     var optionType by remember { mutableStateOf(OptionType.NONE) }
     var topN by remember { mutableIntStateOf(3) }
     var betType by remember { mutableStateOf(BetType.YesNo) }
+    var guessClosest by remember { mutableStateOf(true) }
     var editingBetId by rememberSaveable { mutableStateOf<String?>(null) }
     var showFriendPicker by rememberSaveable { mutableStateOf(false) }
 
@@ -156,6 +163,7 @@ fun CreateChallengeScreen(
         optionType = OptionType.NONE
         topN = 3
         betType = BetType.YesNo
+        guessClosest = true
     }
     val seedEditorFrom = { bet: Bet ->
         newBetTitle = bet.title
@@ -166,6 +174,7 @@ fun CreateChallengeScreen(
                 countryOptions = defaultCountryOptions()
                 optionType = OptionType.NONE
                 topN = 3
+                guessClosest = true
             }
             is Bet.SinglePick -> {
                 betType = BetType.SinglePick
@@ -173,6 +182,7 @@ fun CreateChallengeScreen(
                 options = bet.options.map { it.label }
                 countryOptions = bet.options
                 topN = 3
+                guessClosest = true
             }
             is Bet.Ranking -> {
                 betType = BetType.Ranking
@@ -180,6 +190,15 @@ fun CreateChallengeScreen(
                 options = bet.options.map { it.label }
                 countryOptions = bet.options
                 topN = bet.topN
+                guessClosest = true
+            }
+            is Bet.Guess -> {
+                betType = if (bet.granularity == GuessGranularity.TIME) BetType.Time else BetType.Day
+                options = listOf("", "")
+                countryOptions = defaultCountryOptions()
+                optionType = OptionType.NONE
+                topN = 3
+                guessClosest = bet.closest
             }
         }
     }
@@ -326,8 +345,11 @@ fun CreateChallengeScreen(
                             BetType.YesNo -> true
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
+                            BetType.Time, BetType.Day -> true
                         },
                         saveLabel = stringResource(Res.string.cc_save_bet),
+                        guessClosest = guessClosest,
+                        onGuessClosestChange = { guessClosest = it },
                         duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
                         onCancel = {
                             editingBetId = null
@@ -349,6 +371,8 @@ fun CreateChallengeScreen(
                                     options = resolvedOptions,
                                     topN = topN,
                                 )
+                                BetType.Time -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.TIME, closest = guessClosest)
+                                BetType.Day -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.DAY, closest = guessClosest)
                             }
                             viewModel.onIntent(CreateChallengeViewModel.Intent.UpdateBet(updated))
                             editingBetId = null
@@ -393,8 +417,11 @@ fun CreateChallengeScreen(
                             BetType.YesNo -> true
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
+                            BetType.Time, BetType.Day -> true
                         },
                         saveLabel = stringResource(Res.string.cc_save_bet),
+                        guessClosest = guessClosest,
+                        onGuessClosestChange = { guessClosest = it },
                         duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
                         onCancel = {
                             editingBetId = null
@@ -418,6 +445,20 @@ fun CreateChallengeScreen(
                                         optionType = optionType,
                                         options = resolvedOptions,
                                         topN = topN,
+                                    ),
+                                )
+                                BetType.Time -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddGuess(
+                                        title = newBetTitle,
+                                        granularity = GuessGranularity.TIME,
+                                        closest = guessClosest,
+                                    ),
+                                )
+                                BetType.Day -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddGuess(
+                                        title = newBetTitle,
+                                        granularity = GuessGranularity.DAY,
+                                        closest = guessClosest,
                                     ),
                                 )
                             }
@@ -449,7 +490,7 @@ fun CreateChallengeScreen(
     }
 }
 
-private enum class BetType { YesNo, SinglePick, Ranking }
+private enum class BetType { YesNo, SinglePick, Ranking, Time, Day }
 
 @Composable
 private fun BetEditor(
@@ -468,6 +509,8 @@ private fun BetEditor(
     onTopNChange: (Int) -> Unit,
     canSave: Boolean,
     saveLabel: String,
+    guessClosest: Boolean,
+    onGuessClosestChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     duplicateOptionError: String? = null,
@@ -487,8 +530,9 @@ private fun BetEditor(
                 )
             }
         }
-        Row(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+            verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
             modifier = Modifier.padding(top = standardPaddingSmall),
         ) {
             AppFilterChip(
@@ -506,6 +550,18 @@ private fun BetEditor(
                 onClick = { onBetTypeChange(BetType.Ranking) },
                 label = { Text(stringResource(Res.string.cc_bet_type_ranking)) },
                 modifier = Modifier.testTag("create_bet_ranking"),
+            )
+            AppFilterChip(
+                selected = betType == BetType.Time,
+                onClick = { onBetTypeChange(BetType.Time) },
+                label = { Text(stringResource(Res.string.cc_bet_type_time)) },
+                modifier = Modifier.testTag("create_bet_time"),
+            )
+            AppFilterChip(
+                selected = betType == BetType.Day,
+                onClick = { onBetTypeChange(BetType.Day) },
+                label = { Text(stringResource(Res.string.cc_bet_type_day)) },
+                modifier = Modifier.testTag("create_bet_day"),
             )
         }
         if (betType == BetType.SinglePick || betType == BetType.Ranking) {
@@ -558,6 +614,23 @@ private fun BetEditor(
                 modifier = Modifier.padding(top = standardPaddingSmall),
             )
         }
+        if (betType == BetType.Time || betType == BetType.Day) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+                modifier = Modifier.padding(top = standardPaddingSmall),
+            ) {
+                AppFilterChip(
+                    selected = guessClosest,
+                    onClick = { onGuessClosestChange(true) },
+                    label = { Text(stringResource(Res.string.cc_guess_scoring_closest)) },
+                )
+                AppFilterChip(
+                    selected = !guessClosest,
+                    onClick = { onGuessClosestChange(false) },
+                    label = { Text(stringResource(Res.string.cc_guess_scoring_exact)) },
+                )
+            }
+        }
         if (duplicateOptionError != null) {
             Text(
                 text = duplicateOptionError,
@@ -581,6 +654,7 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
         is Bet.SinglePick -> bet.options
         is Bet.Ranking -> bet.options
         is Bet.BooleanProp -> emptyList()
+        is Bet.Guess -> emptyList()
     }
     val showExpand = options.size > 4
 
@@ -821,6 +895,10 @@ private fun Bet.kindLabel(): String = when (this) {
         OptionType.COUNTRY -> "Ranking · top $topN of ${options.size} countries"
         OptionType.NONE -> "Ranking · top $topN of ${options.size}"
     }
+    is Bet.Guess -> when (granularity) {
+        GuessGranularity.TIME -> if (closest) "Time · closest wins" else "Time · exact"
+        GuessGranularity.DAY -> if (closest) "Day · closest wins" else "Day · exact"
+    }
 }
 
 // region Previews
@@ -845,6 +923,8 @@ private fun CreateChallenge_BetEditor_Preview() {
             onTopNChange = {},
             canSave = true,
             saveLabel = "Save bet",
+            guessClosest = true,
+            onGuessClosestChange = {},
             onSave = {},
             onCancel = {},
         )

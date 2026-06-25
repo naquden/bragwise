@@ -22,6 +22,7 @@ import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.mvi.ScreenViewModel
@@ -78,6 +79,7 @@ class CreateChallengeViewModel(
             val topN: Int = 3,
         ) : Intent
         data class AddBoolean(val title: String) : Intent
+        data class AddGuess(val title: String, val granularity: GuessGranularity, val closest: Boolean = true) : Intent
         data class RemoveBet(val betId: String) : Intent
         data class UpdateBet(val bet: Bet) : Intent
         data class SetInvitedUids(val uids: Set<String>) : Intent
@@ -152,6 +154,11 @@ class CreateChallengeViewModel(
             is Intent.AddBoolean -> update {
                 val seq = it.betSeq + 1
                 val bet = Bet.BooleanProp(id = "b$seq", title = intent.title)
+                it.copy(bets = it.bets + bet, betSeq = seq)
+            }
+            is Intent.AddGuess -> update {
+                val seq = it.betSeq + 1
+                val bet = Bet.Guess(id = "b$seq", title = intent.title, granularity = intent.granularity, closest = intent.closest)
                 it.copy(bets = it.bets + bet, betSeq = seq)
             }
             is Intent.RemoveBet -> update { it.copy(bets = it.bets.filterNot { b -> b.id == intent.betId }) }

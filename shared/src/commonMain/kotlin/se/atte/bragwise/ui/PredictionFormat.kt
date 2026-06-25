@@ -3,6 +3,7 @@ package se.atte.bragwise.ui
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.scoring.ScoringEngine
 
@@ -35,6 +36,7 @@ fun compactPick(bet: Bet, payload: PredictionPayload?, maxItems: Int = 2): Strin
                 if (remaining > 0) "$shown +$remaining more" else shown
             }
         }
+        is Bet.Guess -> (payload as? PredictionPayload.Guess)?.let { formatGuessValue(it.value, bet.granularity) }
     }
 }
 
@@ -57,6 +59,7 @@ fun fullPick(bet: Bet, payload: PredictionPayload?): String {
                 "${index + 1}. $label"
             }.joinToString(", ")
         }
+        is Bet.Guess -> (payload as? PredictionPayload.Guess)?.let { formatGuessValue(it.value, bet.granularity) } ?: "—"
     }
 }
 
@@ -69,6 +72,9 @@ fun betPoints(bet: Bet, detail: ChallengeDetail): Int? {
     val results = detail.challenge.results ?: return null
     val prediction = detail.myPredictions[bet.id] ?: return 0
     val result = results[bet.id] ?: return null
+    // Closest-wins Guess bets are scored cross-player by the leaderboard aggregator;
+    // the client cannot compute the point without all players' predictions.
+    if (bet is Bet.Guess && bet.closest) return null
     return ScoringEngine.score(bet = bet, prediction = prediction, result = result)
 }
 
@@ -84,6 +90,7 @@ fun PredictionPayload?.isCompleteFor(bet: Bet): Boolean = when (bet) {
     }
     is Bet.SinglePick -> this is PredictionPayload.SinglePick && bet.options.any { it.id == this.optionId }
     is Bet.BooleanProp -> this is PredictionPayload.BooleanProp
+    is Bet.Guess -> this is PredictionPayload.Guess
 }
 
 /** Number of bets the user has a valid complete prediction for. */
@@ -93,4 +100,28 @@ fun ChallengeDetail.predictedCount(): Int = challenge.bets.count { myPredictions
 fun PredictionPayload.withoutEmptySlots(): PredictionPayload = when (this) {
     is PredictionPayload.Ranking -> PredictionPayload.Ranking(orderedOptionIds.filter { it.isNotEmpty() })
     else -> this
+}
+
+/** Formats a Guess value for display. TIME: "HH:mm"; DAY: "yyyy-MM-dd" (UTC). */
+fun formatGuessValue(value: Long, granularity: GuessGranularity): String = when (granularity) {
+    GuessGranularity.TIME -> {
+        val h = (value / 60).toInt()
+        val m = (value % 60).toInt()
+        "${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"
+    }
+    GuessGranularity.DAY -> {
+        val totalDays = value
+        // Compute year/month/day from epoch-day using proleptic Gregorian calendar.
+        val z = totalDays + 719468L
+        val era = (if (z >= 0) z else z - 146096L) / 146097L
+        val doe = (z - era * 146097L).toInt()
+        val yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+        val y = yoe + era * 400L
+        val doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+        val mp = (5 * doy + 2) / 153
+        val d = doy - (153 * mp + 2) / 5 + 1
+        val m = if (mp < 10) mp + 3 else mp - 9
+        val yr = if (m <= 2) y + 1 else y
+        "${yr}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}"
+    }
 }

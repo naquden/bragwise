@@ -136,6 +136,35 @@
       "prediction": {"kind": "RANKING", "orderedOptionIds": ["x", "y"]},
       "result": {"kind": "RANKING", "orderedOptionIds": ["x", "y", "z"]},
       "expected": 2
+    },
+    {
+      "name": "guess_exact_correct",
+      "bet": {"kind": "GUESS", "id": "b11", "title": "Arrival time", "granularity": "TIME", "closest": false},
+      "prediction": {"kind": "GUESS", "guessValue": 870},
+      "result": {"kind": "GUESS", "guessValue": 870},
+      "expected": 1
+    },
+    {
+      "name": "guess_exact_wrong",
+      "bet": {"kind": "GUESS", "id": "b12", "title": "Arrival time", "granularity": "TIME", "closest": false},
+      "prediction": {"kind": "GUESS", "guessValue": 870},
+      "result": {"kind": "GUESS", "guessValue": 900},
+      "expected": 0
+    },
+    {
+      "name": "guess_closest_returns_zero_from_score",
+      "$comment": "closest=true bets are scored by computeLeaderboard; score() must return 0 to avoid double-counting",
+      "bet": {"kind": "GUESS", "id": "b13", "title": "Arrival time", "granularity": "TIME", "closest": true},
+      "prediction": {"kind": "GUESS", "guessValue": 870},
+      "result": {"kind": "GUESS", "guessValue": 870},
+      "expected": 0
+    },
+    {
+      "name": "guess_day_exact_correct",
+      "bet": {"kind": "GUESS", "id": "b14", "title": "Birth day", "granularity": "DAY", "closest": false},
+      "prediction": {"kind": "GUESS", "guessValue": 19900},
+      "result": {"kind": "GUESS", "guessValue": 19900},
+      "expected": 1
     }
   ]
 }

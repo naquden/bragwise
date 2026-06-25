@@ -12,6 +12,7 @@ import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.FriendRequests
 import se.atte.bragwise.domain.GENERIC_DISPLAY_NAME
+import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.HeadToHead
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.OptionType
@@ -39,6 +40,8 @@ private data class BetDto(
     val optionType: String = "NONE",
     val options: List<BetOptionDto> = emptyList(),
     val topN: Int = 1,
+    val granularity: String? = null,
+    val closest: Boolean = true,
 )
 
 @Serializable
@@ -47,6 +50,7 @@ private data class PredictionPayloadDto(
     val optionId: String? = null,
     val orderedOptionIds: List<String> = emptyList(),
     val value: Boolean? = null,
+    val guessValue: Long? = null,
 )
 
 @Serializable
@@ -147,6 +151,12 @@ private fun BetDto.toDomain(): Bet {
     return when (kind) {
         "SINGLE_PICK" -> Bet.SinglePick(id = id, title = title, optionType = ot, options = opts)
         "RANKING" -> Bet.Ranking(id = id, title = title, optionType = ot, topN = topN, options = opts)
+        "GUESS" -> Bet.Guess(
+            id = id,
+            title = title,
+            granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
+            closest = closest,
+        )
         else -> Bet.BooleanProp(id = id, title = title)
     }
 }
@@ -155,6 +165,7 @@ private fun PredictionPayloadDto.toDomain(): PredictionPayload? = when (kind) {
     "SINGLE_PICK" -> optionId?.let { PredictionPayload.SinglePick(optionId = it) }
     "RANKING" -> PredictionPayload.Ranking(orderedOptionIds = orderedOptionIds)
     "BOOLEAN_PROP" -> value?.let { PredictionPayload.BooleanProp(value = it) }
+    "GUESS" -> guessValue?.let { PredictionPayload.Guess(value = it) }
     else -> null
 }
 
@@ -178,6 +189,7 @@ internal fun PredictionPayload.toMap(): Map<String, Any?> = when (this) {
     is PredictionPayload.SinglePick -> mapOf("kind" to "SINGLE_PICK", "optionId" to optionId)
     is PredictionPayload.Ranking -> mapOf("kind" to "RANKING", "orderedOptionIds" to orderedOptionIds)
     is PredictionPayload.BooleanProp -> mapOf("kind" to "BOOLEAN_PROP", "value" to value)
+    is PredictionPayload.Guess -> mapOf("kind" to "GUESS", "guessValue" to value)
 }
 
 // ── Other document types ─────────────────────────────────────────────────────

@@ -23,6 +23,13 @@ fun isValidPayload(bet: Bet, payload: PredictionPayload): Boolean {
             }
             true
         }
+        is Bet.Guess -> {
+            val p = payload as? PredictionPayload.Guess ?: return false
+            when (bet.granularity) {
+                se.atte.bragwise.domain.GuessGranularity.TIME -> p.value in 0L..1439L
+                se.atte.bragwise.domain.GuessGranularity.DAY -> true
+            }
+        }
     }
 }
 
@@ -45,4 +52,5 @@ private fun Bet.expectedPayloadClass() = when (this) {
     is Bet.SinglePick -> PredictionPayload.SinglePick::class
     is Bet.Ranking -> PredictionPayload.Ranking::class
     is Bet.BooleanProp -> PredictionPayload.BooleanProp::class
+    is Bet.Guess -> PredictionPayload.Guess::class
 }

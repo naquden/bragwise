@@ -8,13 +8,21 @@
 export type Bet =
   | { kind: 'SINGLE_PICK'; id: string; title: string; options: { id: string; label: string }[] }
   | { kind: 'RANKING'; id: string; title: string; topN: number; options: { id: string; label: string }[] }
-  | { kind: 'BOOLEAN_PROP'; id: string; title: string };
+  | { kind: 'BOOLEAN_PROP'; id: string; title: string }
+  | { kind: 'GUESS'; id: string; title: string; granularity: 'TIME' | 'DAY'; closest: boolean };
 
 export type PredictionPayload =
   | { kind: 'SINGLE_PICK'; optionId: string }
   | { kind: 'RANKING'; orderedOptionIds: string[] }
-  | { kind: 'BOOLEAN_PROP'; value: boolean };
+  | { kind: 'BOOLEAN_PROP'; value: boolean }
+  | { kind: 'GUESS'; guessValue: number };
 
+/**
+ * Pairwise score function.
+ * NOTE: GUESS bets with closest=true are scored cross-player by computeLeaderboard,
+ * not here. This function returns 0 for those bets so the aggregator can add
+ * points without double-counting.
+ */
 export function score(bet: Bet, prediction: PredictionPayload, result: PredictionPayload): number {
   switch (bet.kind) {
     case 'SINGLE_PICK': {
@@ -41,6 +49,16 @@ export function score(bet: Bet, prediction: PredictionPayload, result: Predictio
         if (p[i] === r[i]) matches++;
       }
       return matches;
+    }
+    case 'GUESS': {
+      if (prediction.kind !== 'GUESS' || result.kind !== 'GUESS') {
+        throw new Error(`payload kind mismatch for GUESS bet ${bet.id}`);
+      }
+      if (bet.closest) {
+        // Closest-wins is cross-player; scored by computeLeaderboard, not here.
+        return 0;
+      }
+      return prediction.guessValue === result.guessValue ? 1 : 0;
     }
   }
 }

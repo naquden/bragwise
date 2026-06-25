@@ -310,6 +310,10 @@ private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this)
     is se.atte.bragwise.domain.Bet.BooleanProp -> mapOf(
         "kind" to "BOOLEAN_PROP", "id" to id, "title" to title,
     )
+    is se.atte.bragwise.domain.Bet.Guess -> mapOf(
+        "kind" to "GUESS", "id" to id, "title" to title,
+        "granularity" to granularity.name, "closest" to closest,
+    )
 }
 
 private fun se.atte.bragwise.domain.BetOption.toMap(): Map<String, Any> = buildMap {

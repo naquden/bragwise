@@ -42,6 +42,7 @@ import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
+import se.atte.bragwise.ui.components.GuessPickerField
 import se.atte.bragwise.ui.components.LoadingDialog
 import se.atte.bragwise.ui.components.RankingDragList
 import se.atte.bragwise.ui.components.SectionCard
@@ -97,6 +98,9 @@ fun PostResultsScreen(
                             onRanking = { ids ->
                                 viewModel.onIntent(PostResultsViewModel.Intent.SetRanking(bet.id, ids))
                             },
+                            onGuess = { value ->
+                                viewModel.onIntent(PostResultsViewModel.Intent.SetGuess(bet.id, value))
+                            },
                         )
                     }
                 }
@@ -144,6 +148,7 @@ private fun BetRow(
     onSinglePick: (String) -> Unit,
     onBoolean: (Boolean) -> Unit,
     onRanking: (List<String>) -> Unit,
+    onGuess: (Long) -> Unit,
 ) {
     SectionCard(title = bet.title) {
         when (bet) {
@@ -169,6 +174,11 @@ private fun BetRow(
                 showFlag = false,
                 onReorder = onRanking,
             )
+            is Bet.Guess -> GuessPickerField(
+                granularity = bet.granularity,
+                value = (current as? PredictionPayload.Guess)?.value,
+                onValueChange = onGuess,
+            )
         }
     }
 }
@@ -190,6 +200,7 @@ private fun PostResults_Preview() {
                     onSinglePick = {},
                     onBoolean = {},
                     onRanking = {},
+                    onGuess = {},
                 )
             }
         }

@@ -35,6 +35,7 @@ class PostResultsViewModel(
         data class SetSinglePick(val betId: String, val optionId: String) : Intent
         data class SetBoolean(val betId: String, val value: Boolean) : Intent
         data class SetRanking(val betId: String, val orderedIds: List<String>) : Intent
+        data class SetGuess(val betId: String, val value: Long) : Intent
         data object RequestConfirm : Intent
         data object Cancel : Intent
         data object Submit : Intent
@@ -65,6 +66,9 @@ class PostResultsViewModel(
         }
         is Intent.SetRanking -> update {
             it.copy(results = it.results + (intent.betId to PredictionPayload.Ranking(intent.orderedIds)))
+        }
+        is Intent.SetGuess -> update {
+            it.copy(results = it.results + (intent.betId to PredictionPayload.Guess(intent.value)))
         }
         Intent.RequestConfirm -> update { it.copy(confirming = true) }
         Intent.Cancel -> update { it.copy(confirming = false) }
