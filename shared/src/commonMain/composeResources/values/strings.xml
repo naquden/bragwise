@@ -170,6 +170,7 @@
     <string name="cd_view_predictions">View predictions</string>
     <string name="cd_snackbar_share_failed">Couldn\'t share challenge</string>
     <string name="cd_snackbar_delete_failed">Delete failed: %1$s</string>
+    <string name="cd_snackbar_invites_sent">Invites sent</string>
 
     <!-- Challenges screen (cl_) — empty state / intro card. -->
     <string name="cl_empty_create_first">Create your first challenge</string>
@@ -301,12 +302,9 @@
     <string name="me_privacy_policy">Privacy Policy</string>
     <string name="me_support">Support</string>
 
-    <!-- Invite friends screen. -->
-    <string name="invite_pick_friends">Pick friends to invite</string>
-    <string name="invite_selected">%1$d selected</string>
-    <string name="invite_sending">Sending…</string>
+    <!-- Friend picker dialog. -->
+    <string name="friend_picker_select_all">Select all</string>
     <string name="invite_button">Invite %1$d</string>
-    <string name="invite_no_friends">No friends yet — add some first.</string>
 
     <!-- About screen. -->
     <string name="about_section_title" translatable="false">Bragwise</string>

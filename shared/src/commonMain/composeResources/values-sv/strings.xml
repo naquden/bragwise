@@ -139,6 +139,7 @@
     <string name="cd_view_predictions">Visa tipsningar</string>
     <string name="cd_snackbar_share_failed">Kunde inte dela utmaningen</string>
     <string name="cd_snackbar_delete_failed">Borttagning misslyckades: %1$s</string>
+    <string name="cd_snackbar_invites_sent">Inbjudningar skickade</string>
 
     <string name="cl_empty_create_first">Skapa din första utmaning</string>
     <string name="cl_empty_body">Skapa en för att börja tipsa med vänner.</string>
@@ -260,11 +261,8 @@
     <string name="me_privacy_policy">Integritetspolicy</string>
     <string name="me_support">Support</string>
 
-    <string name="invite_pick_friends">Välj vänner att bjuda in</string>
-    <string name="invite_selected">%1$d valda</string>
-    <string name="invite_sending">Skickar…</string>
     <string name="invite_button">Bjud in %1$d</string>
-    <string name="invite_no_friends">Inga vänner än — lägg till några först.</string>
+    <string name="friend_picker_select_all">Välj alla</string>
 
     <string name="about_section_title" translatable="false">Bragwise</string>
     <string name="about_tagline">Tipsa. Tävla. Skryt.</string>

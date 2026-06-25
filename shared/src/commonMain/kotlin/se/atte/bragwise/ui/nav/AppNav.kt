@@ -96,8 +96,6 @@ import se.atte.bragwise.ui.screens.friends.FriendRequestsScreen
 import se.atte.bragwise.ui.screens.friends.FriendRequestsViewModel
 import se.atte.bragwise.ui.screens.friends.FriendsScreen
 import se.atte.bragwise.ui.screens.friends.FriendsViewModel
-import se.atte.bragwise.ui.screens.invite.InviteFriendsScreen
-import se.atte.bragwise.ui.screens.invite.InviteFriendsViewModel
 import se.atte.bragwise.ui.screens.me.MeScreen
 import se.atte.bragwise.ui.screens.me.MeViewModel
 import se.atte.bragwise.ui.screens.onboarding.WelcomeScreen
@@ -127,7 +125,6 @@ import se.atte.bragwise.verify.VerifyAutomation
 @Serializable data object RouteFriends
 @Serializable data object RouteWelcome
 @Serializable data class RouteChallengeSummary(val challengeId: String)
-@Serializable data class RouteInvite(val challengeId: String)
 @Serializable data class RouteParticipantBets(val challengeId: String, val uid: String)
 @Serializable data class RoutePostResults(val challengeId: String)
 @Serializable data object RouteFriendRequests
@@ -390,7 +387,6 @@ fun AppNav() {
                         onNavigateToSummary = { navController.navigate(RouteChallengeSummary(route.id)) },
                         onNavigateToPostResults = { id -> navController.navigate(RoutePostResults(id)) },
                         onNavigateToParticipant = { challengeId, uid -> navController.navigate(RouteParticipantBets(challengeId = challengeId, uid = uid)) },
-                        onNavigateToInvite = { id -> navController.navigate(RouteInvite(id)) },
                         onNavigateToClone = { id -> navController.navigate(RouteCreate(cloneSourceId = id)) },
                         onDeleted = { navController.popBackStack() },
                     )
@@ -479,14 +475,6 @@ fun AppNav() {
                     ParticipantBetsScreen(
                         viewModel = koinViewModel<ParticipantBetsViewModel> { parametersOf(route.challengeId, route.uid) },
                         snackbarHostState = snackbarHostState,
-                    )
-                }
-                composable<RouteInvite> { entry ->
-                    val route = entry.toRoute<RouteInvite>()
-                    InviteFriendsScreen(
-                        viewModel = koinViewModel<InviteFriendsViewModel> { parametersOf(route.challengeId) },
-                        snackbarHostState = snackbarHostState,
-                        onSent = { navController.popBackStack() },
                     )
                 }
                 composable<RoutePostResults> { entry ->

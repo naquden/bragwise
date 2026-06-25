@@ -137,6 +137,7 @@
     <string name="cd_view_predictions">Vorhersagen anzeigen</string>
     <string name="cd_snackbar_share_failed">Herausforderung konnte nicht geteilt werden</string>
     <string name="cd_snackbar_delete_failed">Löschen fehlgeschlagen: %1$s</string>
+    <string name="cd_snackbar_invites_sent">Einladungen gesendet</string>
 
     <string name="cl_empty_create_first">Erstellen Sie Ihre erste Herausforderung</string>
     <string name="cl_empty_body">Erstellen Sie eine, um mit Freunden vorherzusagen.</string>
@@ -254,11 +255,8 @@
     <string name="me_delete">Löschen</string>
     <string name="me_cancel">Abbrechen</string>
 
-    <string name="invite_pick_friends">Wählen Sie Freunde zum Einladen</string>
-    <string name="invite_selected">%1$d ausgewählt</string>
-    <string name="invite_sending">Senden…</string>
     <string name="invite_button">%1$d einladen</string>
-    <string name="invite_no_friends">Noch keine Freunde — fügen Sie zuerst welche hinzu.</string>
+    <string name="friend_picker_select_all">Alle auswählen</string>
 
     <string name="about_section_title" translatable="false">Bragwise</string>
     <string name="about_tagline">Vorhersagen. Konkurrieren. Prahlen.</string>

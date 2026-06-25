@@ -3,23 +3,30 @@ package se.atte.bragwise.ui.screens.detail
 import androidx.lifecycle.viewModelScope
 import dev.gitlive.firebase.functions.FirebaseFunctionsException
 import dev.gitlive.firebase.functions.FunctionsExceptionCode
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeGoneException
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ProfileRepository
+import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.data.shareUrlForChallenge
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.mvi.toCause
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.AnalyticsEvent
 import kotlin.concurrent.Volatile
 
 /**
@@ -33,11 +40,16 @@ class ChallengeDetailViewModel(
     private val challenges: ChallengeRepository,
     private val auth: AuthRepository,
     private val profile: ProfileRepository,
+    private val social: SocialRepository,
     private val errorReporter: ErrorReporter,
-    private val analytics: se.atte.bragwise.platform.Analytics,
+    private val analytics: Analytics,
 ) : ScreenViewModel<ChallengeDetailViewModel.State, ChallengeDetailViewModel.Intent, ChallengeDetailViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
+
+    val friends = social.observeFriends()
+        .map { list -> list.filterIsInstance<CloudFriend>() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     @Volatile
     private var deletedEmitted = false
@@ -53,6 +65,8 @@ class ChallengeDetailViewModel(
         val isOwner: Boolean = false,
         val myUid: String = "",
         val confirmingDelete: Boolean = false,
+        val invitingFriends: Boolean = false,
+        val sendingInvites: Boolean = false,
     )
 
     sealed interface Intent {
@@ -67,6 +81,9 @@ class ChallengeDetailViewModel(
         data object ConfirmDelete : Intent
         data object Share : Intent
         data object Clone : Intent
+        data object OpenInvite : Intent
+        data object DismissInvite : Intent
+        data class SendInvites(val uids: Set<String>) : Intent
     }
 
     sealed interface Effect {
@@ -87,6 +104,7 @@ class ChallengeDetailViewModel(
     sealed interface SnackbarMessage {
         data object ShareFailed : SnackbarMessage
         data class DeleteFailed(val message: String) : SnackbarMessage
+        data object InvitesSent : SnackbarMessage
     }
 
     init {
@@ -169,7 +187,7 @@ class ChallengeDetailViewModel(
             Intent.Share -> {
                 val title = (state.value.ui as? UiState.Ready)?.data?.title
                 if (title != null) {
-                    analytics.log(se.atte.bragwise.platform.AnalyticsEvent.ShareTapped("native"))
+                    analytics.log(AnalyticsEvent.ShareTapped("native"))
                     emitEffect(
                         Effect.ShareLink(
                             url = shareUrlForChallenge(challengeId),
@@ -179,6 +197,22 @@ class ChallengeDetailViewModel(
                 }
             }
             Intent.Clone -> emitEffect(Effect.GoToClone(challengeId))
+            Intent.OpenInvite -> update { it.copy(invitingFriends = true) }
+            Intent.DismissInvite -> update { it.copy(invitingFriends = false) }
+            is Intent.SendInvites -> viewModelScope.launch {
+                update { it.copy(sendingInvites = true) }
+                val count = intent.uids.size
+                challenges.inviteFriends(challengeId, intent.uids.toList())
+                    .onSuccess {
+                        analytics.log(AnalyticsEvent.ShareTapped("invite", count))
+                        update { it.copy(invitingFriends = false, sendingInvites = false) }
+                        emitEffect(Effect.Snackbar(SnackbarMessage.InvitesSent))
+                    }
+                    .onFailure { e ->
+                        errorReporter.report(e)
+                        update { it.copy(sendingInvites = false) }
+                    }
+            }
         }
     }
 }

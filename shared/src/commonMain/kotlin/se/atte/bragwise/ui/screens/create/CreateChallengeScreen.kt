@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -99,7 +97,6 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.X
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
-import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
@@ -112,6 +109,7 @@ import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.DeadlinePickerField
+import se.atte.bragwise.ui.components.FriendPickerDialog
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
@@ -247,6 +245,7 @@ fun CreateChallengeScreen(
         FriendPickerDialog(
             friends = friends,
             initial = state.invitedUids,
+            confirmLabel = stringResource(Res.string.cc_done),
             onDismiss = { showFriendPicker = false },
             onConfirm = { uids ->
                 viewModel.onIntent(CreateChallengeViewModel.Intent.SetInvitedUids(uids))
@@ -814,54 +813,6 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun FriendPickerDialog(
-    friends: List<CloudFriend>,
-    initial: Set<String>,
-    onDismiss: () -> Unit,
-    onConfirm: (Set<String>) -> Unit,
-) {
-    var selected by remember(initial) { mutableStateOf(initial) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.cc_invite_dialog_title)) },
-        text = {
-            if (friends.isEmpty()) {
-                Text(stringResource(Res.string.cc_no_friends_yet))
-            } else {
-                LazyColumn {
-                    items(items = friends, key = { it.id }) { friend ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selected = if (friend.id in selected) selected - friend.id else selected + friend.id
-                                }
-                                .padding(horizontal = 4.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(friend.displayName, style = MaterialTheme.typography.bodyLarge)
-                            Checkbox(
-                                checked = friend.id in selected,
-                                onCheckedChange = {
-                                    selected = if (friend.id in selected) selected - friend.id else selected + friend.id
-                                },
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            AppTextButton(onClick = { onConfirm(selected) }) { Text(stringResource(Res.string.cc_done)) }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(Res.string.cc_cancel)) }
-        },
-    )
-}
 
 @Composable
 private fun OptionsEditor(

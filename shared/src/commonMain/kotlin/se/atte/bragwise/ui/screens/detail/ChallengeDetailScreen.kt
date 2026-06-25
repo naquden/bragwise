@@ -74,11 +74,14 @@ import bragwise.shared.generated.resources.cd_predicted
 import bragwise.shared.generated.resources.cd_results_posted
 import bragwise.shared.generated.resources.cd_show_more
 import bragwise.shared.generated.resources.cd_snackbar_delete_failed
+import bragwise.shared.generated.resources.cd_snackbar_invites_sent
 import bragwise.shared.generated.resources.cd_snackbar_share_failed
 import bragwise.shared.generated.resources.cd_view_predictions
 import bragwise.shared.generated.resources.cd_your_rank
 import bragwise.shared.generated.resources.cta_share
 import bragwise.shared.generated.resources.deadline_locks_prefix
+import bragwise.shared.generated.resources.invite_button
+import se.atte.bragwise.ui.components.FriendPickerDialog
 import se.atte.bragwise.ui.components.formatDeadline
 import se.atte.bragwise.ui.preview.sampleDetail
 
@@ -91,11 +94,11 @@ fun ChallengeDetailScreen(
     onNavigateToSummary: (String) -> Unit,
     onNavigateToPostResults: (String) -> Unit,
     onNavigateToParticipant: (challengeId: String, uid: String) -> Unit,
-    onNavigateToInvite: (String) -> Unit,
     onNavigateToClone: (String) -> Unit,
     onDeleted: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val friends by viewModel.friends.collectAsStateWithLifecycle()
 
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -118,10 +121,23 @@ fun ChallengeDetailScreen(
                         getString(Res.string.cd_snackbar_share_failed)
                     is ChallengeDetailViewModel.SnackbarMessage.DeleteFailed ->
                         getString(Res.string.cd_snackbar_delete_failed, msg.message)
+                    ChallengeDetailViewModel.SnackbarMessage.InvitesSent ->
+                        getString(Res.string.cd_snackbar_invites_sent)
                 }
                 snackbarHostState.showSnackbar(text)
             }
         }
+    }
+
+    if (state.invitingFriends) {
+        FriendPickerDialog(
+            friends = friends,
+            initial = emptySet(),
+            confirmLabel = stringResource(Res.string.cd_invite_friends),
+            confirmEnabled = !state.sendingInvites,
+            onDismiss = { viewModel.onIntent(ChallengeDetailViewModel.Intent.DismissInvite) },
+            onConfirm = { uids -> viewModel.onIntent(ChallengeDetailViewModel.Intent.SendInvites(uids)) },
+        )
     }
 
     when (val ui = state.ui) {
@@ -167,7 +183,7 @@ fun ChallengeDetailScreen(
                 onPostResults = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPostResults) },
                 onParticipant = { uid -> viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenParticipant(uid)) },
                 onShare = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Share) },
-                onInvite = { (state.ui as? UiState.Ready)?.data?.challenge?.id?.let { onNavigateToInvite(it) } },
+                onInvite = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenInvite) },
                 onClone = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Clone) },
                 onRequestDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.RequestDelete) },
                 onCancelDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.CancelDelete) },

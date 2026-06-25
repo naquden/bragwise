@@ -137,6 +137,7 @@
     <string name="cd_view_predictions">查看预测</string>
     <string name="cd_snackbar_share_failed">无法分享挑战</string>
     <string name="cd_snackbar_delete_failed">删除失败: %1$s</string>
+    <string name="cd_snackbar_invites_sent">邀请已发送</string>
 
     <string name="cl_empty_create_first">创建您的第一个挑战</string>
     <string name="cl_empty_body">创建一个开始与朋友一起预测。</string>
@@ -254,11 +255,8 @@
     <string name="me_delete">删除</string>
     <string name="me_cancel">取消</string>
 
-    <string name="invite_pick_friends">选择要邀请的朋友</string>
-    <string name="invite_selected">已选择 %1$d 个</string>
-    <string name="invite_sending">正在发送…</string>
     <string name="invite_button">邀请 %1$d 人</string>
-    <string name="invite_no_friends">还没有朋友 — 先添加一些。</string>
+    <string name="friend_picker_select_all">全选</string>
 
     <string name="about_section_title" translatable="false">Bragwise</string>
     <string name="about_tagline">预测。竞争。吹牛。</string>

@@ -137,6 +137,7 @@
     <string name="cd_view_predictions">Ver previsões</string>
     <string name="cd_snackbar_share_failed">Não foi possível compartilhar o desafio</string>
     <string name="cd_snackbar_delete_failed">Falha ao deletar: %1$s</string>
+    <string name="cd_snackbar_invites_sent">Convites enviados</string>
 
     <string name="cl_empty_create_first">Crie seu primeiro desafio</string>
     <string name="cl_empty_body">Crie um para começar a prever com amigos.</string>
@@ -254,11 +255,8 @@
     <string name="me_delete">Deletar</string>
     <string name="me_cancel">Cancelar</string>
 
-    <string name="invite_pick_friends">Escolha amigos para convidar</string>
-    <string name="invite_selected">%1$d selecionados</string>
-    <string name="invite_sending">Enviando…</string>
     <string name="invite_button">Convidar %1$d</string>
-    <string name="invite_no_friends">Sem amigos ainda — adicione alguns primeiro.</string>
+    <string name="friend_picker_select_all">Selecionar tudo</string>
 
     <string name="about_section_title" translatable="false">Bragwise</string>
     <string name="about_tagline">Preveja. Compita. Vanglorie-se.</string>

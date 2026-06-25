@@ -6,7 +6,6 @@ import org.koin.dsl.module
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
 import se.atte.bragwise.ui.screens.bets.BetListViewModel
 import se.atte.bragwise.ui.screens.friends.FriendRequestsViewModel
-import se.atte.bragwise.ui.screens.invite.InviteFriendsViewModel
 import se.atte.bragwise.ui.screens.challenges.ChallengesViewModel
 import se.atte.bragwise.ui.screens.create.CreateChallengeViewModel
 import se.atte.bragwise.ui.screens.detail.ChallengeDetailViewModel
@@ -54,6 +53,7 @@ val viewModelModule = module {
             challenges = get(),
             auth = get(),
             profile = get(),
+            social = get(),
             errorReporter = get(),
             analytics = get(),
         )
@@ -74,15 +74,6 @@ val viewModelModule = module {
             challengeId = params.get<String>(),
             challenges = get(),
             errorReporter = get(),
-        )
-    }
-    viewModel<InviteFriendsViewModel> { params ->
-        InviteFriendsViewModel(
-            challengeId = params.get<String>(),
-            social = get(),
-            challenges = get(),
-            errorReporter = get(),
-            analytics = get(),
         )
     }
     viewModel<PostResultsViewModel> { params ->

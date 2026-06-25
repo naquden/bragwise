@@ -137,6 +137,7 @@
     <string name="cd_view_predictions">Visualizza previsioni</string>
     <string name="cd_snackbar_share_failed">Impossibile condividere la sfida</string>
     <string name="cd_snackbar_delete_failed">Eliminazione non riuscita: %1$s</string>
+    <string name="cd_snackbar_invites_sent">Inviti inviati</string>
 
     <string name="cl_empty_create_first">Crea la tua prima sfida</string>
     <string name="cl_empty_body">Creane una per iniziare a fare previsioni con gli amici.</string>
@@ -254,11 +255,8 @@
     <string name="me_delete">Elimina</string>
     <string name="me_cancel">Annulla</string>
 
-    <string name="invite_pick_friends">Scegli amici da invitare</string>
-    <string name="invite_selected">%1$d selezionati</string>
-    <string name="invite_sending">Invio…</string>
     <string name="invite_button">Invita %1$d</string>
-    <string name="invite_no_friends">Nessun amico ancora — aggiungine alcuni prima.</string>
+    <string name="friend_picker_select_all">Seleziona tutto</string>
 
     <string name="about_section_title" translatable="false">Bragwise</string>
     <string name="about_tagline">Prevedi. Competi. Vantati.</string>
