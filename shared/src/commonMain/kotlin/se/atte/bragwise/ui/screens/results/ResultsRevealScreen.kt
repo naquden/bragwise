@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +59,7 @@ import se.atte.bragwise.ui.components.Confetti
 import se.atte.bragwise.ui.components.Podium
 import se.atte.bragwise.ui.components.PointsPill
 import se.atte.bragwise.ui.components.RankChip
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ResultsRevealScreen(
@@ -104,14 +106,18 @@ private fun ResultsRevealBody(
     onToggleFriendsFilter: () -> Unit,
     onParticipantClick: (uid: String) -> Unit,
 ) {
-    var showBanner by remember { mutableStateOf(data.alreadySeen) }
-    var showField by remember { mutableStateOf(data.alreadySeen) }
+    var animationPlayed by rememberSaveable { mutableStateOf(false) }
+    val settled = data.alreadySeen || animationPlayed
+
+    var showBanner by remember { mutableStateOf(settled) }
+    var showField by remember { mutableStateOf(settled) }
 
     LaunchedEffect(Unit) {
-        if (!data.alreadySeen) {
-            delay(1700)
+        if (!settled) {
+            animationPlayed = true
+            delay(1700.milliseconds)
             showBanner = true
-            delay(200)
+            delay(200.milliseconds)
             showField = true
         }
     }
@@ -148,7 +154,7 @@ private fun ResultsRevealBody(
                 Podium(
                     entries = data.leaderboard,
                     myUid = data.myUid,
-                    alreadySeen = data.alreadySeen,
+                    alreadySeen = settled,
                     modifier = Modifier.fillMaxWidth().padding(
                         horizontal = standardPadding,
                         vertical = standardPadding,
