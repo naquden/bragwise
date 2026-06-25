@@ -9,6 +9,7 @@ import bragwise.shared.generated.resources.cc_snackbar_title_and_bet_required
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ class CreateChallengeViewModel(
     private val ensureNamedAccount: EnsureNamedAccount,
     private val errorReporter: ErrorReporter,
     draftId: String? = null,
+    cloneSourceId: String? = null,
 ) : ScreenViewModel<CreateChallengeViewModel.State, CreateChallengeViewModel.Intent, CreateChallengeViewModel.Effect>(
     initialState = State(),
 ) {
@@ -115,6 +117,27 @@ class CreateChallengeViewModel(
                         invitedUids = draft.invitedUids,
                     )
                 }
+            }
+        } else if (cloneSourceId != null) {
+            viewModelScope.launch {
+                runCatching {
+                    val detail = challenges.observeChallengeDetail(cloneSourceId).first()
+                    val source = detail.challenge
+                    val maxSeq = source.bets.maxOfOrNull { b -> b.id.removePrefix("b").toIntOrNull() ?: 0 } ?: 0
+                    update {
+                        it.copy(
+                            draftId = null,
+                            title = "",
+                            category = source.category,
+                            visibility = source.visibility,
+                            locksAt = Clock.System.now() + 1.hours,
+                            bets = source.bets,
+                            betSeq = maxSeq,
+                            betsVisible = source.betsVisible,
+                            invitedUids = emptySet(),
+                        )
+                    }
+                }.onFailure { e -> errorReporter.report(e) }
             }
         }
     }

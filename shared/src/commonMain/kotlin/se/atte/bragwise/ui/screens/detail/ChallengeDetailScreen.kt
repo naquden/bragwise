@@ -69,6 +69,7 @@ import bragwise.shared.generated.resources.cd_no_challenge
 import bragwise.shared.generated.resources.cd_not_predicted
 import bragwise.shared.generated.resources.cd_participants
 import bragwise.shared.generated.resources.cd_post_results
+import bragwise.shared.generated.resources.cd_use_as_template
 import bragwise.shared.generated.resources.cd_predicted
 import bragwise.shared.generated.resources.cd_results_posted
 import bragwise.shared.generated.resources.cd_show_more
@@ -91,6 +92,7 @@ fun ChallengeDetailScreen(
     onNavigateToPostResults: (String) -> Unit,
     onNavigateToParticipant: (challengeId: String, uid: String) -> Unit,
     onNavigateToInvite: (String) -> Unit,
+    onNavigateToClone: (String) -> Unit,
     onDeleted: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -102,6 +104,7 @@ fun ChallengeDetailScreen(
             is ChallengeDetailViewModel.Effect.GoToPostResults -> onNavigateToPostResults(effect.challengeId)
             is ChallengeDetailViewModel.Effect.GoToParticipant -> onNavigateToParticipant(effect.challengeId, effect.uid)
             is ChallengeDetailViewModel.Effect.Deleted -> onDeleted()
+            is ChallengeDetailViewModel.Effect.GoToClone -> onNavigateToClone(effect.challengeId)
             is ChallengeDetailViewModel.Effect.ShareLink -> {
                 val (title, subject) = when (val msg = effect.message) {
                     is ChallengeDetailViewModel.ShareMessage.ChallengeShare ->
@@ -165,6 +168,7 @@ fun ChallengeDetailScreen(
                 onParticipant = { uid -> viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenParticipant(uid)) },
                 onShare = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Share) },
                 onInvite = { (state.ui as? UiState.Ready)?.data?.challenge?.id?.let { onNavigateToInvite(it) } },
+                onClone = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Clone) },
                 onRequestDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.RequestDelete) },
                 onCancelDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.CancelDelete) },
                 onConfirmDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.ConfirmDelete) },
@@ -185,6 +189,7 @@ private fun DetailContent(
     onParticipant: (String) -> Unit,
     onShare: () -> Unit,
     onInvite: () -> Unit,
+    onClone: () -> Unit,
     onRequestDelete: () -> Unit,
     onCancelDelete: () -> Unit,
     onConfirmDelete: () -> Unit,
@@ -339,9 +344,22 @@ private fun DetailContent(
                         )
                     }
                 }
+            }
+
+            item {
+                AppOutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onClone,
+                ) {
+                    Text(stringResource(Res.string.cd_use_as_template))
+                }
+            }
+
+            if (isOwner) {
                 val canDelete = challenge.resultsPostedAt == null
                 if (canDelete) {
                     item {
+                        Spacer(Modifier.height(standardPadding))
                         AppTextButton(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = onRequestDelete,
@@ -463,6 +481,7 @@ private fun Detail_Ready_NotJoined_Preview() {
             onParticipant = {},
             onShare = {},
             onInvite = {},
+            onClone = {},
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
@@ -490,6 +509,7 @@ private fun Detail_Ready_Owner_Preview() {
             onParticipant = {},
             onShare = {},
             onInvite = {},
+            onClone = {},
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
@@ -515,6 +535,7 @@ private fun Detail_Ready_BetsVisible_Preview() {
             onParticipant = {},
             onShare = {},
             onInvite = {},
+            onClone = {},
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},

@@ -66,6 +66,7 @@ class ChallengeDetailViewModel(
         data object CancelDelete : Intent
         data object ConfirmDelete : Intent
         data object Share : Intent
+        data object Clone : Intent
     }
 
     sealed interface Effect {
@@ -76,6 +77,7 @@ class ChallengeDetailViewModel(
         data object Deleted : Effect
         data class ShareLink(val url: String, val message: ShareMessage) : Effect
         data class Snackbar(val message: SnackbarMessage) : Effect
+        data class GoToClone(val challengeId: String) : Effect
     }
 
     sealed interface ShareMessage {
@@ -176,6 +178,7 @@ class ChallengeDetailViewModel(
                     )
                 }
             }
+            Intent.Clone -> emitEffect(Effect.GoToClone(challengeId))
         }
     }
 }

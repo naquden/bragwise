@@ -47,6 +47,7 @@ import bragwise.shared.generated.resources.results_empty_title
 import bragwise.shared.generated.resources.results_finished_count
 import bragwise.shared.generated.resources.results_history
 import bragwise.shared.generated.resources.results_menu_archive
+import bragwise.shared.generated.resources.results_menu_clone
 import bragwise.shared.generated.resources.results_menu_mark_unseen
 import bragwise.shared.generated.resources.results_new_count
 import com.composables.icons.lucide.Lucide
@@ -62,7 +63,11 @@ import se.atte.bragwise.ui.icons.LucideSparkles
 import kotlin.time.Instant
 
 @Composable
-fun ResultsScreen(viewModel: ResultsViewModel, onNavigateToReveal: (challengeId: String) -> Unit) {
+fun ResultsScreen(
+    viewModel: ResultsViewModel,
+    onNavigateToReveal: (challengeId: String) -> Unit,
+    onNavigateToClone: (challengeId: String) -> Unit,
+) {
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             is ResultsViewModel.Effect.GoToReveal -> onNavigateToReveal(effect.challengeId)
@@ -74,6 +79,7 @@ fun ResultsScreen(viewModel: ResultsViewModel, onNavigateToReveal: (challengeId:
         onChallenge = { viewModel.onIntent(ResultsViewModel.Intent.OpenReveal(challengeId = it)) },
         onArchive = { viewModel.onIntent(ResultsViewModel.Intent.Archive(challengeId = it)) },
         onMarkUnseen = { viewModel.onIntent(ResultsViewModel.Intent.MarkUnseen(challengeId = it)) },
+        onClone = onNavigateToClone,
     )
 }
 
@@ -83,6 +89,7 @@ private fun ResultsBody(
     onChallenge: (String) -> Unit,
     onArchive: (String) -> Unit,
     onMarkUnseen: (String) -> Unit,
+    onClone: (String) -> Unit,
 ) {
     val isDark = LocalIsDark.current
     val scrim = if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.40f)
@@ -130,6 +137,7 @@ private fun ResultsBody(
                 onChallenge = onChallenge,
                 onArchive = onArchive,
                 onMarkUnseen = onMarkUnseen,
+                onClone = onClone,
             )
         }
     }
@@ -141,6 +149,7 @@ private fun ResultsContent(
     onChallenge: (String) -> Unit,
     onArchive: (String) -> Unit,
     onMarkUnseen: (String) -> Unit,
+    onClone: (String) -> Unit,
 ) {
     val sc = LocalSectionColors.current
     Box(modifier = Modifier.fillMaxSize()) {
@@ -167,6 +176,7 @@ private fun ResultsContent(
                             onClick = { onChallenge(challenge.id) },
                             onArchive = { onArchive(challenge.id) },
                             onMarkUnseen = { onMarkUnseen(challenge.id) },
+                            onClone = { onClone(challenge.id) },
                         )
                     }
                 }
@@ -191,6 +201,7 @@ private fun ResultsContent(
                             onClick = { onChallenge(challenge.id) },
                             onArchive = { onArchive(challenge.id) },
                             onMarkUnseen = { onMarkUnseen(challenge.id) },
+                            onClone = { onClone(challenge.id) },
                         )
                     }
                 }
@@ -210,6 +221,7 @@ private fun ResultCardWithMenu(
     onClick: () -> Unit,
     onArchive: () -> Unit,
     onMarkUnseen: () -> Unit,
+    onClone: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Box {
@@ -224,6 +236,13 @@ private fun ResultCardWithMenu(
             expanded = menuOpen,
             onDismissRequest = { menuOpen = false },
         ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.results_menu_clone)) },
+                onClick = {
+                    onClone()
+                    menuOpen = false
+                },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(Res.string.results_menu_archive)) },
                 onClick = {
@@ -283,6 +302,7 @@ private fun ResultsContent_Preview() {
             onChallenge = {},
             onArchive = {},
             onMarkUnseen = {},
+            onClone = {},
         )
     }
 }

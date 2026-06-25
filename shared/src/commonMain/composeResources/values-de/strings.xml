@@ -126,6 +126,7 @@
     <string name="cd_invite_friends">Freunde einladen</string>
     <string name="cd_results_posted">Ergebnisse veröffentlicht</string>
     <string name="cd_post_results">Ergebnisse veröffentlichen</string>
+    <string name="cd_use_as_template">Als Vorlage verwenden</string>
     <string name="cd_delete_challenge">Herausforderung löschen</string>
     <string name="cd_delete_challenge_title">Herausforderung löschen?</string>
     <string name="cd_delete_challenge_body">Dies entfernt die Herausforderung, alle Vorhersagen und Einladungen dauerhaft. Dies kann nicht rückgängig gemacht werden.</string>
@@ -157,6 +158,8 @@
     <string name="results_finished_count">%1$d beendet</string>
     <string name="results_empty_title">Noch keine Ergebnisse</string>
     <string name="results_empty_body">Abgeschlossene Herausforderungen werden hier angezeigt.</string>
+    <string name="cl_menu_clone">Als Vorlage verwenden</string>
+    <string name="results_menu_clone">Als Vorlage verwenden</string>
     <string name="results_menu_archive">Archivieren</string>
     <string name="results_menu_mark_unseen">Als ungesehen markieren</string>
 

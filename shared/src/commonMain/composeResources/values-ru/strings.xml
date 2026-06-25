@@ -126,6 +126,7 @@
     <string name="cd_invite_friends">Пригласить друзей</string>
     <string name="cd_results_posted">Результаты опубликованы</string>
     <string name="cd_post_results">Опубликовать результаты</string>
+    <string name="cd_use_as_template">Использовать как шаблон</string>
     <string name="cd_delete_challenge">Удалить испытание</string>
     <string name="cd_delete_challenge_title">Удалить испытание?</string>
     <string name="cd_delete_challenge_body">Это навсегда удалит испытание, все прогнозы и приглашения. Это невозможно отменить.</string>
@@ -157,6 +158,8 @@
     <string name="results_finished_count">%1$d завершено</string>
     <string name="results_empty_title">Результатов нет</string>
     <string name="results_empty_body">Завершённые испытания будут показаны здесь.</string>
+    <string name="cl_menu_clone">Использовать как шаблон</string>
+    <string name="results_menu_clone">Использовать как шаблон</string>
     <string name="results_menu_archive">Архивировать</string>
     <string name="results_menu_mark_unseen">Отметить как непросмотренное</string>
 

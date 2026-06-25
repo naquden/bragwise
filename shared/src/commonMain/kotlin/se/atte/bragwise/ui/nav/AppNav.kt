@@ -122,7 +122,7 @@ import se.atte.bragwise.verify.VerifyAutomation
 @Serializable data object RouteMe
 @Serializable data class RouteChallengeDetail(val id: String)
 @Serializable data class RoutePredict(val challengeId: String)
-@Serializable data class RouteCreate(val draftId: String? = null)
+@Serializable data class RouteCreate(val draftId: String? = null, val cloneSourceId: String? = null)
 @Serializable data object RouteSignIn
 @Serializable data object RouteFriends
 @Serializable data object RouteWelcome
@@ -344,12 +344,18 @@ fun AppNav() {
                         onNavigateToDraft = { draftId ->
                             if (authState.isFullyAuthed) navController.navigate(RouteCreate(draftId = draftId)) else navController.navigate(RouteSignIn)
                         },
+                        onNavigateToClone = { id ->
+                            if (authState.isFullyAuthed) navController.navigate(RouteCreate(cloneSourceId = id)) else navController.navigate(RouteSignIn)
+                        },
                     )
                 }
                 composable<RouteResults> {
                     ResultsScreen(
                         viewModel = koinViewModel<ResultsViewModel>(),
                         onNavigateToReveal = { navController.navigate(RouteResultsReveal(challengeId = it)) },
+                        onNavigateToClone = { id ->
+                            if (authState.isFullyAuthed) navController.navigate(RouteCreate(cloneSourceId = id)) else navController.navigate(RouteSignIn)
+                        },
                     )
                 }
                 composable<RouteMe> {
@@ -385,6 +391,7 @@ fun AppNav() {
                         onNavigateToPostResults = { id -> navController.navigate(RoutePostResults(id)) },
                         onNavigateToParticipant = { challengeId, uid -> navController.navigate(RouteParticipantBets(challengeId = challengeId, uid = uid)) },
                         onNavigateToInvite = { id -> navController.navigate(RouteInvite(id)) },
+                        onNavigateToClone = { id -> navController.navigate(RouteCreate(cloneSourceId = id)) },
                         onDeleted = { navController.popBackStack() },
                     )
                 }
@@ -399,7 +406,7 @@ fun AppNav() {
                 composable<RouteCreate> { entry ->
                     val route = entry.toRoute<RouteCreate>()
                     CreateChallengeScreen(
-                        viewModel = koinViewModel<CreateChallengeViewModel> { parametersOf(route.draftId) },
+                        viewModel = koinViewModel<CreateChallengeViewModel> { parametersOf(route.draftId, route.cloneSourceId) },
                         snackbarHostState = snackbarHostState,
                         onPublished = { id ->
                             navController.navigate(RouteChallengeDetail(id)) {

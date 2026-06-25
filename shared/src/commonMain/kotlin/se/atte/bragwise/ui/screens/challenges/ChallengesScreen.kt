@@ -19,6 +19,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.Image
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,6 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,6 +60,7 @@ import bragwise.shared.generated.resources.cl_intro_predict_title
 import bragwise.shared.generated.resources.cl_intro_title
 import bragwise.shared.generated.resources.cl_intro_win_body
 import bragwise.shared.generated.resources.cl_intro_win_title
+import bragwise.shared.generated.resources.cl_menu_clone
 import bragwise.shared.generated.resources.cl_section_from_friends
 import bragwise.shared.generated.resources.cl_section_invites
 import bragwise.shared.generated.resources.cl_section_mine
@@ -85,6 +91,7 @@ fun ChallengesScreen(
     onNavigateToChallenge: (String) -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToDraft: (String) -> Unit,
+    onNavigateToClone: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -107,6 +114,7 @@ fun ChallengesScreen(
             onCreate = onNavigateToCreate,
             onChallenge = { viewModel.onIntent(ChallengesViewModel.Intent.OpenChallenge(it)) },
             onDraft = onNavigateToDraft,
+            onClone = onNavigateToClone,
         )
     }
 }
@@ -117,6 +125,7 @@ private fun ChallengesContentRoot(
     onCreate: () -> Unit,
     onChallenge: (String) -> Unit,
     onDraft: (String) -> Unit,
+    onClone: (String) -> Unit,
 ) {
     when (ui) {
         UiState.Loading -> Box(
@@ -141,6 +150,7 @@ private fun ChallengesContentRoot(
             onChallenge = onChallenge,
             onDraft = onDraft,
             onCreate = onCreate,
+            onClone = onClone,
         )
     }
 }
@@ -257,6 +267,7 @@ private fun ChallengesContent(
     onChallenge: (String) -> Unit,
     onDraft: (String) -> Unit,
     onCreate: () -> Unit,
+    onClone: (String) -> Unit,
 ) {
     val joinedIds = sections.joinedIds
     val sc = LocalSectionColors.current
@@ -272,26 +283,45 @@ private fun ChallengesContent(
                 topInset = topInset,
             ) {
                 sections.mine.forEach { c ->
-                    val onClick = if (c.status == ChallengeStatus.DRAFT) {
-                        { onDraft(c.id) }
-                    } else {
-                        { onChallenge(c.id) }
-                    }
-                    ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = onClick, surfaceColor = sc.mineCard)
+                    val isDraft = c.status == ChallengeStatus.DRAFT
+                    val onClick = if (isDraft) ({ onDraft(c.id) }) else ({ onChallenge(c.id) })
+                    CloneableCard(
+                        challenge = c,
+                        predicted = c.id in joinedIds,
+                        surfaceColor = sc.mineCard,
+                        onClick = onClick,
+                        showClone = !isDraft,
+                        onClone = { onClone(c.id) },
+                    )
                 }
             }
         })
         if (sections.promoted.isNotEmpty()) add(SectionEntry(sc.promotedBg) { topInset ->
             ColoredSection(bg = sc.promotedBg, title = stringResource(Res.string.cl_section_promoted), icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
                 sections.promoted.forEach { c ->
-                    ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = { onChallenge(c.id) }, accent = true, surfaceColor = sc.promotedCard)
+                    CloneableCard(
+                        challenge = c,
+                        predicted = c.id in joinedIds,
+                        surfaceColor = sc.promotedCard,
+                        accent = true,
+                        onClick = { onChallenge(c.id) },
+                        showClone = true,
+                        onClone = { onClone(c.id) },
+                    )
                 }
             }
         })
         if (sections.fromFriends.isNotEmpty()) add(SectionEntry(sc.friendsBg) { topInset ->
             ColoredSection(bg = sc.friendsBg, title = stringResource(Res.string.cl_section_from_friends), icon = "👥", onTitleColor = sc.onFriends, iconVector = Lucide.UsersRound, topInset = topInset) {
                 sections.fromFriends.forEach { c ->
-                    ChallengeCard(challenge = c, predicted = c.id in joinedIds, onClick = { onChallenge(c.id) }, surfaceColor = sc.friendsCard)
+                    CloneableCard(
+                        challenge = c,
+                        predicted = c.id in joinedIds,
+                        surfaceColor = sc.friendsCard,
+                        onClick = { onChallenge(c.id) },
+                        showClone = true,
+                        onClone = { onClone(c.id) },
+                    )
                 }
             }
         })
@@ -316,6 +346,43 @@ private fun ChallengesContent(
                 val prevBg = if (i == 0 && showIntro) bgColor else if (i > 0) entries[i - 1].bg else null
                 if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
                 entry.render(i == 0 && !showIntro)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CloneableCard(
+    challenge: Challenge,
+    predicted: Boolean = false,
+    surfaceColor: Color,
+    accent: Boolean = false,
+    onClick: () -> Unit,
+    showClone: Boolean,
+    onClone: () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        ChallengeCard(
+            challenge = challenge,
+            predicted = predicted,
+            surfaceColor = surfaceColor,
+            accent = accent,
+            onClick = onClick,
+            onLongClick = if (showClone) ({ menuOpen = true }) else null,
+        )
+        if (showClone) {
+            DropdownMenu(
+                expanded = menuOpen,
+                onDismissRequest = { menuOpen = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.cl_menu_clone)) },
+                    onClick = {
+                        onClone()
+                        menuOpen = false
+                    },
+                )
             }
         }
     }
@@ -392,7 +459,7 @@ private fun previewChallenge(id: String, title: String, promoted: Boolean = fals
 @Preview
 @Composable
 private fun Challenges_Empty_Preview() {
-    ThemePreview { ChallengesContentRoot(ui = UiState.Empty(), onCreate = {}, onChallenge = {}, onDraft = {}) }
+    ThemePreview { ChallengesContentRoot(ui = UiState.Empty(), onCreate = {}, onChallenge = {}, onDraft = {}, onClone = {}) }
 }
 
 @Preview
@@ -413,7 +480,7 @@ private fun Challenges_Ready_Preview() {
         ),
     )
     ThemePreview {
-        ChallengesContentRoot(ui = UiState.Ready(sections), onCreate = {}, onChallenge = {}, onDraft = {})
+        ChallengesContentRoot(ui = UiState.Ready(sections), onCreate = {}, onChallenge = {}, onDraft = {}, onClone = {})
     }
 }
 

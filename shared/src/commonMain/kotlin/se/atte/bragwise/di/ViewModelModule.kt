@@ -30,7 +30,8 @@ val viewModelModule = module {
             social = get(),
             ensureNamedAccount = get(),
             errorReporter = get(),
-            draftId = params.getOrNull<String>(),
+            draftId = params.get<String?>(0),
+            cloneSourceId = params.get<String?>(1),
         )
     }
     viewModelOf(::SignInViewModel)

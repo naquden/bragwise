@@ -126,6 +126,7 @@
     <string name="cd_invite_friends">邀请朋友</string>
     <string name="cd_results_posted">结果已发布</string>
     <string name="cd_post_results">发布结果</string>
+    <string name="cd_use_as_template">用作模板</string>
     <string name="cd_delete_challenge">删除挑战</string>
     <string name="cd_delete_challenge_title">删除挑战?</string>
     <string name="cd_delete_challenge_body">这将永久删除挑战、所有预测和邀请。这无法撤销。</string>
@@ -157,6 +158,8 @@
     <string name="results_finished_count">%1$d 个已完成</string>
     <string name="results_empty_title">还没有结果</string>
     <string name="results_empty_body">已完成的挑战将出现在这里。</string>
+    <string name="cl_menu_clone">用作模板</string>
+    <string name="results_menu_clone">用作模板</string>
     <string name="results_menu_archive">归档</string>
     <string name="results_menu_mark_unseen">标记为未看</string>
 

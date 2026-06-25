@@ -126,6 +126,7 @@
     <string name="cd_invite_friends">मित्रों को आमंत्रित करें</string>
     <string name="cd_results_posted">परिणाम पोस्ट हुए</string>
     <string name="cd_post_results">परिणाम पोस्ट करें</string>
+    <string name="cd_use_as_template">टेम्पलेट के रूप में उपयोग करें</string>
     <string name="cd_delete_challenge">चैलेंज हटाएं</string>
     <string name="cd_delete_challenge_title">चैलेंज हटाएं?</string>
     <string name="cd_delete_challenge_body">यह चैलेंज, सभी भविष्यवाणियां और आमंत्रण स्थायी रूप से हटा देगा। यह पूर्ववत नहीं हो सकता।</string>
@@ -157,6 +158,8 @@
     <string name="results_finished_count">%1$d समाप्त</string>
     <string name="results_empty_title">अभी कोई परिणाम नहीं</string>
     <string name="results_empty_body">समाप्त चैलेंज यहां दिखेंगे।</string>
+    <string name="cl_menu_clone">टेम्पलेट के रूप में उपयोग करें</string>
+    <string name="results_menu_clone">टेम्पलेट के रूप में उपयोग करें</string>
     <string name="results_menu_archive">संग्रहित करें</string>
     <string name="results_menu_mark_unseen">अनदेखा के रूप में चिह्नित करें</string>
 

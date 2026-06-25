@@ -126,6 +126,7 @@
     <string name="cd_invite_friends">Invita amici</string>
     <string name="cd_results_posted">Risultati pubblicati</string>
     <string name="cd_post_results">Pubblica risultati</string>
+    <string name="cd_use_as_template">Usa come modello</string>
     <string name="cd_delete_challenge">Elimina sfida</string>
     <string name="cd_delete_challenge_title">Eliminare la sfida?</string>
     <string name="cd_delete_challenge_body">Questo elimina permanentemente la sfida, tutte le previsioni e gli inviti. Questo non può essere annullato.</string>
@@ -157,6 +158,8 @@
     <string name="results_finished_count">%1$d completato</string>
     <string name="results_empty_title">Nessun risultato ancora</string>
     <string name="results_empty_body">Le sfide completate appariranno qui.</string>
+    <string name="cl_menu_clone">Usa come modello</string>
+    <string name="results_menu_clone">Usa come modello</string>
     <string name="results_menu_archive">Archivia</string>
     <string name="results_menu_mark_unseen">Segna come non visto</string>
 
