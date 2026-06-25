@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.EnsureNamedAccount
+import se.atte.bragwise.data.NameState
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.UiText
@@ -209,9 +210,13 @@ class CreateChallengeViewModel(
             emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_deadline_future)))
             return
         }
-        if (ensureNamedAccount.name.value.isNullOrBlank()) {
-            update { it.copy(needsName = true, pendingPublish = true) }
-            return
+        when (ensureNamedAccount.nameState.value) {
+            is NameState.Loading -> return  // cloud not resolved yet; user can retry
+            is NameState.Absent -> {
+                update { it.copy(needsName = true, pendingPublish = true) }
+                return
+            }
+            is NameState.Present -> Unit
         }
         update { it.copy(submitting = true, error = null) }
         viewModelScope.launch {

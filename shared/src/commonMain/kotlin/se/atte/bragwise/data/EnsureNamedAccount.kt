@@ -4,18 +4,37 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 
 private const val MAX_DISPLAY_NAME = 40
 private const val USERNAME_CANDIDATE_TRIES = 5
 
 /**
+ * Tri-state result of the name-readiness check.
+ *
+ * [Loading] — auth or the player doc is still resolving; the name gate must
+ *             NOT show (we don't know yet whether the user has a name).
+ * [Present] — resolved and the user has a non-blank display name; gate hidden.
+ * [Absent]  — resolved and the user genuinely has no display name; show gate.
+ */
+sealed interface NameState {
+    data object Loading : NameState
+    data class Present(val name: String) : NameState
+    data object Absent : NameState
+}
+
+/**
  * Lazily bootstraps a named player account the first time the user takes an
  * action that needs one (placing bets, creating a challenge).
  *
- * [name] emits the current cloud display name; null/blank means the user
- * hasn't named themselves yet and the gate should prompt.
+ * [nameState] is the authoritative tri-state signal. Consumers should observe
+ * it reactively and only show the name gate when the value is [NameState.Absent].
+ * [name] is a convenience projection (non-null only when [NameState.Present]).
  *
  * [ensure] is called with the user-chosen name. It:
  *  1. Creates an anonymous Firebase account if the user isn't signed in at all.
@@ -30,14 +49,46 @@ class EnsureNamedAccount(
 ) {
     private val scope = CoroutineScope(SupervisorJob())
 
-    val name: StateFlow<String?> = profile.observeMe()
-        .map { player -> player?.displayName?.takeIf { it.isNotBlank() } }
+    val nameState: StateFlow<NameState> = auth.authState
+        .flatMapLatest { authState ->
+            when (authState) {
+                is AuthState.Loading -> flowOf(NameState.Loading)
+                is AuthState.SignedOut -> flowOf(NameState.Absent)
+                is AuthState.SignedIn -> profile.observeMe()
+                    .map { player ->
+                        val cloudName = player?.displayName?.takeIf { it.isNotBlank() }
+                        if (cloudName != null) NameState.Present(cloudName) else NameState.Absent
+                    }
+                    .onEach { state ->
+                        // Cache the cloud name locally so future launches seed instantly.
+                        if (state is NameState.Present && onboardingPrefs.chosenName != state.name) {
+                            onboardingPrefs.chosenName = state.name
+                        }
+                    }
+                    .onStart {
+                        // While waiting for the player doc emit Loading, unless the local
+                        // pref already has a name (returning user: skip the flash).
+                        val cached = onboardingPrefs.chosenName?.takeIf { it.isNotBlank() }
+                        emit(if (cached != null) NameState.Present(cached) else NameState.Loading)
+                    }
+            }
+        }
         .stateIn(
             scope = scope,
             started = SharingStarted.Eagerly,
-            // Seed from the local pref so returning users get an immediate non-null value
-            // before the first Firestore emission arrives, preventing a spurious name prompt.
-            initialValue = onboardingPrefs.chosenName?.takeIf { it.isNotBlank() },
+            initialValue = onboardingPrefs.chosenName
+                ?.takeIf { it.isNotBlank() }
+                ?.let { NameState.Present(it) }
+                ?: NameState.Loading,
+        )
+
+    /** Convenience projection — non-null only when [nameState] is [NameState.Present]. */
+    val name: StateFlow<String?> = nameState
+        .map { (it as? NameState.Present)?.name }
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = (nameState.value as? NameState.Present)?.name,
         )
 
     suspend fun ensure(displayName: String): Result<Unit> = runCatching {

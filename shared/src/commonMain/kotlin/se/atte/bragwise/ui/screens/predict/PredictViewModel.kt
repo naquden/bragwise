@@ -12,6 +12,7 @@ import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.LocalPredictionStore
+import se.atte.bragwise.data.NameState
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.signedInUid
 import se.atte.bragwise.domain.Bet
@@ -71,10 +72,11 @@ class PredictViewModel(
     }
 
     init {
-        // Prompt for a name as soon as the screen opens, before the user starts filling picks.
-        if (ensureNamedAccount.name.value.isNullOrBlank()) {
-            update { it.copy(needsName = true) }
-        }
+        // Reactively track name state so Loading (cloud not yet arrived) never
+        // triggers the prompt — only a resolved Absent does.
+        ensureNamedAccount.nameState
+            .onEach { state -> update { it.copy(needsName = state is NameState.Absent) } }
+            .launchIn(viewModelScope)
 
         challenges.observeChallengeDetail(challengeId)
             .distinctUntilChanged()
