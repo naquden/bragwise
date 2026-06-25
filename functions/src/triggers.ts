@@ -81,18 +81,19 @@ export const onResultsPosted = onDocumentUpdated(
             ? ((prevSnap.data()?.vs ?? {}) as Record<string, 'win' | 'loss' | 'tie'>)
             : {};
 
-          const rootPatch: Record<string, FirebaseFirestore.FieldValue> = {};
+          const rootPatch: Record<string, Record<string, Record<string, FirebaseFirestore.FieldValue>>> = { vs: {} };
           const allFids = new Set([...Object.keys(prevVs), ...Object.keys(newVs)]);
           for (const fid of allFids) {
             const prev = prevVs[fid] ?? null;
             const next = newVs[fid] ?? null;
             if (prev === next) continue;
-            if (prev) rootPatch[`vs.${fid}.${prev}s`] = FieldValue.increment(-1);
-            if (next) rootPatch[`vs.${fid}.${next}s`] = FieldValue.increment(1);
+            rootPatch.vs[fid] = {};
+            if (prev) rootPatch.vs[fid][`${prev}s`] = FieldValue.increment(-1);
+            if (next) rootPatch.vs[fid][`${next}s`] = FieldValue.increment(1);
           }
 
           tx.set(byChallRef, { vs: newVs });
-          if (Object.keys(rootPatch).length > 0) {
+          if (Object.keys(rootPatch.vs).length > 0) {
             tx.set(rootRef, rootPatch, { merge: true });
           }
         });
@@ -767,26 +768,44 @@ async function recomputeH2hForPair(uidA: string, uidB: string): Promise<void> {
     .where(`leaderboard.${uidA}`, '>=', 0)
     .get();
 
-  await Promise.allSettled(
-    challengeSnaps.docs.map(async (challengeSnap) => {
-      const data = challengeSnap.data();
-      if (!data.resultsPostedAt) return;
+  // Accumulate outcomes across all shared resolved challenges.
+  const countersA = { wins: 0, losses: 0, ties: 0 };
+  const countersB = { wins: 0, losses: 0, ties: 0 };
+  const byChallWrites: Array<{ id: string; outcomeA: 'win' | 'loss' | 'tie'; outcomeB: 'win' | 'loss' | 'tie' }> = [];
 
-      const leaderboard: Record<string, number> = data.leaderboard ?? {};
-      if (!(uidB in leaderboard)) return;
+  const incr = (c: typeof countersA, outcome: 'win' | 'loss' | 'tie') => {
+    if (outcome === 'win') c.wins++;
+    else if (outcome === 'loss') c.losses++;
+    else c.ties++;
+  };
 
-      const challengeId = challengeSnap.id;
-      const ptsA = leaderboard[uidA];
-      const ptsB = leaderboard[uidB];
-      const outcomeA: 'win' | 'loss' | 'tie' = ptsA > ptsB ? 'win' : ptsA < ptsB ? 'loss' : 'tie';
-      const outcomeB: 'win' | 'loss' | 'tie' = ptsB > ptsA ? 'win' : ptsB < ptsA ? 'loss' : 'tie';
+  for (const snap of challengeSnaps.docs) {
+    const data = snap.data();
+    if (!data.resultsPostedAt) continue;
+    const leaderboard: Record<string, number> = data.leaderboard ?? {};
+    if (!(uidB in leaderboard)) continue;
+    const ptsA = leaderboard[uidA];
+    const ptsB = leaderboard[uidB];
+    const outcomeA: 'win' | 'loss' | 'tie' = ptsA > ptsB ? 'win' : ptsA < ptsB ? 'loss' : 'tie';
+    const outcomeB: 'win' | 'loss' | 'tie' = ptsB > ptsA ? 'win' : ptsB < ptsA ? 'loss' : 'tie';
+    incr(countersA, outcomeA);
+    incr(countersB, outcomeB);
+    byChallWrites.push({ id: snap.id, outcomeA, outcomeB });
+  }
 
-      await Promise.all([
-        upsertByChallengeVs(uidA, challengeId, uidB, outcomeA),
-        upsertByChallengeVs(uidB, challengeId, uidA, outcomeB),
-      ]);
-    }),
-  );
+  if (byChallWrites.length === 0) return;
+
+  // Write byChallenge docs (idempotent set) and wholesale-overwrite root aggregate.
+  // Using set() with a real nested object — no dotted keys — so the shape the client
+  // reads (vs.{opponentUid}.{wins|losses|ties}) is always correct.
+  const batch = db.batch();
+  for (const { id, outcomeA, outcomeB } of byChallWrites) {
+    batch.set(db.doc(`players/${uidA}/private/headToHead/byChallenge/${id}`), { vs: { [uidB]: outcomeA } });
+    batch.set(db.doc(`players/${uidB}/private/headToHead/byChallenge/${id}`), { vs: { [uidA]: outcomeB } });
+  }
+  batch.set(db.doc(`players/${uidA}/private/headToHead`), { vs: { [uidB]: countersA } });
+  batch.set(db.doc(`players/${uidB}/private/headToHead`), { vs: { [uidA]: countersB } });
+  await batch.commit();
 }
 
 /**
@@ -812,12 +831,12 @@ async function upsertByChallengeVs(
     const prevOutcome = prevVs[opponentUid] ?? null;
     if (prevOutcome === newOutcome) return;
 
-    const rootPatch: Record<string, FirebaseFirestore.FieldValue> = {};
-    if (prevOutcome) rootPatch[`vs.${opponentUid}.${prevOutcome}s`] = FieldValue.increment(-1);
-    rootPatch[`vs.${opponentUid}.${newOutcome}s`] = FieldValue.increment(1);
+    const opponentPatch: Record<string, FirebaseFirestore.FieldValue> = {};
+    if (prevOutcome) opponentPatch[`${prevOutcome}s`] = FieldValue.increment(-1);
+    opponentPatch[`${newOutcome}s`] = FieldValue.increment(1);
 
     tx.set(byChallRef, { vs: { ...prevVs, [opponentUid]: newOutcome } }, { merge: true });
-    tx.set(rootRef, rootPatch, { merge: true });
+    tx.set(rootRef, { vs: { [opponentUid]: opponentPatch } }, { merge: true });
   });
 }
 
