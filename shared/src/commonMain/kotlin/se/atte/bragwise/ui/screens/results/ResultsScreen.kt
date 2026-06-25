@@ -1,5 +1,6 @@
 package se.atte.bragwise.ui.screens.results
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import se.atte.bragwise.theme.LocalIsDark
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
@@ -81,8 +84,11 @@ private fun ResultsBody(
     onArchive: (String) -> Unit,
     onMarkUnseen: (String) -> Unit,
 ) {
+    val isDark = LocalIsDark.current
+    val scrim = if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.40f)
     Box(modifier = Modifier.fillMaxSize()) {
         PlatinumBackground(modifier = Modifier.matchParentSize())
+        Box(Modifier.matchParentSize().background(scrim))
         when (val ui = state.ui) {
             UiState.Loading -> Box(
                 modifier = Modifier.fillMaxSize().statusBarsPadding(),

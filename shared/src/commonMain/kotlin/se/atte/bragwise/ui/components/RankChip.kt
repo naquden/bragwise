@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import se.atte.bragwise.theme.AppType
 
@@ -22,6 +23,13 @@ import se.atte.bragwise.theme.AppType
  * Plan §4 calls for a delta arrow (↑/↓); deferred until paired with a
  * historical-rank source.
  */
+private val Gold = Color(0xFFFFD700).copy(alpha = 0.55f)
+private val GoldText = Color(0xFF3A2E00)
+private val Silver = Color(0xFFCFD4DA)
+private val SilverText = Color(0xFF2A2E33)
+private val Bronze = Color(0xFFCD7F32)
+private val BronzeText = Color.White
+
 @Composable
 fun RankChip(rank: Int, modifier: Modifier = Modifier) {
     val animated by animateIntAsState(
@@ -32,15 +40,21 @@ fun RankChip(rank: Int, modifier: Modifier = Modifier) {
         ),
         label = "rank",
     )
+    val (chipBg, chipText) = when (rank) {
+        1 -> Gold to GoldText
+        2 -> Silver to SilverText
+        3 -> Bronze to BronzeText
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurface
+    }
     Text(
         text = "#$animated",
         style = AppType.rankBadge,
         modifier = modifier
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = chipBg,
                 shape = RoundedCornerShape(12.dp),
             )
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        color = MaterialTheme.colorScheme.onSurface,
+        color = chipText,
     )
 }
