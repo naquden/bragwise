@@ -10,6 +10,8 @@ import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Friend
 import se.atte.bragwise.domain.FriendRequests
 import se.atte.bragwise.domain.HeadToHead
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.AnalyticsEvent
 
 interface SocialRepository {
     fun observeFriends(): Flow<List<Friend>>
@@ -28,6 +30,7 @@ class FirebaseSocialRepository(
     private val local: SocialLocalDataSource,
     private val auth: AuthRepository,
     private val profiles: ProfileRepository,
+    private val analytics: Analytics,
 ) : SocialRepository {
     override fun observeFriends(): Flow<List<Friend>> =
         auth.authState.flatMapLatest { state ->
@@ -73,6 +76,7 @@ class FirebaseSocialRepository(
 
     override suspend fun acceptFriendRequest(requesterUid: String): Result<Unit> = runCatching {
         remote.acceptFriendRequest(requesterUid)
+        analytics.log(AnalyticsEvent.FriendAdded)
     }
 
     override suspend fun declineFriendRequest(requesterUid: String): Result<Unit> = runCatching {

@@ -13,6 +13,8 @@ import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.data.db.DatabaseDriverFactory
 import se.atte.bragwise.db.BragwiseDatabase
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.IosAnalytics
 import se.atte.bragwise.platform.IosPlatformShare
 import se.atte.bragwise.push.PushNotifications
 import se.atte.bragwise.platform.PlatformShare
@@ -24,6 +26,7 @@ actual val platformModule: Module = module {
     single<ThemePrefs> { IosThemePrefs() }
     single<LanguagePrefs> { IosLanguagePrefs() }
     single<PlatformShare> { IosPlatformShare() }
+    single<Analytics> { IosAnalytics() }
     single { PushNotifications() }
     single { DatabaseDriverFactory() }
     single { BragwiseDatabase(get<DatabaseDriverFactory>().create()) }

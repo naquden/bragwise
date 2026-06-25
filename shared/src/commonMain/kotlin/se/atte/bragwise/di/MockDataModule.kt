@@ -16,9 +16,12 @@ import se.atte.bragwise.data.mock.MockSocialRepository
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.db.BragwiseDatabase
 import se.atte.bragwise.push.PushTokenRegistrar
+import se.atte.bragwise.crash.CrashReporter
+import se.atte.bragwise.crash.NoopCrashReporter
 
 val mockDataModule = module {
-    single { se.atte.bragwise.mvi.ErrorReporter() }
+    single<CrashReporter> { NoopCrashReporter }
+    single { se.atte.bragwise.mvi.ErrorReporter(crash = get()) }
     single<AuthRepository> { MockAuthRepository() }
     single<ChallengeRepository> { MockChallengeRepository(auth = get()) }
     single { LocalPredictionStore(get<BragwiseDatabase>()) }

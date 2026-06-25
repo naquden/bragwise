@@ -9,12 +9,15 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
+import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.LocalPredictionStore
 import se.atte.bragwise.data.NameState
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.data.signedInUid
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.AnalyticsEvent
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.Prediction
@@ -33,6 +36,7 @@ class PredictViewModel(
     private val localPredictions: LocalPredictionStore,
     private val ensureNamedAccount: EnsureNamedAccount,
     private val errorReporter: ErrorReporter,
+    private val analytics: Analytics,
 ) : ScreenViewModel<PredictViewModel.State, PredictViewModel.Intent, PredictViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -191,6 +195,13 @@ class PredictViewModel(
         saved.fold(
             onSuccess = {
                 println("$PRED_DBG submit.local challengeId=$challengeId drafts=${drafts.size}")
+                analytics.log(
+                    AnalyticsEvent.PredictionSubmitted(
+                        predictionCount = drafts.size,
+                        isGuest = auth.authState.value.let { it is AuthState.SignedIn && it.isAnonymous },
+                        offline = true,
+                    ),
+                )
                 emitEffect(Effect.Submitted)
             },
             onFailure = { e ->

@@ -54,6 +54,7 @@ val viewModelModule = module {
             auth = get(),
             profile = get(),
             errorReporter = get(),
+            analytics = get(),
         )
     }
     viewModel<PredictViewModel> { params ->
@@ -64,6 +65,7 @@ val viewModelModule = module {
             localPredictions = get(),
             ensureNamedAccount = get(),
             errorReporter = get(),
+            analytics = get(),
         )
     }
     viewModel<BetListViewModel> { params ->
@@ -79,6 +81,7 @@ val viewModelModule = module {
             social = get(),
             challenges = get(),
             errorReporter = get(),
+            analytics = get(),
         )
     }
     viewModel<PostResultsViewModel> { params ->

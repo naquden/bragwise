@@ -18,6 +18,7 @@ import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.Reaction
+import se.atte.bragwise.platform.AnalyticsEvent
 
 interface ChallengeRepository {
     fun observeMine(): Flow<List<Challenge>>
@@ -72,6 +73,7 @@ class FirebaseChallengeRepository(
     private val localDrafts: LocalDraftStore,
     private val auth: AuthRepository,
     private val social: SocialRepository,
+    private val analytics: se.atte.bragwise.platform.Analytics,
 ) : ChallengeRepository {
     private val currentUid: String?
         get() = (auth.authState.value as? AuthState.SignedIn)?.uid
@@ -167,14 +169,34 @@ class FirebaseChallengeRepository(
     override suspend fun publish(challenge: Challenge): Result<Challenge> = runCatching {
         val serverId = remote.createChallenge(challenge)
         localDrafts.delete(challenge.id)
+        analytics.log(
+            AnalyticsEvent.ChallengeCreated(
+                betCount = challenge.bets.size,
+                visibility = challenge.visibility.name.lowercase(),
+                category = challenge.category,
+                invitedCount = challenge.invitedUids.size,
+            ),
+        )
         challenge.copy(id = serverId, status = se.atte.bragwise.domain.ChallengeStatus.OPEN)
     }
 
     override suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>): Result<Unit> =
-        runCatching { remote.submitPredictions(challengeId, predictions) }
+        runCatching {
+            remote.submitPredictions(challengeId, predictions)
+            analytics.log(
+                AnalyticsEvent.PredictionSubmitted(
+                    predictionCount = predictions.size,
+                    isGuest = auth.authState.value.let { it is AuthState.SignedIn && it.isAnonymous },
+                    offline = false,
+                ),
+            )
+        }
 
     override suspend fun postResults(challengeId: String, results: Map<String, PredictionPayload>): Result<Unit> =
-        runCatching { remote.postResults(challengeId, results) }
+        runCatching {
+            remote.postResults(challengeId, results)
+            analytics.log(AnalyticsEvent.ResultsPosted(resultCount = results.size))
+        }
 
     override suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit> =
         runCatching { remote.inviteFriends(challengeId, uids) }

@@ -34,6 +34,7 @@ class ChallengeDetailViewModel(
     private val auth: AuthRepository,
     private val profile: ProfileRepository,
     private val errorReporter: ErrorReporter,
+    private val analytics: se.atte.bragwise.platform.Analytics,
 ) : ScreenViewModel<ChallengeDetailViewModel.State, ChallengeDetailViewModel.Intent, ChallengeDetailViewModel.Effect>(
     initialState = State(ui = UiState.Loading),
 ) {
@@ -166,6 +167,7 @@ class ChallengeDetailViewModel(
             Intent.Share -> {
                 val title = (state.value.ui as? UiState.Ready)?.data?.title
                 if (title != null) {
+                    analytics.log(se.atte.bragwise.platform.AnalyticsEvent.ShareTapped("native"))
                     emitEffect(
                         Effect.ShareLink(
                             url = shareUrlForChallenge(challengeId),

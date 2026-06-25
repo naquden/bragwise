@@ -14,6 +14,8 @@ import se.atte.bragwise.data.OnboardingPrefs
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.data.db.DatabaseDriverFactory
 import se.atte.bragwise.db.BragwiseDatabase
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.AndroidAnalytics
 import se.atte.bragwise.platform.AndroidPlatformShare
 import se.atte.bragwise.push.PushNotifications
 import se.atte.bragwise.platform.PlatformShare
@@ -31,6 +33,7 @@ actual val platformModule: Module = module {
     single<ThemePrefs> { AndroidThemePrefs(context = androidContext()) }
     single<LanguagePrefs> { AndroidLanguagePrefs(context = androidContext()) }
     single<PlatformShare> { AndroidPlatformShare(context = androidContext()) }
+    single<Analytics> { AndroidAnalytics() }
     single { PushNotifications() }
     single { DatabaseDriverFactory(context = androidContext()) }
     single { BragwiseDatabase(get<DatabaseDriverFactory>().create()) }

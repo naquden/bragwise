@@ -4,6 +4,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlin.coroutines.cancellation.CancellationException
+import se.atte.bragwise.crash.CrashReporter
+import se.atte.bragwise.crash.NoopCrashReporter
 
 /**
  * A backend/operation error surfaced to the user as an app-wide dialog.
@@ -20,11 +22,13 @@ data class AppError(val cause: Cause, val detail: String? = null)
  * Channel-backed (not SharedFlow) so an error raised while no collector is
  * attached is queued and delivered once the host resumes, instead of dropped.
  */
-class ErrorReporter {
+class ErrorReporter(private val crash: CrashReporter = NoopCrashReporter) {
     private val _errors = Channel<AppError>(Channel.BUFFERED)
     val errors: Flow<AppError> = _errors.receiveAsFlow()
 
     fun report(error: AppError) {
+        crash.log("AppError cause=${error.cause::class.simpleName} detail=${error.detail}")
+        crash.setCustomKey("cause", error.cause::class.simpleName ?: "Unknown")
         _errors.trySend(error)
     }
 
@@ -32,6 +36,10 @@ class ErrorReporter {
 
     fun report(throwable: Throwable) {
         if (throwable is CancellationException) return
-        report(AppError(cause = throwable.toCause(), detail = throwable.message))
+        val cause = throwable.toCause()
+        crash.setCustomKey("cause", cause::class.simpleName ?: "Unknown")
+        crash.log("Exception cause=${cause::class.simpleName} message=${throwable.message}")
+        crash.recordException(throwable)
+        _errors.trySend(AppError(cause = cause, detail = throwable.message))
     }
 }

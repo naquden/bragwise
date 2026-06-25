@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseAppCheck
+import FirebaseCrashlytics
 import FirebaseMessaging
 import FirebaseAnalytics
 import UserNotifications
@@ -74,6 +75,24 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
             // Touch Analytics so the SDK initialises (parity with Android's
             // BragwiseApplication touching Firebase.analytics).
             Analytics.setAnalyticsCollectionEnabled(true)
+
+            // Wire Kotlin's CrashReporter to native Crashlytics.
+            // KotlinThrowable arrives as KotlinBase; build an NSError from its
+            // message and type name so Crashlytics can group and symbolicate it.
+            IosCrashBridgeKt.registerIosCrashReporter(
+                onRecord: { throwable in
+                    let domain = String(describing: type(of: throwable))
+                    let message = throwable.message ?? "no message"
+                    let error = NSError(
+                        domain: domain,
+                        code: 0,
+                        userInfo: [NSLocalizedDescriptionKey: message]
+                    )
+                    Crashlytics.crashlytics().record(error: error)
+                },
+                onLog: { msg in Crashlytics.crashlytics().log(msg) },
+                onKey: { key, value in Crashlytics.crashlytics().setCustomValue(value, forKey: key) }
+            )
 
             // Receive FCM registration tokens. Permission + APNs registration is
             // requested lazily on first sign-in (see requestPushPermissionOnFirstSignInFromIos).

@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.AnalyticsEvent
 
 sealed interface AuthState {
     data object Loading : AuthState
@@ -110,6 +112,7 @@ class FirebaseAuthRepository(
     private val local: AuthLocalDataSource,
     private val localPredictions: LocalPredictionStore,
     private val challengeRemote: ChallengeRemoteDataSource,
+    private val analytics: Analytics,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) : AuthRepository {
     private val _pendingSignInEmail = MutableStateFlow(local.pendingSignInEmail)
@@ -135,6 +138,8 @@ class FirebaseAuthRepository(
 
     override suspend fun continueAsGuest(): Result<Unit> = runCatching {
         remote.signInAnonymously()
+        analytics.log(AnalyticsEvent.OnboardingComplete("guest"))
+        analytics.setIsGuest(true)
     }
 
     override suspend fun sendSignInLink(email: String): Result<Unit> = runCatching {
@@ -149,6 +154,8 @@ class FirebaseAuthRepository(
         remote.completeSignIn(email = email, link = link)
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
+        analytics.log(AnalyticsEvent.OnboardingComplete("email"))
+        analytics.setIsGuest(false)
     }
 
     override suspend fun signOut() {

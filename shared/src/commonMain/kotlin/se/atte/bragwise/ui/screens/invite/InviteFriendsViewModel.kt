@@ -14,12 +14,15 @@ import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.Friend
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
+import se.atte.bragwise.platform.Analytics
+import se.atte.bragwise.platform.AnalyticsEvent
 
 class InviteFriendsViewModel(
     private val challengeId: String,
     private val social: SocialRepository,
     private val challenges: ChallengeRepository,
     private val errorReporter: ErrorReporter,
+    private val analytics: Analytics,
 ) : ScreenViewModel<InviteFriendsViewModel.State, InviteFriendsViewModel.Intent, InviteFriendsViewModel.Effect>(
     initialState = State(),
 ) {
@@ -57,8 +60,12 @@ class InviteFriendsViewModel(
         Intent.Send -> {
             viewModelScope.launch {
                 update { it.copy(sending = true) }
+                val count = state.value.selected.size
                 challenges.inviteFriends(challengeId, state.value.selected.toList())
-                    .onSuccess { emitEffect(Effect.Sent) }
+                    .onSuccess {
+                        analytics.log(AnalyticsEvent.ShareTapped("invite", count))
+                        emitEffect(Effect.Sent)
+                    }
                     .onFailure { errorReporter.report(it) }
                 update { it.copy(sending = false) }
             }

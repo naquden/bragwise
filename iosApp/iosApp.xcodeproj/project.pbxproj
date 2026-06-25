@@ -13,6 +13,7 @@
 		5EB3B4CCF4E27F7D2E59C7B2 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 06A0EDD907AE8FE40EADFA79 /* FirebaseFirestore */; };
 		A1A1A1A1A1A1A1A1A1A1A101 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1A1A1A1A1A1A1A1A1A1A102 /* FirebaseMessaging */; };
 		A2A2A2A2A2A2A2A2A2A2A201 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = A2A2A2A2A2A2A2A2A2A2A202 /* FirebaseAnalytics */; };
+		A3A3A3A3A3A3A3A3A3A3A301 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = A3A3A3A3A3A3A3A3A3A3A302 /* FirebaseCrashlytics */; };
 		C28CFD542DCCCF3B204A03B5 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5C884667C4CDDB2AE9AA74 /* libsqlite3.tbd */; };
 		EC08C7A086A66A456F5BD38B /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 89FCFBCE16194975B84FB956 /* FirebaseCore */; };
 /* End PBXBuildFile section */
@@ -60,6 +61,7 @@
 				27F69A4AB81AE43E526054AF /* FirebaseFunctions in Frameworks */,
 				A1A1A1A1A1A1A1A1A1A1A101 /* FirebaseMessaging in Frameworks */,
 				A2A2A2A2A2A2A2A2A2A2A201 /* FirebaseAnalytics in Frameworks */,
+				A3A3A3A3A3A3A3A3A3A3A301 /* FirebaseCrashlytics in Frameworks */,
 				C28CFD542DCCCF3B204A03B5 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -121,6 +123,7 @@
 				D544BC3AD227E11C08319C75 /* FirebaseFunctions */,
 				A1A1A1A1A1A1A1A1A1A1A102 /* FirebaseMessaging */,
 				A2A2A2A2A2A2A2A2A2A2A202 /* FirebaseAnalytics */,
+				A3A3A3A3A3A3A3A3A3A3A302 /* FirebaseCrashlytics */,
 			);
 			productName = iosApp;
 			productReference = A8AF93A5528641A707439D1D /* Bragwise.app */;
@@ -343,6 +346,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Bragwise;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.family-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -373,6 +378,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Bragwise;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.family-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -448,6 +455,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B8BE6759E32626C01E80DB19 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
+		};
+		A3A3A3A3A3A3A3A3A3A3A302 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B8BE6759E32626C01E80DB19 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 		D4CC8FADAD8842BB982903D0 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
