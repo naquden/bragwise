@@ -189,6 +189,15 @@ fun AppNav() {
                 is DeepLink.Challenge -> navController.navigate(RouteChallengeDetail(deepLink.id)) {
                     launchSingleTop = true
                 }
+                is DeepLink.Result -> navController.navigate(RouteResultsReveal(deepLink.challengeId)) {
+                    launchSingleTop = true
+                }
+                is DeepLink.FriendRequests -> navController.navigate(RouteFriendRequests) {
+                    launchSingleTop = true
+                }
+                is DeepLink.Friends -> navController.navigate(RouteFriends) {
+                    launchSingleTop = true
+                }
             }
         }
     }

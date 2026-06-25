@@ -50,7 +50,7 @@ export const onResultsPosted = onDocumentUpdated(
           title: 'Results are in!',
           body: `${challengeTitle} — you finished #${rank} with ${pts} pts`,
           channel: CHANNEL_RESULTS,
-          deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}`,
+          deepLink: `https://bragwise.firebaseapp.com/c/${challengeId}/results`,
         });
       }),
     );
@@ -203,6 +203,7 @@ export const onFriendshipWritten = onDocumentWritten(
           title: 'Friend request accepted!',
           body: `${acceptorName} accepted your friend request`,
           channel: CHANNEL_SOCIAL,
+          deepLink: 'https://bragwise.firebaseapp.com/friends',
         }).catch(() => {/* best-effort */});
       }
     } else if (after?.state === 'PENDING') {

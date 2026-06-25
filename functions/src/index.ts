@@ -538,6 +538,7 @@ export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) =>
     title: 'New friend request',
     body: `${senderName} wants to be your friend`,
     channel: CHANNEL_SOCIAL,
+    deepLink: 'https://bragwise.firebaseapp.com/requests',
   }).catch(() => {/* best-effort */});
 });
 
