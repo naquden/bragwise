@@ -697,11 +697,10 @@ export const setNotificationPref = onCall(async (req: CallableRequest<unknown>) 
 
   const patch: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
   if (enabled !== undefined) patch['notifications'] = enabled;
-  if (categories) {
-    for (const [key, value] of Object.entries(categories)) {
-      patch[`categories.${key}`] = value;
-    }
-  }
+  // Use a nested object (not dotted keys): set(..., {merge:true}) treats "categories.x"
+  // as a literal field name, leaving the real nested map untouched. merge deep-merges
+  // nested maps, so sibling category keys are preserved.
+  if (categories) patch['categories'] = categories;
 
   await db.doc(`players/${uid}/private/preferences`).set(patch, { merge: true });
   return { ok: true };
