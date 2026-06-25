@@ -45,11 +45,16 @@ import se.atte.bragwise.domain.Visibility
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.cl_active_count
-import se.atte.bragwise.ui.icons.BragIconWithRing
 import bragwise.shared.generated.resources.cl_active_count_one
-import bragwise.shared.generated.resources.cl_empty
-import bragwise.shared.generated.resources.cl_empty_body
 import bragwise.shared.generated.resources.cl_empty_create_first
+import bragwise.shared.generated.resources.cl_intro_create_alt
+import bragwise.shared.generated.resources.cl_intro_create_body
+import bragwise.shared.generated.resources.cl_intro_create_title
+import bragwise.shared.generated.resources.cl_intro_predict_body
+import bragwise.shared.generated.resources.cl_intro_predict_title
+import bragwise.shared.generated.resources.cl_intro_title
+import bragwise.shared.generated.resources.cl_intro_win_body
+import bragwise.shared.generated.resources.cl_intro_win_title
 import bragwise.shared.generated.resources.cl_section_from_friends
 import bragwise.shared.generated.resources.cl_section_invites
 import bragwise.shared.generated.resources.cl_section_mine
@@ -61,7 +66,13 @@ import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.theme.appShadow
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.ChallengeCard
+import se.atte.bragwise.ui.components.SectionCard
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.lucide.CircleCheck
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.Trophy
 import com.composables.icons.lucide.UsersRound
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.WaveSeparator
@@ -129,6 +140,7 @@ private fun ChallengesContentRoot(
             sections = ui.data,
             onChallenge = onChallenge,
             onDraft = onDraft,
+            onCreate = onCreate,
         )
     }
 }
@@ -136,28 +148,104 @@ private fun ChallengesContentRoot(
 @Composable
 private fun EmptyState(onCreate: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(standardPaddingLarge),
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(imageVector = BragIconWithRing, contentDescription = null, modifier = Modifier.size(64.dp))
-        Spacer(Modifier.height(standardPadding))
-        Text(
-            text = stringResource(Res.string.cl_empty),
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(standardPaddingSmall))
-        Text(
-            text = stringResource(Res.string.cl_empty_body),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(24.dp))
+        IntroBanner(onCreate = onCreate, topInset = false)
+    }
+}
+
+@Composable
+private fun IntroBanner(onCreate: () -> Unit, topInset: Boolean) {
+    val sc = LocalSectionColors.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (topInset) Modifier.statusBarsPadding() else Modifier)
+            .padding(horizontal = standardPadding, vertical = standardPaddingLarge),
+    ) {
+        SectionCard(title = stringResource(Res.string.cl_intro_title)) {
+            Spacer(Modifier.height(standardPaddingSmall))
+            IntroStep(
+                icon = Lucide.Plus,
+                tint = MaterialTheme.colorScheme.tertiary,
+                badgeBg = sc.mineCard,
+                title = stringResource(Res.string.cl_intro_create_title),
+                body = stringResource(Res.string.cl_intro_create_body),
+                subBody = stringResource(Res.string.cl_intro_create_alt),
+            )
+            Spacer(Modifier.height(standardPadding))
+            IntroStep(
+                icon = Lucide.CircleCheck,
+                tint = MaterialTheme.colorScheme.primary,
+                badgeBg = sc.friendsCard,
+                title = stringResource(Res.string.cl_intro_predict_title),
+                body = stringResource(Res.string.cl_intro_predict_body),
+            )
+            Spacer(Modifier.height(standardPadding))
+            IntroStep(
+                icon = Lucide.Trophy,
+                tint = MaterialTheme.colorScheme.secondary,
+                badgeBg = sc.promotedCard,
+                title = stringResource(Res.string.cl_intro_win_title),
+                body = stringResource(Res.string.cl_intro_win_body),
+            )
+        }
+        Spacer(Modifier.height(standardPaddingLarge))
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onCreate,
         ) { Text(stringResource(Res.string.cl_empty_create_first)) }
+    }
+}
+
+@Composable
+private fun IntroStep(
+    icon: ImageVector,
+    tint: Color,
+    badgeBg: Color,
+    title: String,
+    body: String,
+    subBody: String? = null,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(badgeBg, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = tint,
+            )
+        }
+        Spacer(Modifier.width(standardPadding))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (subBody != null) {
+                Text(
+                    text = subBody,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
+        }
     }
 }
 
@@ -168,6 +256,7 @@ private fun ChallengesContent(
     sections: ChallengesViewModel.Sections,
     onChallenge: (String) -> Unit,
     onDraft: (String) -> Unit,
+    onCreate: () -> Unit,
 ) {
     val joinedIds = sections.joinedIds
     val sc = LocalSectionColors.current
@@ -215,14 +304,18 @@ private fun ChallengesContent(
         })
     }
 
-    val lastBg = entries.lastOrNull()?.bg ?: MaterialTheme.colorScheme.background
+    val showIntro = sections.mine.isEmpty()
+    val bgColor = MaterialTheme.colorScheme.background
+    val lastBg = entries.lastOrNull()?.bg ?: bgColor
     Box(modifier = Modifier.fillMaxSize().background(lastBg)) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            if (showIntro) {
+                IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
+            }
             entries.forEachIndexed { i, entry ->
-                if (i > 0) {
-                    WaveSeparator(topColor = entries[i - 1].bg, bottomColor = entry.bg)
-                }
-                entry.render(i == 0)
+                val prevBg = if (i == 0 && showIntro) bgColor else if (i > 0) entries[i - 1].bg else null
+                if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
+                entry.render(i == 0 && !showIntro)
             }
         }
     }

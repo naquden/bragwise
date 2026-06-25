@@ -139,6 +139,14 @@
 
     <string name="cl_empty_create_first">अपना पहला चैलेंज बनाएं</string>
     <string name="cl_empty_body">मित्रों के साथ भविष्यवाणी शुरू करने के लिए एक बनाएं।</string>
+    <string name="cl_intro_title">Bragwise कैसे काम करता है</string>
+    <string name="cl_intro_create_title">बनाएं</string>
+    <string name="cl_intro_create_body">एक भविष्यवाणी चैलेंज बनाएं</string>
+    <string name="cl_intro_create_alt">या किसी मित्र से बनवाकर आपके साथ शेयर करवाएं</string>
+    <string name="cl_intro_predict_title">भविष्यवाणी करें</string>
+    <string name="cl_intro_predict_body">दोस्तों के साथ परिणाम का अनुमान लगाएं</string>
+    <string name="cl_intro_win_title">जीतें</string>
+    <string name="cl_intro_win_body">लीडरबोर्ड में शीर्ष पर रहें, जीत का अधिकार कमाएं</string>
     <string name="cl_section_mine_title">मेरे चैलेंज</string>
     <string name="cl_active_count_one">1 सक्रिय</string>
     <string name="cl_active_count">%1$d सक्रिय</string>

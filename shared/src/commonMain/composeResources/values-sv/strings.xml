@@ -141,6 +141,14 @@
 
     <string name="cl_empty_create_first">Skapa din första utmaning</string>
     <string name="cl_empty_body">Skapa en för att börja tipsa med vänner.</string>
+    <string name="cl_intro_title">Så fungerar Bragwise</string>
+    <string name="cl_intro_create_title">Skapa</string>
+    <string name="cl_intro_create_body">Skapa en tipsutmaning</string>
+    <string name="cl_intro_create_alt">eller låt en vän skapa och dela med dig</string>
+    <string name="cl_intro_predict_title">Tipsa</string>
+    <string name="cl_intro_predict_body">Gissa resultatet med vänner</string>
+    <string name="cl_intro_win_title">Vinn</string>
+    <string name="cl_intro_win_body">Toppa listan och tjäna skrytregler</string>
     <string name="cl_section_mine_title">Mina utmaningar</string>
     <string name="cl_active_count_one">1 aktiv</string>
     <string name="cl_active_count">%1$d aktiva</string>

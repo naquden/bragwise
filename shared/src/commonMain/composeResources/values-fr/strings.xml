@@ -139,6 +139,14 @@
 
     <string name="cl_empty_create_first">Créez votre premier défi</string>
     <string name="cl_empty_body">Créez-en un pour commencer à prédire avec des amis.</string>
+    <string name="cl_intro_title">Comment fonctionne Bragwise</string>
+    <string name="cl_intro_create_title">Créer</string>
+    <string name="cl_intro_create_body">Lance un défi de prédiction</string>
+    <string name="cl_intro_create_alt">ou demande à un ami de créer et de le partager avec toi</string>
+    <string name="cl_intro_predict_title">Prédire</string>
+    <string name="cl_intro_predict_body">Devine le résultat avec tes amis</string>
+    <string name="cl_intro_win_title">Gagner</string>
+    <string name="cl_intro_win_body">Domine le classement, mérite de te vanter</string>
     <string name="cl_section_mine_title">Mes défis</string>
     <string name="cl_active_count_one">1 actif</string>
     <string name="cl_active_count">%1$d actifs</string>

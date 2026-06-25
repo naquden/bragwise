@@ -139,6 +139,14 @@
 
     <string name="cl_empty_create_first">创建您的第一个挑战</string>
     <string name="cl_empty_body">创建一个开始与朋友一起预测。</string>
+    <string name="cl_intro_title">Bragwise 如何运作</string>
+    <string name="cl_intro_create_title">创建</string>
+    <string name="cl_intro_create_body">创建一个预测挑战</string>
+    <string name="cl_intro_create_alt">或让朋友创建并分享给你</string>
+    <string name="cl_intro_predict_title">预测</string>
+    <string name="cl_intro_predict_body">与朋友一起猜测结果</string>
+    <string name="cl_intro_win_title">获胜</string>
+    <string name="cl_intro_win_body">登上排行榜榜首，赢得炫耀的权利</string>
     <string name="cl_section_mine_title">我的挑战</string>
     <string name="cl_active_count_one">1 个活跃</string>
     <string name="cl_active_count">%1$d 个活跃</string>

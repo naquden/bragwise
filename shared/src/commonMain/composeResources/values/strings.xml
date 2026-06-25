@@ -158,9 +158,17 @@
     <string name="cd_snackbar_share_failed">Couldn\'t share challenge</string>
     <string name="cd_snackbar_delete_failed">Delete failed: %1$s</string>
 
-    <!-- Challenges screen (cl_) — empty state. -->
+    <!-- Challenges screen (cl_) — empty state / intro card. -->
     <string name="cl_empty_create_first">Create your first challenge</string>
     <string name="cl_empty_body">Create one to start predicting with friends.</string>
+    <string name="cl_intro_title">How Bragwise works</string>
+    <string name="cl_intro_create_title">Create</string>
+    <string name="cl_intro_create_body">Make a prediction challenge</string>
+    <string name="cl_intro_create_alt">or have a friend create and share it with you</string>
+    <string name="cl_intro_predict_title">Predict</string>
+    <string name="cl_intro_predict_body">Guess the outcome with friends</string>
+    <string name="cl_intro_win_title">Win</string>
+    <string name="cl_intro_win_body">Top the leaderboard, earn bragging rights</string>
     <string name="cl_section_mine_title">My Challenges</string>
     <string name="cl_active_count_one">1 active</string>
     <string name="cl_active_count">%1$d active</string>

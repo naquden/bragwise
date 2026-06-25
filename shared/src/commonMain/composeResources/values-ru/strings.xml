@@ -139,6 +139,14 @@
 
     <string name="cl_empty_create_first">Создайте своё первое испытание</string>
     <string name="cl_empty_body">Создайте одно, чтобы начать прогнозировать с друзьями.</string>
+    <string name="cl_intro_title">Как работает Bragwise</string>
+    <string name="cl_intro_create_title">Создать</string>
+    <string name="cl_intro_create_body">Создайте испытание с прогнозами</string>
+    <string name="cl_intro_create_alt">или попросите друга создать и поделиться с вами</string>
+    <string name="cl_intro_predict_title">Прогнозировать</string>
+    <string name="cl_intro_predict_body">Угадайте исход вместе с друзьями</string>
+    <string name="cl_intro_win_title">Победить</string>
+    <string name="cl_intro_win_body">Возглавьте таблицу лидеров, заслужите право похвастаться</string>
     <string name="cl_section_mine_title">Мои испытания</string>
     <string name="cl_active_count_one">1 активное</string>
     <string name="cl_active_count">%1$d активных</string>
