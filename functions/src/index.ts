@@ -45,6 +45,7 @@ import {
   RegisterPushTokenSchema,
   SetNotificationPrefSchema,
   SendFriendRequestSchema,
+  SetReactionSchema,
   SubmitPredictionsSchema,
   UnfriendSchema,
   WithdrawFriendRequestSchema,
@@ -419,11 +420,12 @@ export const deleteChallenge = onCall(async (req: CallableRequest<unknown>) => {
   });
 
   // Purge subcollections then the challenge doc itself.
-  const [playersSnap, invitationsSnap] = await Promise.all([
+  const [playersSnap, invitationsSnap, reactionsSnap] = await Promise.all([
     challengeRef.collection('players').listDocuments(),
     challengeRef.collection('invitations').listDocuments(),
+    challengeRef.collection('reactions').listDocuments(),
   ]);
-  const allRefs = [...playersSnap, ...invitationsSnap, challengeRef];
+  const allRefs = [...playersSnap, ...invitationsSnap, ...reactionsSnap, challengeRef];
   const BATCH_SIZE = 500;
   for (let i = 0; i < allRefs.length; i += BATCH_SIZE) {
     const batch = db.batch();
@@ -761,6 +763,49 @@ async function assignRandomHandle(uid: string, maxAttempts = 10): Promise<void> 
     }
   }
 }
+
+// ─── setReaction ──────────────────────────────────────────────────────────────
+
+/**
+ * Set or clear the calling user's smiley reaction on a challenge.
+ * emoji == null clears the reaction. Toggling to the same emoji also clears.
+ * No email verification — guests can react (same as submitPredictions).
+ */
+export const setReaction = onCall(async (req: CallableRequest<unknown>) => {
+  verifyAppCheck(req);
+  const uid = requireAuth(req);
+  await rateLimit(uid, 'setReaction', 3600, 600);
+  const { challengeId, emoji } = validate(SetReactionSchema, req.data);
+
+  const challengeRef = db.doc(`challenges/${challengeId}`);
+  const reactionRef = db.doc(`challenges/${challengeId}/reactions/${uid}`);
+
+  await db.runTransaction(async (tx) => {
+    const [challengeSnap, playerSnap, inviteSnap] = await Promise.all([
+      tx.get(challengeRef),
+      tx.get(db.doc(`challenges/${challengeId}/players/${uid}`)),
+      tx.get(db.doc(`challenges/${challengeId}/invitations/${uid}`)),
+    ]);
+
+    if (!challengeSnap.exists) throw new HttpsError('not-found', 'challenge-not-found');
+    const challenge = challengeSnap.data()!;
+
+    const isEligible =
+      challenge.createdBy === uid ||
+      challenge.visibility === 'PROMOTED' ||
+      challenge.visibility === 'FRIENDS' ||
+      playerSnap.exists ||
+      inviteSnap.exists;
+
+    if (!isEligible) throw new HttpsError('permission-denied', 'not-eligible');
+
+    if (emoji == null) {
+      tx.delete(reactionRef);
+    } else {
+      tx.set(reactionRef, { uid, emoji, updatedAt: FieldValue.serverTimestamp() });
+    }
+  });
+});
 
 // ─── recordActivity ───────────────────────────────────────────────────────────
 

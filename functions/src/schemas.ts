@@ -228,3 +228,11 @@ export const MigrateGuestDataSchema = z.object({
     )
     .max(2000),
 });
+
+export const REACTION_EMOJIS = ['😂', '🔥', '😭', '🎉', '💀', '👏', '🤡', '🧠', '😱', '🤯', '👀'] as const;
+export type ReactionEmoji = typeof REACTION_EMOJIS[number];
+
+export const SetReactionSchema = z.object({
+  challengeId: z.string().min(1),
+  emoji: z.enum(REACTION_EMOJIS).nullable(),
+});

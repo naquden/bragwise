@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
@@ -16,6 +17,7 @@ import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.LeaderboardEntry
+import se.atte.bragwise.domain.Reaction
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiState
@@ -42,6 +44,7 @@ class ResultsRevealViewModel(
 
     sealed interface Intent {
         data object ToggleFriendsFilter : Intent
+        data class React(val emoji: String) : Intent
     }
 
     sealed interface Effect {
@@ -59,6 +62,8 @@ class ResultsRevealViewModel(
         val friendUids: Set<String>,
         val alreadySeen: Boolean,
         val iAmCreator: Boolean = false,
+        val reactionCounts: Map<String, Int> = emptyMap(),
+        val myReaction: String? = null,
     ) {
         val displayedLeaderboard: List<LeaderboardEntry>
             get() = leaderboard
@@ -92,6 +97,14 @@ class ResultsRevealViewModel(
             is Intent.ToggleFriendsFilter -> {
                 friendsOnlyState.value = !friendsOnlyState.value
                 confettiEmitted = false
+            }
+            is Intent.React -> {
+                val current = (state.value.ui as? UiState.Ready)?.data?.myReaction
+                val next = if (intent.emoji == current) null else intent.emoji
+                viewModelScope.launch {
+                    challenges.setReaction(challengeId, next)
+                        .onFailure { /* best-effort; snapshot reconciles */ }
+                }
             }
         }
     }
@@ -129,6 +142,11 @@ class ResultsRevealViewModel(
                         friendUids = friendUids,
                         alreadySeen = seenAtEntry,
                         iAmCreator = detail.challenge.createdBy == myUid,
+                    )
+                }.combine(challenges.observeReactions(challengeId = challengeId)) { data, reactions ->
+                    data.copy(
+                        reactionCounts = reactions.groupingBy { it.emoji }.eachCount(),
+                        myReaction = reactions.firstOrNull { it.uid == myUid }?.emoji,
                     )
                 }
             }

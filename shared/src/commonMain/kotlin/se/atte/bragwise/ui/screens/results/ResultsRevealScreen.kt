@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -47,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import se.atte.bragwise.domain.LeaderboardEntry
+import se.atte.bragwise.domain.REACTION_EMOJIS
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.theme.ThemePreview
@@ -92,6 +95,7 @@ fun ResultsRevealScreen(
                 data = ui.data,
                 friendsOnly = state.friendsOnly,
                 onToggleFriendsFilter = { viewModel.onIntent(ResultsRevealViewModel.Intent.ToggleFriendsFilter) },
+                onReact = { emoji -> viewModel.onIntent(ResultsRevealViewModel.Intent.React(emoji)) },
                 onParticipantClick = onParticipantClick,
             )
         }
@@ -104,6 +108,7 @@ private fun ResultsRevealBody(
     data: ResultsRevealViewModel.RevealData,
     friendsOnly: Boolean,
     onToggleFriendsFilter: () -> Unit,
+    onReact: (emoji: String) -> Unit,
     onParticipantClick: (uid: String) -> Unit,
 ) {
     var animationPlayed by rememberSaveable { mutableStateOf(false) }
@@ -200,6 +205,23 @@ private fun ResultsRevealBody(
                         participantCount = data.displayedParticipantCount,
                         iAmWinner = data.iAmWinner,
                         iAmCreator = data.iAmCreator,
+                        modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall),
+                    )
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = showBanner,
+                    enter = slideInVertically(
+                        animationSpec = tween(durationMillis = 400),
+                        initialOffsetY = { it / 2 },
+                    ) + fadeIn(animationSpec = tween(durationMillis = 400)),
+                ) {
+                    ReactionBar(
+                        reactionCounts = data.reactionCounts,
+                        myReaction = data.myReaction,
+                        onReact = onReact,
                         modifier = Modifier.padding(horizontal = standardPadding, vertical = standardPaddingSmall),
                     )
                 }
@@ -331,6 +353,34 @@ private fun LeaderboardRow(entry: LeaderboardEntry, isMe: Boolean, onClick: () -
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReactionBar(
+    reactionCounts: Map<String, Int>,
+    myReaction: String?,
+    onReact: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+    ) {
+        REACTION_EMOJIS.forEach { emoji ->
+            val count = reactionCounts[emoji] ?: 0
+            val selected = emoji == myReaction
+            FilterChip(
+                selected = selected,
+                onClick = { onReact(emoji) },
+                label = {
+                    val label = if (count > 0) "$emoji $count" else emoji
+                    Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                },
+            )
+        }
+    }
+}
+
 // region Previews
 
 @Preview(showBackground = true)
@@ -357,6 +407,7 @@ private fun ResultsRevealBody_Preview() {
             ),
             friendsOnly = false,
             onToggleFriendsFilter = {},
+            onReact = {},
             onParticipantClick = {},
         )
     }
@@ -386,6 +437,7 @@ private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
             ),
             friendsOnly = false,
             onToggleFriendsFilter = {},
+            onReact = {},
             onParticipantClick = {},
         )
     }
@@ -415,6 +467,7 @@ private fun PreviewTie() {
             ),
             friendsOnly = false,
             onToggleFriendsFilter = {},
+            onReact = {},
             onParticipantClick = {},
         )
     }

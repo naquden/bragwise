@@ -17,6 +17,7 @@ import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.domain.Reaction
 
 interface ChallengeRepository {
     fun observeMine(): Flow<List<Challenge>>
@@ -45,6 +46,9 @@ interface ChallengeRepository {
     suspend fun inviteFriends(challengeId: String, uids: List<String>): Result<Unit>
     suspend fun dismissInviteLocally(challengeId: String): Result<Unit>
     suspend fun deleteChallenge(challengeId: String): Result<Unit>
+
+    fun observeReactions(challengeId: String): Flow<List<Reaction>>
+    suspend fun setReaction(challengeId: String, emoji: String?): Result<Unit>
 }
 
 // #region agent log
@@ -180,4 +184,10 @@ class FirebaseChallengeRepository(
     override suspend fun deleteChallenge(challengeId: String): Result<Unit> = runCatching {
         remote.deleteChallenge(challengeId)
     }
+
+    override fun observeReactions(challengeId: String): Flow<List<Reaction>> =
+        remote.observeReactions(challengeId)
+
+    override suspend fun setReaction(challengeId: String, emoji: String?): Result<Unit> =
+        runCatching { remote.setReaction(challengeId, emoji) }
 }

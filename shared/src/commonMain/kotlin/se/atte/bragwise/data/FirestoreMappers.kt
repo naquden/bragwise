@@ -20,6 +20,7 @@ import se.atte.bragwise.domain.ParticipantInfo
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
+import se.atte.bragwise.domain.Reaction
 import se.atte.bragwise.domain.Visibility
 
 // ── Serializable DTOs ────────────────────────────────────────────────────────
@@ -256,4 +257,10 @@ internal fun DocumentSnapshot.toInvitation(challengeId: String): Invitation = In
     invitedUid = strOrNull("invitedUid") ?: id,
     invitedBy = strOrNull("invitedBy") ?: "SYSTEM",
     invitedAt = timestampOrNull("invitedAt") ?: Instant.DISTANT_PAST,
+)
+
+internal fun DocumentSnapshot.toReaction(): Reaction = Reaction(
+    uid = strOrNull("uid") ?: id,
+    emoji = strOrNull("emoji") ?: "",
+    updatedAt = timestampOrNull("updatedAt") ?: Instant.DISTANT_PAST,
 )

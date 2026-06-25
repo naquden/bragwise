@@ -17,6 +17,7 @@ import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.PredictionPayload
+import se.atte.bragwise.domain.Reaction
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.util.randomUuid
 import kotlin.time.Clock
@@ -143,6 +144,27 @@ class MockChallengeRepository(
 
     override suspend fun deleteChallenge(challengeId: String): Result<Unit> =
         Result.success(Unit)
+
+    private val _reactions = MutableStateFlow<Map<String, Map<String, String>>>(emptyMap())
+
+    override fun observeReactions(challengeId: String): Flow<List<Reaction>> =
+        _reactions.map { all ->
+            (all[challengeId] ?: emptyMap()).map { (uid, emoji) ->
+                Reaction(uid = uid, emoji = emoji, updatedAt = Instant.DISTANT_PAST)
+            }
+        }
+
+    override suspend fun setReaction(challengeId: String, emoji: String?): Result<Unit> = runCatching {
+        _reactions.update { all ->
+            val current = (all[challengeId] ?: emptyMap()).toMutableMap()
+            if (emoji == null) {
+                current.remove(currentUid)
+            } else {
+                current[currentUid] = emoji
+            }
+            all + (challengeId to current)
+        }
+    }
 }
 
 private fun buildMockLeaderboard(sortedEntries: List<Map.Entry<String, Int>>): List<LeaderboardEntry> {

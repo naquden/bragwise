@@ -30,6 +30,7 @@ import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
+import se.atte.bragwise.domain.Reaction
 import se.atte.bragwise.domain.scoring.competitionRanks
 
 /** Thrown when a Firestore PERMISSION_DENIED indicates the challenge no longer exists for this user. */
@@ -250,6 +251,26 @@ class ChallengeRemoteDataSource(
 
     suspend fun deleteChallenge(challengeId: String) {
         functions.httpsCallable("deleteChallenge")(hashMapOf("challengeId" to challengeId))
+    }
+
+    fun observeReactions(challengeId: String): Flow<List<Reaction>> = flow {
+        emitAll(
+            db.collection("challenges/$challengeId/reactions").snapshots
+                .map { snap ->
+                    snap.documents.mapNotNull { doc ->
+                        runCatching { doc.toReaction() }.getOrNull()
+                            ?.takeIf { it.emoji.isNotEmpty() }
+                    }
+                }
+                .catch { e ->
+                    if (e is FirebaseFirestoreException && e.code == FirestoreExceptionCode.PERMISSION_DENIED) emit(emptyList())
+                    else throw e
+                },
+        )
+    }
+
+    suspend fun setReaction(challengeId: String, emoji: String?) {
+        functions.httpsCallable("setReaction")(hashMapOf("challengeId" to challengeId, "emoji" to emoji))
     }
 
     /**

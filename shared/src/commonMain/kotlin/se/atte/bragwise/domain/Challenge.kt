@@ -2,6 +2,14 @@ package se.atte.bragwise.domain
 
 import kotlin.time.Instant
 
+val REACTION_EMOJIS = listOf("😂", "🔥", "😭", "🎉", "💀", "👏", "🤡", "🧠", "😱", "🤯", "👀")
+
+data class Reaction(
+    val uid: String,
+    val emoji: String,
+    val updatedAt: Instant,
+)
+
 data class Challenge(
     val id: String,
     val title: String,

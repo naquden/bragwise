@@ -90,6 +90,15 @@ service cloud.firestore {
         allow read: if isSelf(uid) || isCreator(challengeId);
         allow write: if false;        // inviteFriends callable / onFriendAccepted trigger
       }
+
+      match /reactions/{uid} {
+        allow read: if isSelf(uid)
+          || get(/databases/$(database)/documents/challenges/$(challengeId)).data.betsVisible == true
+          || isCreator(challengeId)
+          || exists(/databases/$(database)/documents/challenges/$(challengeId)/invitations/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/challenges/$(challengeId)/players/$(request.auth.uid));
+        allow write: if false;        // setReaction callable only
+      }
     }
 
     // Collection-group query: "my pending invitations" across all challenges.
