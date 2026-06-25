@@ -24,7 +24,6 @@ import se.atte.bragwise.theme.AppType
  * historical-rank source.
  */
 private val Gold = Color(0xFFFFD700).copy(alpha = 0.55f)
-private val GoldText = Color(0xFF3A2E00)
 private val Silver = Color(0xFFCFD4DA)
 private val SilverText = Color(0xFF2A2E33)
 private val Bronze = Color(0xFFCD7F32)
@@ -41,7 +40,7 @@ fun RankChip(rank: Int, modifier: Modifier = Modifier) {
         label = "rank",
     )
     val (chipBg, chipText) = when (rank) {
-        1 -> Gold to GoldText
+        1 -> Gold to MaterialTheme.colorScheme.onSurface
         2 -> Silver to SilverText
         3 -> Bronze to BronzeText
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurface
