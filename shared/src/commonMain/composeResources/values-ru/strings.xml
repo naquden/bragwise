@@ -307,6 +307,7 @@
     <string name="cc_snackbar_title_and_bet_required">Требуется название и по крайней мере одна ставка</string>
     <string name="cc_snackbar_deadline_future">Крайний срок должен быть в будущем</string>
     <string name="cc_snackbar_no_reachable_invitees">Ни один из ваших приглашённых друзей не доступен — выберите по крайней мере одного</string>
+    <string name="cc_snackbar_invite_needs_friends">Выберите хотя бы одного друга для приглашения</string>
 
     <string name="nav_create_challenge_a11y">Создать испытание</string>
 </resources>

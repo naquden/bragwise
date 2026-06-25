@@ -307,6 +307,7 @@
     <string name="cc_snackbar_title_and_bet_required">Se requiere título y al menos una apuesta</string>
     <string name="cc_snackbar_deadline_future">La fecha límite debe ser en el futuro</string>
     <string name="cc_snackbar_no_reachable_invitees">Ninguno de tus amigos invitados son accesibles — elige al menos uno</string>
+    <string name="cc_snackbar_invite_needs_friends">Elige al menos un amigo para invitar</string>
 
     <string name="nav_create_challenge_a11y">Crear desafío</string>
 </resources>

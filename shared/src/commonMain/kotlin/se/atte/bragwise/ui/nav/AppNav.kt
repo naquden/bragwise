@@ -508,6 +508,7 @@ fun AppNav() {
                     val route = entry.toRoute<RouteResultsReveal>()
                     ResultsRevealScreen(
                         viewModel = koinViewModel<ResultsRevealViewModel> { parametersOf(route.challengeId) },
+                        platformShare = platformShare,
                         onParticipantClick = { uid ->
                             navController.navigate(RouteParticipantBets(challengeId = route.challengeId, uid = uid))
                         },

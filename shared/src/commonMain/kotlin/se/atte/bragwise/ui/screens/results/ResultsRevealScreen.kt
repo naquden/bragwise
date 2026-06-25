@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
@@ -52,8 +54,10 @@ import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.REACTION_EMOJIS
 import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
+import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.theme.ThemePreview
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Share2
 import com.composables.icons.lucide.Trophy
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
@@ -67,6 +71,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun ResultsRevealScreen(
     viewModel: ResultsRevealViewModel,
+    platformShare: PlatformShare,
     onParticipantClick: (uid: String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -74,6 +79,8 @@ fun ResultsRevealScreen(
     ObserveEffects(effects = viewModel.effects) { effect ->
         when (effect) {
             ResultsRevealViewModel.Effect.PlayConfetti -> showConfetti = true
+            is ResultsRevealViewModel.Effect.ShareLink ->
+                platformShare.send(effect.url, effect.title, "${effect.title} on Bragwise")
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -96,6 +103,7 @@ fun ResultsRevealScreen(
                 friendsOnly = state.friendsOnly,
                 onToggleFriendsFilter = { viewModel.onIntent(ResultsRevealViewModel.Intent.ToggleFriendsFilter) },
                 onReact = { emoji -> viewModel.onIntent(ResultsRevealViewModel.Intent.React(emoji)) },
+                onShare = { viewModel.onIntent(ResultsRevealViewModel.Intent.ShareResults) },
                 onParticipantClick = onParticipantClick,
             )
         }
@@ -109,6 +117,7 @@ private fun ResultsRevealBody(
     friendsOnly: Boolean,
     onToggleFriendsFilter: () -> Unit,
     onReact: (emoji: String) -> Unit,
+    onShare: () -> Unit,
     onParticipantClick: (uid: String) -> Unit,
 ) {
     var animationPlayed by rememberSaveable { mutableStateOf(false) }
@@ -265,6 +274,21 @@ private fun ResultsRevealBody(
 
             item { Spacer(Modifier.height(32.dp)) }
         }
+
+        // Share icon — floats top-end over the header area
+        IconButton(
+            onClick = onShare,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 8.dp),
+        ) {
+            Icon(
+                imageVector = Lucide.Share2,
+                contentDescription = "Share results",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -408,6 +432,7 @@ private fun ResultsRevealBody_Preview() {
             friendsOnly = false,
             onToggleFriendsFilter = {},
             onReact = {},
+            onShare = {},
             onParticipantClick = {},
         )
     }
@@ -438,6 +463,7 @@ private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
             friendsOnly = false,
             onToggleFriendsFilter = {},
             onReact = {},
+            onShare = {},
             onParticipantClick = {},
         )
     }
@@ -468,6 +494,7 @@ private fun PreviewTie() {
             friendsOnly = false,
             onToggleFriendsFilter = {},
             onReact = {},
+            onShare = {},
             onParticipantClick = {},
         )
     }

@@ -18,6 +18,8 @@
  */
 import { onRequest } from 'firebase-functions/v2/https';
 import { db } from './lib/admin';
+import { renderChallengeCard } from './shareCard';
+import type { ShareCardData, PodiumEntry } from './shareCard';
 
 const APP_NAME = 'Bragwise';
 const APP_PACKAGE = 'se.atte.bragwise';
@@ -41,11 +43,69 @@ export const landing = onRequest(async (req, res) => {
     return;
   }
 
-  // ── /c/{challengeId} ────────────────────────────────────────────────────────
-  const challengeMatch = path.match(/^\/c\/([a-zA-Z0-9_-]+)$/);
+  // ── /c/{challengeId}/card.png ────────────────────────────────────────────────
+  // Podium share-card image — only for finished PROMOTED challenges.
+  // Served unauthenticated; gating is the privacy guarantee.
+  const cardMatch = path.match(/^\/c\/([a-zA-Z0-9_-]+)\/card\.png$/);
+  if (cardMatch) {
+    const challengeId = cardMatch[1];
+    try {
+      const snap = await db.doc(`challenges/${challengeId}`).get();
+      if (!snap.exists) { res.status(404).send('Not found'); return; }
+      const data = snap.data()!;
+
+      // Gate: only promoted + finished
+      if (data.promoted !== true || data.resultsPostedAt == null) {
+        res.status(404).send('Not found');
+        return;
+      }
+
+      const leaderboard: Record<string, number> = data.leaderboard ?? {};
+      const rankedLeaderboard: Record<string, number> = data.rankedLeaderboard ?? {};
+      const participants: Record<string, { displayName: string; avatarSeed?: string }> =
+        data.participants ?? {};
+
+      // Build top-3 podium entries from persisted rankedLeaderboard
+      const ranked: PodiumEntry[] = Object.entries(rankedLeaderboard)
+        .filter(([, rank]) => rank <= 3)
+        .map(([uid, rank]) => ({
+          rank,
+          displayName: participants[uid]?.displayName ?? 'Player',
+          avatarSeed: participants[uid]?.avatarSeed ?? uid,
+          points: leaderboard[uid] ?? 0,
+        }))
+        .sort((a, b) => a.rank - b.rank);
+
+      const playerCount = Math.max(
+        Object.keys(leaderboard).length,
+        typeof data.joinedCount === 'number' ? data.joinedCount : 0,
+      );
+
+      const cardData: ShareCardData = {
+        title: data.title ?? '',
+        playerCount,
+        podium: ranked,
+      };
+
+      const png = await renderChallengeCard(cardData);
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.status(200).send(png);
+    } catch (err) {
+      console.error('card.png render error', err);
+      res.status(500).send('Internal error');
+    }
+    return;
+  }
+
+  // ── /c/{challengeId} and /c/{challengeId}/results ───────────────────────────
+  // Both paths show the same OG preview (results card when finished).
+  // /results deep-links directly to the in-app results screen.
+  const challengeMatch = path.match(/^\/c\/([a-zA-Z0-9_-]+)(\/results)?$/);
   if (challengeMatch) {
     const challengeId = challengeMatch[1];
-    const deepLink = `https://${req.hostname}/c/${challengeId}`;
+    const isResultsPath = challengeMatch[2] === '/results';
+    const deepLink = `https://${req.hostname}/c/${challengeId}${isResultsPath ? '/results' : ''}`;
     let ogTitle = APP_NAME;
     let ogDescription = 'Make your predictions on Bragwise.';
     let ogImage = '';
@@ -58,8 +118,14 @@ export const landing = onRequest(async (req, res) => {
         const title: string = data.title ?? '';
         const category: string = data.category ?? '';
         if (isPromoted && title) {
+          const isFinished: boolean = data.resultsPostedAt != null;
           ogTitle = `${title} — ${APP_NAME}`;
-          ogDescription = `Predict the ${category} challenge on Bragwise.`;
+          ogDescription = isFinished
+            ? `See the final standings on Bragwise.`
+            : `Predict the ${category} challenge on Bragwise.`;
+          if (isFinished) {
+            ogImage = `https://${req.hostname}/c/${challengeId}/card.png`;
+          }
         }
       }
     } catch {
@@ -143,6 +209,7 @@ function renderDeepLinkPage({ title, description, ogImage, deepLink, ctaLabel }:
   const ogImageTag = ogImage
     ? `<meta property="og:image" content="${escHtml(ogImage)}">`
     : '';
+  const twitterCard = ogImage ? 'summary_large_image' : 'summary';
 
   return html`<!doctype html>
 <html lang="en">
@@ -155,7 +222,7 @@ function renderDeepLinkPage({ title, description, ogImage, deepLink, ctaLabel }:
   <meta property="og:type" content="website">
   <meta property="og:url" content="${escHtml(deepLink)}">
   ${ogImageTag}
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="${twitterCard}">
   <meta name="twitter:title" content="${escHtml(title)}">
   <meta name="twitter:description" content="${escHtml(description)}">
   ${commonHead()}

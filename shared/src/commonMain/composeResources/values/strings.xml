@@ -348,6 +348,7 @@
     <string name="cc_snackbar_title_and_bet_required">Title and at least one bet required</string>
     <string name="cc_snackbar_deadline_future">Deadline must be in the future</string>
     <string name="cc_snackbar_no_reachable_invitees">None of your invited friends are reachable — pick at least one</string>
+    <string name="cc_snackbar_invite_needs_friends">Pick at least one friend to invite</string>
 
     <!-- AppNav. -->
     <string name="nav_create_challenge_a11y">Create challenge</string>

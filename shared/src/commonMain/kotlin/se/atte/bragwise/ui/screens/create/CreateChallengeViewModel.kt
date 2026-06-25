@@ -2,6 +2,7 @@ package se.atte.bragwise.ui.screens.create
 
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.cc_snackbar_deadline_future
+import bragwise.shared.generated.resources.cc_snackbar_invite_needs_friends
 import bragwise.shared.generated.resources.cc_snackbar_no_reachable_invitees
 import bragwise.shared.generated.resources.cc_snackbar_nothing_to_save
 import bragwise.shared.generated.resources.cc_snackbar_title_and_bet_required
@@ -215,6 +216,10 @@ class CreateChallengeViewModel(
         }
         if (s.locksAt <= Clock.System.now()) {
             emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_deadline_future)))
+            return
+        }
+        if (s.visibility == Visibility.INVITE_ONLY && s.invitedUids.isEmpty()) {
+            emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_invite_needs_friends)))
             return
         }
         when (ensureNamedAccount.nameState.value) {

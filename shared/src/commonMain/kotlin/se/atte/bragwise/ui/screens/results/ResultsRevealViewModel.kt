@@ -15,6 +15,7 @@ import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.ResultsSeenStore
 import se.atte.bragwise.data.SocialRepository
+import se.atte.bragwise.data.shareUrlForResults
 import se.atte.bragwise.domain.CloudFriend
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Reaction
@@ -45,10 +46,12 @@ class ResultsRevealViewModel(
     sealed interface Intent {
         data object ToggleFriendsFilter : Intent
         data class React(val emoji: String) : Intent
+        data object ShareResults : Intent
     }
 
     sealed interface Effect {
         data object PlayConfetti : Effect
+        data class ShareLink(val url: String, val title: String) : Effect
     }
 
     data class RevealData(
@@ -104,6 +107,12 @@ class ResultsRevealViewModel(
                 viewModelScope.launch {
                     challenges.setReaction(challengeId, next)
                         .onFailure { /* best-effort; snapshot reconciles */ }
+                }
+            }
+            is Intent.ShareResults -> {
+                val title = (state.value.ui as? UiState.Ready)?.data?.challengeTitle
+                if (title != null) {
+                    emitEffect(Effect.ShareLink(url = shareUrlForResults(challengeId), title = title))
                 }
             }
         }

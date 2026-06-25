@@ -26,3 +26,6 @@ internal const val APP_LINK_BASE_URL = "https://$APP_LINK_HOST"
 
 /** Canonical shareable URL for a challenge. Resolves via the landing function. */
 fun shareUrlForChallenge(challengeId: String): String = "$APP_LINK_BASE_URL/c/$challengeId"
+
+/** Shareable URL linking directly to the results screen. */
+fun shareUrlForResults(challengeId: String): String = "$APP_LINK_BASE_URL/c/$challengeId/results"

@@ -307,6 +307,7 @@
     <string name="cc_snackbar_title_and_bet_required">Titre et au moins un pari requis</string>
     <string name="cc_snackbar_deadline_future">Le délai doit être dans le futur</string>
     <string name="cc_snackbar_no_reachable_invitees">Aucun de vos amis invités n'est joignable — choisissez au moins un</string>
+    <string name="cc_snackbar_invite_needs_friends">Choisissez au moins un ami à inviter</string>
 
     <string name="nav_create_challenge_a11y">Créer un défi</string>
 </resources>

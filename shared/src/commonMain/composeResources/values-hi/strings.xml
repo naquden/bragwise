@@ -307,6 +307,7 @@
     <string name="cc_snackbar_title_and_bet_required">शीर्षक और कम से कम एक बेट आवश्यक है</string>
     <string name="cc_snackbar_deadline_future">समय सीमा भविष्य में होनी चाहिए</string>
     <string name="cc_snackbar_no_reachable_invitees">आपके कोई भी आमंत्रित मित्र उपलब्ध नहीं — कम से कम एक चुनें</string>
+    <string name="cc_snackbar_invite_needs_friends">आमंत्रित करने के लिए कम से कम एक मित्र चुनें</string>
 
     <string name="nav_create_challenge_a11y">चैलेंज बनाएं</string>
 </resources>

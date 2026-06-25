@@ -313,6 +313,7 @@
     <string name="cc_snackbar_title_and_bet_required">Titel och minst ett tips krävs</string>
     <string name="cc_snackbar_deadline_future">Deadline måste vara i framtiden</string>
     <string name="cc_snackbar_no_reachable_invitees">Ingen av dina inbjudna vänner är nåbara — välj minst en</string>
+    <string name="cc_snackbar_invite_needs_friends">Välj minst en vän att bjuda in</string>
 
     <string name="nav_create_challenge_a11y">Skapa utmaning</string>
 
