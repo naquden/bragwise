@@ -81,6 +81,9 @@ export const onResultsPosted = onDocumentUpdated(
             ? ((prevSnap.data()?.vs ?? {}) as Record<string, 'win' | 'loss' | 'tie'>)
             : {};
 
+          const H2H_FIELD: Record<'win' | 'loss' | 'tie', 'wins' | 'losses' | 'ties'> = {
+            win: 'wins', loss: 'losses', tie: 'ties',
+          };
           const rootPatch: Record<string, Record<string, Record<string, FirebaseFirestore.FieldValue>>> = { vs: {} };
           const allFids = new Set([...Object.keys(prevVs), ...Object.keys(newVs)]);
           for (const fid of allFids) {
@@ -88,8 +91,8 @@ export const onResultsPosted = onDocumentUpdated(
             const next = newVs[fid] ?? null;
             if (prev === next) continue;
             rootPatch.vs[fid] = {};
-            if (prev) rootPatch.vs[fid][`${prev}s`] = FieldValue.increment(-1);
-            if (next) rootPatch.vs[fid][`${next}s`] = FieldValue.increment(1);
+            if (prev) rootPatch.vs[fid][H2H_FIELD[prev]] = FieldValue.increment(-1);
+            if (next) rootPatch.vs[fid][H2H_FIELD[next]] = FieldValue.increment(1);
           }
 
           tx.set(byChallRef, { vs: newVs });
@@ -831,9 +834,12 @@ async function upsertByChallengeVs(
     const prevOutcome = prevVs[opponentUid] ?? null;
     if (prevOutcome === newOutcome) return;
 
+    const H2H_FIELD: Record<'win' | 'loss' | 'tie', 'wins' | 'losses' | 'ties'> = {
+      win: 'wins', loss: 'losses', tie: 'ties',
+    };
     const opponentPatch: Record<string, FirebaseFirestore.FieldValue> = {};
-    if (prevOutcome) opponentPatch[`${prevOutcome}s`] = FieldValue.increment(-1);
-    opponentPatch[`${newOutcome}s`] = FieldValue.increment(1);
+    if (prevOutcome) opponentPatch[H2H_FIELD[prevOutcome]] = FieldValue.increment(-1);
+    opponentPatch[H2H_FIELD[newOutcome]] = FieldValue.increment(1);
 
     tx.set(byChallRef, { vs: { ...prevVs, [opponentUid]: newOutcome } }, { merge: true });
     tx.set(rootRef, { vs: { [opponentUid]: opponentPatch } }, { merge: true });
