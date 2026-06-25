@@ -236,8 +236,7 @@ private fun PodiumSlot(
             contentAlignment = Alignment.Center,
         ) {
             if (crownOffset != null) {
-                val crownText = if (entry.isTied) "👑👑" else "👑"
-                Text(text = crownText, fontSize = if (entry.isTied) 14.sp else 22.sp)
+                Text(text = "👑", fontSize = 22.sp)
             }
         }
 
