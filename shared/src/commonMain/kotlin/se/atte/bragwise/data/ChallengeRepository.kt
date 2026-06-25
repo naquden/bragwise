@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.ChallengeStatus
+import se.atte.bragwise.domain.InviteCard
 import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
@@ -24,7 +26,7 @@ interface ChallengeRepository {
     fun observeMine(): Flow<List<Challenge>>
     fun observePromoted(): Flow<List<Challenge>>
     fun observeFromFriends(): Flow<List<Challenge>>
-    fun observePendingInvites(): Flow<List<Invitation>>
+    fun observePendingInvites(): Flow<List<InviteCard>>
     /** Ids of challenges the current user has predicted on. Empty when signed out. */
     fun observeJoinedIds(): Flow<Set<String>>
     fun observeChallengeDetail(id: String): Flow<ChallengeDetail>
@@ -116,12 +118,36 @@ class FirebaseChallengeRepository(
             }
         }
 
-    override fun observePendingInvites(): Flow<List<Invitation>> =
+    override fun observePendingInvites(): Flow<List<InviteCard>> =
         auth.authState.flatMapLatest { state ->
             when (state) {
-                is AuthState.SignedIn -> remote.observePendingInvites(state.uid)
-                    .catch { emit(emptyList()) }
-                else -> localDrafts.observeDrafts().map { emptyList() }
+                is AuthState.SignedIn -> {
+                    val uid = state.uid
+                    remote.observePendingInvites(uid)
+                        .catch { e ->
+                            println("observePendingInvites.error: ${e::class.simpleName} ${e.message}")
+                            emit(emptyList())
+                        }
+                        .flatMapLatest { invitations ->
+                            val openInvites = invitations.filter { it.invitedUid == uid }
+                            if (openInvites.isEmpty()) return@flatMapLatest flowOf(emptyList())
+                            val ids = openInvites.map { it.challengeId }
+                            val inviteByChallenge = openInvites.associate { it.challengeId to it.invitedBy }
+                            val joinedIds = remote.observeJoined(uid).map { joined -> joined.map { it.id }.toSet() }
+                            combine(
+                                remote.observeChallengesByIds(ids),
+                                joinedIds,
+                            ) { challenges, joined ->
+                                challenges
+                                    .filter { it.status == ChallengeStatus.OPEN && it.id !in joined }
+                                    .mapNotNull { challenge ->
+                                        val invitedBy = inviteByChallenge[challenge.id] ?: return@mapNotNull null
+                                        InviteCard(challenge = challenge, invitedByUid = invitedBy)
+                                    }
+                            }
+                        }
+                }
+                else -> flowOf(emptyList())
             }
         }
 

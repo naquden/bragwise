@@ -1,7 +1,6 @@
 package se.atte.bragwise.ui.screens.challenges
 
 import androidx.compose.foundation.background
-import se.atte.bragwise.theme.LocalIsDark
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.Image
@@ -23,7 +21,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,7 +42,6 @@ import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
-import se.atte.bragwise.domain.Invitation
 import se.atte.bragwise.domain.Visibility
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
@@ -60,16 +56,15 @@ import bragwise.shared.generated.resources.cl_intro_predict_title
 import bragwise.shared.generated.resources.cl_intro_title
 import bragwise.shared.generated.resources.cl_intro_win_body
 import bragwise.shared.generated.resources.cl_intro_win_title
+import bragwise.shared.generated.resources.cl_invited_by
 import bragwise.shared.generated.resources.cl_menu_clone
 import bragwise.shared.generated.resources.cl_section_from_friends
 import bragwise.shared.generated.resources.cl_section_invites
 import bragwise.shared.generated.resources.cl_section_mine
 import bragwise.shared.generated.resources.cl_section_promoted
 import se.atte.bragwise.mvi.UiState
-import se.atte.bragwise.theme.Elevation
 import se.atte.bragwise.theme.LocalSectionColors
 import se.atte.bragwise.theme.ThemePreview
-import se.atte.bragwise.theme.appShadow
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.ChallengeCard
 import se.atte.bragwise.ui.components.SectionCard
@@ -327,8 +322,13 @@ private fun ChallengesContent(
         })
         if (sections.invites.isNotEmpty()) add(SectionEntry(sc.invitesBg) { topInset ->
             ColoredSection(bg = sc.invitesBg, title = stringResource(Res.string.cl_section_invites), icon = "✉️", onTitleColor = sc.onInvites, topInset = topInset) {
-                sections.invites.forEach { inv ->
-                    InvitationRow(invitation = inv, onClick = onChallenge, surfaceColor = sc.invitesCard)
+                sections.invites.forEach { entry ->
+                    ChallengeCard(
+                        challenge = entry.challenge,
+                        surfaceColor = sc.invitesCard,
+                        onClick = { onChallenge(entry.challenge.id) },
+                        caption = stringResource(Res.string.cl_invited_by, entry.invitedByName),
+                    )
                 }
             }
         })
@@ -388,48 +388,6 @@ private fun CloneableCard(
     }
 }
 
-@Composable
-private fun InvitationRow(invitation: Invitation, onClick: (String) -> Unit, surfaceColor: Color) {
-    val isDark = LocalIsDark.current
-    val shape = MaterialTheme.shapes.medium
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .appShadow(Elevation.Card, isDark = isDark, shape = shape)
-            .clickable { onClick(invitation.challengeId) },
-        color = surfaceColor,
-        shape = shape,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(64.dp)
-                    .background(MaterialTheme.colorScheme.tertiary),
-            )
-            Spacer(Modifier.width(standardPadding))
-            Text(
-                text = "✉️",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Spacer(Modifier.width(standardPaddingSmall))
-            Column(Modifier.padding(vertical = standardPadding, horizontal = 0.dp)) {
-                Text(
-                    text = "Invitation to ${invitation.challengeId}",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "from ${invitation.invitedBy}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
 
 // region Previews
 
@@ -471,11 +429,9 @@ private fun Challenges_Ready_Preview() {
         fromFriends = listOf(previewChallenge("c3", "Friend's Challenge")),
         joinedIds = setOf("c1"),
         invites = listOf(
-            Invitation(
-                challengeId = "c4",
-                invitedUid = "u2",
-                invitedBy = "u3",
-                invitedAt = Instant.fromEpochSeconds(0),
+            ChallengesViewModel.InviteEntry(
+                challenge = previewChallenge("c4", "Invite Challenge"),
+                invitedByName = "Alice",
             ),
         ),
     )

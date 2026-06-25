@@ -313,4 +313,15 @@
     <string name="cc_snackbar_invite_needs_friends">आमंत्रित करने के लिए कम से कम एक मित्र चुनें</string>
 
     <string name="nav_create_challenge_a11y">चैलेंज बनाएं</string>
+    <string name="predict_over">ऊपर</string>
+    <string name="predict_under">नीचे</string>
+    <string name="predict_over_under_line">रेखा: %1$d</string>
+    <string name="postresults_over">ऊपर</string>
+    <string name="postresults_under">नीचे</string>
+    <string name="postresults_over_under_actual_label">वास्तविक मूल्य दर्ज करें (रेखा: %1$d)</string>
+    <string name="cc_bet_type_multi_select">बहु-चयन</string>
+    <string name="cc_bet_type_number">संख्या</string>
+    <string name="cc_bet_type_over_under">ऊपर / नीचे</string>
+    <string name="cc_over_under_line_label">रेखा</string>
+    <string name="cc_guess_pick_number_title">एक संख्या दर्ज करें</string>
 </resources>

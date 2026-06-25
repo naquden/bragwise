@@ -13,7 +13,7 @@ import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeDetail
 import se.atte.bragwise.domain.ChallengeStatus
-import se.atte.bragwise.domain.Invitation
+import se.atte.bragwise.domain.InviteCard
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.domain.Prediction
 import se.atte.bragwise.domain.PredictionPayload
@@ -50,7 +50,7 @@ class MockChallengeRepository(
                 .sortedByDescending { it.createdAt }
         }
 
-    override fun observePendingInvites(): Flow<List<Invitation>> = flowOf(emptyList())
+    override fun observePendingInvites(): Flow<List<InviteCard>> = flowOf(emptyList())
 
     override fun observeJoinedIds(): Flow<Set<String>> =
         _predictions.map { it.keys }

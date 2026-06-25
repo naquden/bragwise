@@ -311,7 +311,7 @@ private fun DetailContent(
                 }
             }
 
-            if (isOwner && challenge.status != ChallengeStatus.DRAFT) {
+            if (isOwner && challenge.status == ChallengeStatus.OPEN) {
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

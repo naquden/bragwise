@@ -83,6 +83,12 @@ class CreateChallengeViewModel(
         ) : Intent
         data class AddBoolean(val title: String) : Intent
         data class AddGuess(val title: String, val granularity: GuessGranularity, val closest: Boolean = true) : Intent
+        data class AddMultiSelect(
+            val title: String,
+            val options: List<BetOption>,
+            val optionType: OptionType = OptionType.NONE,
+        ) : Intent
+        data class AddOverUnder(val title: String, val line: Long) : Intent
         data class RemoveBet(val betId: String) : Intent
         data class UpdateBet(val bet: Bet) : Intent
         data class SetInvitedUids(val uids: Set<String>) : Intent
@@ -183,6 +189,17 @@ class CreateChallengeViewModel(
             is Intent.AddGuess -> update {
                 val seq = it.betSeq + 1
                 val bet = Bet.Guess(id = "b$seq", title = intent.title, granularity = intent.granularity, closest = intent.closest)
+                it.copy(bets = it.bets + bet, betSeq = seq)
+            }
+            is Intent.AddMultiSelect -> update {
+                val seq = it.betSeq + 1
+                val opts = intent.options.mapIndexed { i, opt -> opt.copy(id = "o$i") }
+                val bet = Bet.MultiSelect(id = "b$seq", title = intent.title, optionType = intent.optionType, options = opts)
+                it.copy(bets = it.bets + bet, betSeq = seq)
+            }
+            is Intent.AddOverUnder -> update {
+                val seq = it.betSeq + 1
+                val bet = Bet.OverUnder(id = "b$seq", title = intent.title, line = intent.line)
                 it.copy(bets = it.bets + bet, betSeq = seq)
             }
             is Intent.RemoveBet -> update { it.copy(bets = it.bets.filterNot { b -> b.id == intent.betId }) }

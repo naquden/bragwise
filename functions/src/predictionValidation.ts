@@ -5,7 +5,7 @@ function invalid(code: string): HttpsError {
   return new HttpsError('invalid-argument', code);
 }
 
-export function validatePayloadAgainstBet(bet: Bet, payload: PredictionPayload): void {
+export function validatePayloadAgainstBet(bet: Bet, payload: PredictionPayload, isResult = false): void {
   if (payload.kind !== bet.kind) throw invalid('payload-kind-mismatch');
   switch (bet.kind) {
     case 'SINGLE_PICK': {
@@ -39,6 +39,28 @@ export function validatePayloadAgainstBet(bet: Bet, payload: PredictionPayload):
       }
       break;
     }
+    case 'MULTI_SELECT': {
+      const p = payload as { kind: 'MULTI_SELECT'; selectedOptionIds: string[] };
+      const ids = new Set(bet.options.map((o) => o.id));
+      const seen = new Set<string>();
+      for (const id of p.selectedOptionIds) {
+        if (!ids.has(id)) throw invalid('multiselect-unknown-option');
+        if (seen.has(id)) throw invalid('multiselect-duplicate-option');
+        seen.add(id);
+      }
+      break;
+    }
+    case 'OVER_UNDER': {
+      const p = payload as { kind: 'OVER_UNDER'; over?: boolean; actualValue?: number };
+      if (isResult) {
+        if (typeof p.actualValue !== 'number' || !Number.isInteger(p.actualValue)) {
+          throw invalid('overunder-result-missing-actualValue');
+        }
+      } else {
+        if (typeof p.over !== 'boolean') throw invalid('overunder-prediction-missing-over');
+      }
+      break;
+    }
   }
 }
 
@@ -50,7 +72,7 @@ export function validatePredictionMap(
   for (const [betId, payload] of Object.entries(predMap)) {
     const bet = betById.get(betId);
     if (!bet) throw invalid('unknown-bet-id');
-    validatePayloadAgainstBet(bet, payload);
+    validatePayloadAgainstBet(bet, payload, false);
   }
   if (Object.keys(predMap).length !== bets.length) {
     throw invalid('incomplete-predictions');
@@ -62,7 +84,7 @@ export function validateResults(bets: Bet[], results: Record<string, PredictionP
   for (const [betId, payload] of Object.entries(results)) {
     const bet = betById.get(betId);
     if (!bet) throw invalid('result-unknown-bet-id');
-    validatePayloadAgainstBet(bet, payload);
+    validatePayloadAgainstBet(bet, payload, true);
   }
   for (const bet of bets) {
     if (!(bet.id in results)) throw invalid('result-missing-bet');

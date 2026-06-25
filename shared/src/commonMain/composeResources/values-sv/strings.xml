@@ -326,4 +326,15 @@
     <string name="pb_already_friends">Vänner</string>
     <string name="pb_snackbar_request_sent">Vänförfrågan skickad till @%1$s</string>
     <string name="pb_snackbar_request_failed">Kunde inte skicka förfrågan — försök igen</string>
+    <string name="predict_over">Över</string>
+    <string name="predict_under">Under</string>
+    <string name="predict_over_under_line">Linje: %1$d</string>
+    <string name="postresults_over">Över</string>
+    <string name="postresults_under">Under</string>
+    <string name="postresults_over_under_actual_label">Ange faktiskt värde (linje: %1$d)</string>
+    <string name="cc_bet_type_multi_select">Flerval</string>
+    <string name="cc_bet_type_number">Nummer</string>
+    <string name="cc_bet_type_over_under">Över / Under</string>
+    <string name="cc_over_under_line_label">Linje</string>
+    <string name="cc_guess_pick_number_title">Ange ett nummer</string>
 </resources>

@@ -35,6 +35,9 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.predict_no_bets
+import bragwise.shared.generated.resources.predict_over
+import bragwise.shared.generated.resources.predict_over_under_line
+import bragwise.shared.generated.resources.predict_under
 import bragwise.shared.generated.resources.predict_yes
 import bragwise.shared.generated.resources.predict_no
 import bragwise.shared.generated.resources.predict_submitting
@@ -131,6 +134,12 @@ fun PredictScreen(
             onGuess = { betId, value ->
                 viewModel.onIntent(PredictViewModel.Intent.SetGuess(betId, value))
             },
+            onMultiSelect = { betId, selectedIds ->
+                viewModel.onIntent(PredictViewModel.Intent.SetMultiSelect(betId, selectedIds))
+            },
+            onOverUnder = { betId, over ->
+                viewModel.onIntent(PredictViewModel.Intent.SetOverUnder(betId, over))
+            },
             onSubmit = { viewModel.onIntent(PredictViewModel.Intent.Submit) },
         )
     }
@@ -145,6 +154,8 @@ private fun PredictContent(
     onBoolean: (String, Boolean) -> Unit,
     onRanking: (String, List<String>) -> Unit,
     onGuess: (String, Long) -> Unit,
+    onMultiSelect: (String, List<String>) -> Unit,
+    onOverUnder: (String, Boolean) -> Unit,
     onSubmit: () -> Unit,
 ) {
     LaunchedEffect(bets) {
@@ -184,6 +195,8 @@ private fun PredictContent(
                         onBoolean = onBoolean,
                         onRanking = onRanking,
                         onGuess = onGuess,
+                        onMultiSelect = onMultiSelect,
+                        onOverUnder = onOverUnder,
                     )
                 }
             }
@@ -223,6 +236,8 @@ private fun BetCard(
     onBoolean: (String, Boolean) -> Unit,
     onRanking: (String, List<String>) -> Unit,
     onGuess: (String, Long) -> Unit,
+    onMultiSelect: (String, List<String>) -> Unit,
+    onOverUnder: (String, Boolean) -> Unit,
 ) {
     SectionCard(title = bet.title) {
         when (bet) {
@@ -279,6 +294,60 @@ private fun BetCard(
                 value = (draft as? PredictionPayload.Guess)?.value,
                 onValueChange = { v -> onGuess(bet.id, v) },
             )
+            is Bet.MultiSelect -> {
+                val selectedIds = (draft as? PredictionPayload.MultiSelect)?.selectedOptionIds.orEmpty()
+                if (bet.optionType == OptionType.COUNTRY) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        bet.options.forEach { option ->
+                            val selected = option.id in selectedIds
+                            CountryOptionRow(
+                                option = option,
+                                selected = selected,
+                                onClick = {
+                                    val updated = if (selected) selectedIds - option.id else selectedIds + option.id
+                                    onMultiSelect(bet.id, updated)
+                                },
+                            )
+                        }
+                    }
+                } else {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                        bet.options.forEach { option ->
+                            val selected = option.id in selectedIds
+                            AppFilterChip(
+                                selected = selected,
+                                onClick = {
+                                    val updated = if (selected) selectedIds - option.id else selectedIds + option.id
+                                    onMultiSelect(bet.id, updated)
+                                },
+                                label = { Text(option.label) },
+                            )
+                        }
+                    }
+                }
+            }
+            is Bet.OverUnder -> {
+                val current = (draft as? PredictionPayload.OverUnder)?.over
+                Column(verticalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                    Text(
+                        text = stringResource(Res.string.predict_over_under_line, bet.line),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                        AppFilterChip(
+                            selected = current == true,
+                            onClick = { onOverUnder(bet.id, true) },
+                            label = { Text(stringResource(Res.string.predict_over)) },
+                        )
+                        AppFilterChip(
+                            selected = current == false,
+                            onClick = { onOverUnder(bet.id, false) },
+                            label = { Text(stringResource(Res.string.predict_under)) },
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -410,6 +479,8 @@ private fun Predict_Ready_Empty_Preview() {
                 onBoolean = { _, _ -> },
                 onRanking = { _, _ -> },
                 onGuess = { _, _ -> },
+                onMultiSelect = { _, _ -> },
+                onOverUnder = { _, _ -> },
                 onSubmit = {},
             )
         }
@@ -429,6 +500,8 @@ private fun Predict_Ready_Partial_Preview() {
                 onBoolean = { _, _ -> },
                 onRanking = { _, _ -> },
                 onGuess = { _, _ -> },
+                onMultiSelect = { _, _ -> },
+                onOverUnder = { _, _ -> },
                 onSubmit = {},
             )
         }
@@ -451,6 +524,8 @@ private fun Predict_Ranking_Active_Preview() {
                 onBoolean = { _, _ -> },
                 onRanking = { _, _ -> },
                 onGuess = { _, _ -> },
+                onMultiSelect = { _, _ -> },
+                onOverUnder = { _, _ -> },
                 onSubmit = {},
             )
         }

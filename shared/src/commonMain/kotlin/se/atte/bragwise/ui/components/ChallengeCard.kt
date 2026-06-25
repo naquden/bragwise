@@ -47,6 +47,7 @@ fun ChallengeCard(
     onLongClick: (() -> Unit)? = null,
     accent: Boolean = false,
     surfaceColor: Color = Unspecified,
+    caption: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val isDark = LocalIsDark.current
@@ -129,6 +130,14 @@ fun ChallengeCard(
                         RankChip(rank = rank)
                     }
                 }
+            }
+            if (caption != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = caption,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

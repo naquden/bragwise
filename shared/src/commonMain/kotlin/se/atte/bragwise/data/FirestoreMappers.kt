@@ -43,6 +43,7 @@ private data class BetDto(
     val topN: Int = 1,
     val granularity: String? = null,
     val closest: Boolean = true,
+    val line: Long? = null,
 )
 
 @Serializable
@@ -52,6 +53,9 @@ private data class PredictionPayloadDto(
     val orderedOptionIds: List<String> = emptyList(),
     val value: Boolean? = null,
     val guessValue: Long? = null,
+    val selectedOptionIds: List<String> = emptyList(),
+    val over: Boolean? = null,
+    val actualValue: Long? = null,
 )
 
 @Serializable
@@ -158,6 +162,8 @@ private fun BetDto.toDomain(): Bet {
             granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
             closest = closest,
         )
+        "MULTI_SELECT" -> Bet.MultiSelect(id = id, title = title, optionType = ot, options = opts)
+        "OVER_UNDER" -> Bet.OverUnder(id = id, title = title, line = line ?: 0L)
         else -> Bet.BooleanProp(id = id, title = title)
     }
 }
@@ -167,6 +173,8 @@ private fun PredictionPayloadDto.toDomain(): PredictionPayload? = when (kind) {
     "RANKING" -> PredictionPayload.Ranking(orderedOptionIds = orderedOptionIds)
     "BOOLEAN_PROP" -> value?.let { PredictionPayload.BooleanProp(value = it) }
     "GUESS" -> guessValue?.let { PredictionPayload.Guess(value = it) }
+    "MULTI_SELECT" -> PredictionPayload.MultiSelect(selectedOptionIds = selectedOptionIds)
+    "OVER_UNDER" -> PredictionPayload.OverUnder(over = over, actualValue = actualValue)
     else -> null
 }
 
@@ -191,6 +199,12 @@ internal fun PredictionPayload.toMap(): Map<String, Any?> = when (this) {
     is PredictionPayload.Ranking -> mapOf("kind" to "RANKING", "orderedOptionIds" to orderedOptionIds)
     is PredictionPayload.BooleanProp -> mapOf("kind" to "BOOLEAN_PROP", "value" to value)
     is PredictionPayload.Guess -> mapOf("kind" to "GUESS", "guessValue" to value)
+    is PredictionPayload.MultiSelect -> mapOf("kind" to "MULTI_SELECT", "selectedOptionIds" to selectedOptionIds)
+    is PredictionPayload.OverUnder -> buildMap {
+        put("kind", "OVER_UNDER")
+        over?.let { put("over", it) }
+        actualValue?.let { put("actualValue", it) }
+    }
 }
 
 // ── Other document types ─────────────────────────────────────────────────────

@@ -66,6 +66,8 @@ class PredictViewModel(
         data class SetBoolean(val betId: String, val value: Boolean) : Intent
         data class SetRanking(val betId: String, val orderedOptionIds: List<String>) : Intent
         data class SetGuess(val betId: String, val value: Long) : Intent
+        data class SetMultiSelect(val betId: String, val selectedOptionIds: List<String>) : Intent
+        data class SetOverUnder(val betId: String, val over: Boolean) : Intent
         data object Submit : Intent
         data class ConfirmName(val name: String) : Intent
         data object DismissName : Intent
@@ -119,6 +121,12 @@ class PredictViewModel(
             }
             is Intent.SetGuess -> update {
                 it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.Guess(intent.value)))
+            }
+            is Intent.SetMultiSelect -> update {
+                it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.MultiSelect(intent.selectedOptionIds)))
+            }
+            is Intent.SetOverUnder -> update {
+                it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.OverUnder(over = intent.over)))
             }
             Intent.Submit -> submit()
             is Intent.ConfirmName -> viewModelScope.launch {

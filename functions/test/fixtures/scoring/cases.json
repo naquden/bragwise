@@ -165,6 +165,120 @@
       "prediction": {"kind": "GUESS", "guessValue": 19900},
       "result": {"kind": "GUESS", "guessValue": 19900},
       "expected": 1
+    },
+    {
+      "name": "guess_number_exact_correct",
+      "bet": {"kind": "GUESS", "id": "b15", "title": "Final score", "granularity": "NUMBER", "closest": false},
+      "prediction": {"kind": "GUESS", "guessValue": 42},
+      "result": {"kind": "GUESS", "guessValue": 42},
+      "expected": 1
+    },
+    {
+      "name": "guess_number_exact_wrong",
+      "bet": {"kind": "GUESS", "id": "b16", "title": "Final score", "granularity": "NUMBER", "closest": false},
+      "prediction": {"kind": "GUESS", "guessValue": 41},
+      "result": {"kind": "GUESS", "guessValue": 42},
+      "expected": 0
+    },
+    {
+      "name": "guess_number_closest_returns_zero",
+      "$comment": "closest=true NUMBER bets are scored by computeLeaderboard, not score()",
+      "bet": {"kind": "GUESS", "id": "b17", "title": "Final score", "granularity": "NUMBER", "closest": true},
+      "prediction": {"kind": "GUESS", "guessValue": 42},
+      "result": {"kind": "GUESS", "guessValue": 42},
+      "expected": 0
+    },
+    {
+      "name": "multi_select_all_correct",
+      "bet": {
+        "kind": "MULTI_SELECT",
+        "id": "b18",
+        "title": "Pick winners",
+        "options": [
+          {"id": "a", "label": "Alice"},
+          {"id": "b", "label": "Bob"},
+          {"id": "c", "label": "Carol"}
+        ]
+      },
+      "prediction": {"kind": "MULTI_SELECT", "selectedOptionIds": ["a", "b"]},
+      "result": {"kind": "MULTI_SELECT", "selectedOptionIds": ["a", "b"]},
+      "expected": 2
+    },
+    {
+      "name": "multi_select_partial_correct_partial_wrong",
+      "bet": {
+        "kind": "MULTI_SELECT",
+        "id": "b19",
+        "title": "Pick winners",
+        "options": [
+          {"id": "a", "label": "Alice"},
+          {"id": "b", "label": "Bob"},
+          {"id": "c", "label": "Carol"}
+        ]
+      },
+      "prediction": {"kind": "MULTI_SELECT", "selectedOptionIds": ["a", "c"]},
+      "result": {"kind": "MULTI_SELECT", "selectedOptionIds": ["a", "b"]},
+      "expected": 0
+    },
+    {
+      "name": "multi_select_all_wrong_negative",
+      "bet": {
+        "kind": "MULTI_SELECT",
+        "id": "b20",
+        "title": "Pick winners",
+        "options": [
+          {"id": "a", "label": "Alice"},
+          {"id": "b", "label": "Bob"},
+          {"id": "c", "label": "Carol"}
+        ]
+      },
+      "prediction": {"kind": "MULTI_SELECT", "selectedOptionIds": ["b", "c"]},
+      "result": {"kind": "MULTI_SELECT", "selectedOptionIds": ["a"]},
+      "expected": -2
+    },
+    {
+      "name": "multi_select_empty_prediction",
+      "bet": {
+        "kind": "MULTI_SELECT",
+        "id": "b21",
+        "title": "Pick winners",
+        "options": [
+          {"id": "a", "label": "Alice"},
+          {"id": "b", "label": "Bob"}
+        ]
+      },
+      "prediction": {"kind": "MULTI_SELECT", "selectedOptionIds": []},
+      "result": {"kind": "MULTI_SELECT", "selectedOptionIds": ["a"]},
+      "expected": 0
+    },
+    {
+      "name": "over_under_over_correct",
+      "bet": {"kind": "OVER_UNDER", "id": "b22", "title": "Goals scored", "line": 2},
+      "prediction": {"kind": "OVER_UNDER", "over": true},
+      "result": {"kind": "OVER_UNDER", "actualValue": 3},
+      "expected": 1
+    },
+    {
+      "name": "over_under_under_correct",
+      "bet": {"kind": "OVER_UNDER", "id": "b23", "title": "Goals scored", "line": 2},
+      "prediction": {"kind": "OVER_UNDER", "over": false},
+      "result": {"kind": "OVER_UNDER", "actualValue": 1},
+      "expected": 1
+    },
+    {
+      "name": "over_under_over_wrong",
+      "bet": {"kind": "OVER_UNDER", "id": "b24", "title": "Goals scored", "line": 2},
+      "prediction": {"kind": "OVER_UNDER", "over": true},
+      "result": {"kind": "OVER_UNDER", "actualValue": 1},
+      "expected": 0
+    },
+    {
+      "name": "over_under_push",
+      "$comment": "actual == line → push, nobody scores",
+      "bet": {"kind": "OVER_UNDER", "id": "b25", "title": "Goals scored", "line": 2},
+      "prediction": {"kind": "OVER_UNDER", "over": true},
+      "result": {"kind": "OVER_UNDER", "actualValue": 2},
+      "expected": 0
     }
   ]
 }

@@ -44,5 +44,26 @@ object ScoringEngine {
                 if (p.value == r.value) 1 else 0
             }
         }
+        is Bet.MultiSelect -> {
+            val p = (prediction as PredictionPayload.MultiSelect).selectedOptionIds.toSet()
+            val r = (result as PredictionPayload.MultiSelect).selectedOptionIds.toSet()
+            val correct = p.count { it in r }
+            val wrong = p.count { it !in r }
+            correct - wrong
+        }
+        is Bet.OverUnder -> {
+            val p = prediction as PredictionPayload.OverUnder
+            val r = result as PredictionPayload.OverUnder
+            val actualValue = r.actualValue
+            val predictedOver = p.over
+            if (actualValue == null || predictedOver == null) {
+                0
+            } else when {
+                actualValue == bet.line -> 0  // push
+                predictedOver && actualValue > bet.line -> 1
+                !predictedOver && actualValue < bet.line -> 1
+                else -> 0
+            }
+        }
     }
 }

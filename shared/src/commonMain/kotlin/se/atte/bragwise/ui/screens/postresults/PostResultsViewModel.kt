@@ -36,6 +36,8 @@ class PostResultsViewModel(
         data class SetBoolean(val betId: String, val value: Boolean) : Intent
         data class SetRanking(val betId: String, val orderedIds: List<String>) : Intent
         data class SetGuess(val betId: String, val value: Long) : Intent
+        data class SetMultiSelect(val betId: String, val selectedIds: List<String>) : Intent
+        data class SetOverUnderActual(val betId: String, val actualValue: Long) : Intent
         data object RequestConfirm : Intent
         data object Cancel : Intent
         data object Submit : Intent
@@ -69,6 +71,12 @@ class PostResultsViewModel(
         }
         is Intent.SetGuess -> update {
             it.copy(results = it.results + (intent.betId to PredictionPayload.Guess(intent.value)))
+        }
+        is Intent.SetMultiSelect -> update {
+            it.copy(results = it.results + (intent.betId to PredictionPayload.MultiSelect(intent.selectedIds)))
+        }
+        is Intent.SetOverUnderActual -> update {
+            it.copy(results = it.results + (intent.betId to PredictionPayload.OverUnder(actualValue = intent.actualValue)))
         }
         Intent.RequestConfirm -> update { it.copy(confirming = true) }
         Intent.Cancel -> update { it.copy(confirming = false) }

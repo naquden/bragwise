@@ -32,6 +32,7 @@
     <string name="cl_section_promoted">Promoted</string>
     <string name="cl_section_from_friends">From friends</string>
     <string name="cl_section_invites">Invites</string>
+    <string name="cl_invited_by">Invited by %1$s</string>
     <string name="cl_empty">No challenges yet</string>
 
     <!-- Detail / predict CTAs. -->
@@ -106,10 +107,21 @@
     <string name="cc_bet_type_ranking">Ranking</string>
     <string name="cc_bet_type_time">Time</string>
     <string name="cc_bet_type_day">Day</string>
+    <string name="cc_bet_type_multi_select">Multi-select</string>
+    <string name="cc_bet_type_number">Number</string>
+    <string name="cc_bet_type_over_under">Over / Under</string>
+    <string name="cc_over_under_line_label">Line (threshold)</string>
     <string name="cc_guess_scoring_closest">Closest wins</string>
     <string name="cc_guess_scoring_exact">Exact match</string>
     <string name="cc_guess_pick_time_title">Pick a time</string>
     <string name="cc_guess_pick_day_title">Pick a day</string>
+    <string name="cc_guess_pick_number_title">Enter a number</string>
+    <string name="predict_over">Over</string>
+    <string name="predict_under">Under</string>
+    <string name="predict_over_under_line">Line: %1$d</string>
+    <string name="postresults_over">Over</string>
+    <string name="postresults_under">Under</string>
+    <string name="postresults_over_under_actual_label">Enter actual value (line: %1$d)</string>
     <string name="cc_bet_remove">Remove bet</string>
     <string name="cc_deadline_label">Deadline</string>
     <string name="cc_deadline_hint">Predictions lock at this time</string>

@@ -313,4 +313,15 @@
     <string name="cc_snackbar_invite_needs_friends">Выберите хотя бы одного друга для приглашения</string>
 
     <string name="nav_create_challenge_a11y">Создать испытание</string>
+    <string name="predict_over">Выше</string>
+    <string name="predict_under">Ниже</string>
+    <string name="predict_over_under_line">Линия: %1$d</string>
+    <string name="postresults_over">Выше</string>
+    <string name="postresults_under">Ниже</string>
+    <string name="postresults_over_under_actual_label">Введите фактическое значение (линия: %1$d)</string>
+    <string name="cc_bet_type_multi_select">Мультивыбор</string>
+    <string name="cc_bet_type_number">Число</string>
+    <string name="cc_bet_type_over_under">Выше / Ниже</string>
+    <string name="cc_over_under_line_label">Линия</string>
+    <string name="cc_guess_pick_number_title">Введите число</string>
 </resources>

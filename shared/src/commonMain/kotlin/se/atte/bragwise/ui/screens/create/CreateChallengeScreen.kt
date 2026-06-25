@@ -39,10 +39,14 @@ import bragwise.shared.generated.resources.cc_add_option
 import bragwise.shared.generated.resources.cc_bet_cancel_a11y
 import bragwise.shared.generated.resources.cc_bet_remove
 import bragwise.shared.generated.resources.cc_bet_type_day
+import bragwise.shared.generated.resources.cc_bet_type_multi_select
+import bragwise.shared.generated.resources.cc_bet_type_number
+import bragwise.shared.generated.resources.cc_bet_type_over_under
 import bragwise.shared.generated.resources.cc_bet_type_ranking
 import bragwise.shared.generated.resources.cc_bet_type_single_pick
 import bragwise.shared.generated.resources.cc_bet_type_time
 import bragwise.shared.generated.resources.cc_bet_type_yes_no
+import bragwise.shared.generated.resources.cc_over_under_line_label
 import bragwise.shared.generated.resources.cc_guess_scoring_closest
 import bragwise.shared.generated.resources.cc_guess_scoring_exact
 import bragwise.shared.generated.resources.cc_bets_visible_hint
@@ -152,6 +156,7 @@ fun CreateChallengeScreen(
     var topN by remember { mutableIntStateOf(3) }
     var betType by remember { mutableStateOf(BetType.YesNo) }
     var guessClosest by remember { mutableStateOf(true) }
+    var overUnderLine by remember { mutableStateOf("") }
     var editingBetId by rememberSaveable { mutableStateOf<String?>(null) }
     var showFriendPicker by rememberSaveable { mutableStateOf(false) }
 
@@ -164,6 +169,7 @@ fun CreateChallengeScreen(
         topN = 3
         betType = BetType.YesNo
         guessClosest = true
+        overUnderLine = ""
     }
     val seedEditorFrom = { bet: Bet ->
         newBetTitle = bet.title
@@ -175,6 +181,7 @@ fun CreateChallengeScreen(
                 optionType = OptionType.NONE
                 topN = 3
                 guessClosest = true
+                overUnderLine = ""
             }
             is Bet.SinglePick -> {
                 betType = BetType.SinglePick
@@ -183,6 +190,7 @@ fun CreateChallengeScreen(
                 countryOptions = bet.options
                 topN = 3
                 guessClosest = true
+                overUnderLine = ""
             }
             is Bet.Ranking -> {
                 betType = BetType.Ranking
@@ -191,14 +199,38 @@ fun CreateChallengeScreen(
                 countryOptions = bet.options
                 topN = bet.topN
                 guessClosest = true
+                overUnderLine = ""
             }
             is Bet.Guess -> {
-                betType = if (bet.granularity == GuessGranularity.TIME) BetType.Time else BetType.Day
+                betType = when (bet.granularity) {
+                    GuessGranularity.TIME -> BetType.Time
+                    GuessGranularity.DAY -> BetType.Day
+                    GuessGranularity.NUMBER -> BetType.Number
+                }
                 options = listOf("", "")
                 countryOptions = defaultCountryOptions()
                 optionType = OptionType.NONE
                 topN = 3
                 guessClosest = bet.closest
+                overUnderLine = ""
+            }
+            is Bet.MultiSelect -> {
+                betType = BetType.MultiSelect
+                optionType = bet.optionType
+                options = bet.options.map { it.label }
+                countryOptions = bet.options
+                topN = 3
+                guessClosest = true
+                overUnderLine = ""
+            }
+            is Bet.OverUnder -> {
+                betType = BetType.OverUnder
+                options = listOf("", "")
+                countryOptions = defaultCountryOptions()
+                optionType = OptionType.NONE
+                topN = 3
+                guessClosest = true
+                overUnderLine = bet.line.toString()
             }
         }
     }
@@ -345,11 +377,15 @@ fun CreateChallengeScreen(
                             BetType.YesNo -> true
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
-                            BetType.Time, BetType.Day -> true
+                            BetType.Time, BetType.Day, BetType.Number -> true
+                            BetType.MultiSelect -> resolvedOptions.size >= 2
+                            BetType.OverUnder -> overUnderLine.toLongOrNull() != null
                         },
                         saveLabel = stringResource(Res.string.cc_save_bet),
                         guessClosest = guessClosest,
                         onGuessClosestChange = { guessClosest = it },
+                        overUnderLine = overUnderLine,
+                        onOverUnderLineChange = { overUnderLine = it },
                         duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
                         onCancel = {
                             editingBetId = null
@@ -373,6 +409,18 @@ fun CreateChallengeScreen(
                                 )
                                 BetType.Time -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.TIME, closest = guessClosest)
                                 BetType.Day -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.DAY, closest = guessClosest)
+                                BetType.Number -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.NUMBER, closest = guessClosest)
+                                BetType.MultiSelect -> Bet.MultiSelect(
+                                    id = bet.id,
+                                    title = newBetTitle,
+                                    optionType = optionType,
+                                    options = resolvedOptions,
+                                )
+                                BetType.OverUnder -> Bet.OverUnder(
+                                    id = bet.id,
+                                    title = newBetTitle,
+                                    line = overUnderLine.toLongOrNull() ?: 0L,
+                                )
                             }
                             viewModel.onIntent(CreateChallengeViewModel.Intent.UpdateBet(updated))
                             editingBetId = null
@@ -417,11 +465,15 @@ fun CreateChallengeScreen(
                             BetType.YesNo -> true
                             BetType.SinglePick -> resolvedOptions.size >= 2
                             BetType.Ranking -> resolvedOptions.size >= topN
-                            BetType.Time, BetType.Day -> true
+                            BetType.Time, BetType.Day, BetType.Number -> true
+                            BetType.MultiSelect -> resolvedOptions.size >= 2
+                            BetType.OverUnder -> overUnderLine.toLongOrNull() != null
                         },
                         saveLabel = stringResource(Res.string.cc_save_bet),
                         guessClosest = guessClosest,
                         onGuessClosestChange = { guessClosest = it },
+                        overUnderLine = overUnderLine,
+                        onOverUnderLineChange = { overUnderLine = it },
                         duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
                         onCancel = {
                             editingBetId = null
@@ -461,6 +513,26 @@ fun CreateChallengeScreen(
                                         closest = guessClosest,
                                     ),
                                 )
+                                BetType.Number -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddGuess(
+                                        title = newBetTitle,
+                                        granularity = GuessGranularity.NUMBER,
+                                        closest = guessClosest,
+                                    ),
+                                )
+                                BetType.MultiSelect -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddMultiSelect(
+                                        title = newBetTitle,
+                                        optionType = optionType,
+                                        options = resolvedOptions,
+                                    ),
+                                )
+                                BetType.OverUnder -> viewModel.onIntent(
+                                    CreateChallengeViewModel.Intent.AddOverUnder(
+                                        title = newBetTitle,
+                                        line = overUnderLine.toLongOrNull() ?: 0L,
+                                    ),
+                                )
                             }
                             editingBetId = null
                             resetEditor()
@@ -490,7 +562,7 @@ fun CreateChallengeScreen(
     }
 }
 
-private enum class BetType { YesNo, SinglePick, Ranking, Time, Day }
+private enum class BetType { YesNo, SinglePick, Ranking, Time, Day, Number, MultiSelect, OverUnder }
 
 @Composable
 private fun BetEditor(
@@ -511,6 +583,8 @@ private fun BetEditor(
     saveLabel: String,
     guessClosest: Boolean,
     onGuessClosestChange: (Boolean) -> Unit,
+    overUnderLine: String,
+    onOverUnderLineChange: (String) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     duplicateOptionError: String? = null,
@@ -563,8 +637,26 @@ private fun BetEditor(
                 label = { Text(stringResource(Res.string.cc_bet_type_day)) },
                 modifier = Modifier.testTag("create_bet_day"),
             )
+            AppFilterChip(
+                selected = betType == BetType.Number,
+                onClick = { onBetTypeChange(BetType.Number) },
+                label = { Text(stringResource(Res.string.cc_bet_type_number)) },
+                modifier = Modifier.testTag("create_bet_number"),
+            )
+            AppFilterChip(
+                selected = betType == BetType.MultiSelect,
+                onClick = { onBetTypeChange(BetType.MultiSelect) },
+                label = { Text(stringResource(Res.string.cc_bet_type_multi_select)) },
+                modifier = Modifier.testTag("create_bet_multi_select"),
+            )
+            AppFilterChip(
+                selected = betType == BetType.OverUnder,
+                onClick = { onBetTypeChange(BetType.OverUnder) },
+                label = { Text(stringResource(Res.string.cc_bet_type_over_under)) },
+                modifier = Modifier.testTag("create_bet_over_under"),
+            )
         }
-        if (betType == BetType.SinglePick || betType == BetType.Ranking) {
+        if (betType == BetType.SinglePick || betType == BetType.Ranking || betType == BetType.MultiSelect) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
                 modifier = Modifier.padding(top = standardPaddingSmall),
@@ -592,7 +684,7 @@ private fun BetEditor(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_bet_question"),
             singleLine = true,
         )
-        if (betType == BetType.SinglePick || betType == BetType.Ranking) {
+        if (betType == BetType.SinglePick || betType == BetType.Ranking || betType == BetType.MultiSelect) {
             if (optionType == OptionType.COUNTRY) {
                 CountryOptionsEditor(
                     options = countryOptions,
@@ -614,7 +706,7 @@ private fun BetEditor(
                 modifier = Modifier.padding(top = standardPaddingSmall),
             )
         }
-        if (betType == BetType.Time || betType == BetType.Day) {
+        if (betType == BetType.Time || betType == BetType.Day || betType == BetType.Number) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
                 modifier = Modifier.padding(top = standardPaddingSmall),
@@ -630,6 +722,18 @@ private fun BetEditor(
                     label = { Text(stringResource(Res.string.cc_guess_scoring_exact)) },
                 )
             }
+        }
+        if (betType == BetType.OverUnder) {
+            OutlinedTextField(
+                value = overUnderLine,
+                onValueChange = onOverUnderLineChange,
+                label = { Text(stringResource(Res.string.cc_over_under_line_label)) },
+                modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                ),
+            )
         }
         if (duplicateOptionError != null) {
             Text(
@@ -653,8 +757,10 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
     val options = when (bet) {
         is Bet.SinglePick -> bet.options
         is Bet.Ranking -> bet.options
+        is Bet.MultiSelect -> bet.options
         is Bet.BooleanProp -> emptyList()
         is Bet.Guess -> emptyList()
+        is Bet.OverUnder -> emptyList()
     }
     val showExpand = options.size > 4
 
@@ -898,7 +1004,13 @@ private fun Bet.kindLabel(): String = when (this) {
     is Bet.Guess -> when (granularity) {
         GuessGranularity.TIME -> if (closest) "Time · closest wins" else "Time · exact"
         GuessGranularity.DAY -> if (closest) "Day · closest wins" else "Day · exact"
+        GuessGranularity.NUMBER -> if (closest) "Number · closest wins" else "Number · exact"
     }
+    is Bet.MultiSelect -> when (optionType) {
+        OptionType.COUNTRY -> "Multi-select · ${options.size} countries"
+        OptionType.NONE -> "Multi-select · ${options.size} options"
+    }
+    is Bet.OverUnder -> "Over / Under · line $line"
 }
 
 // region Previews
@@ -925,6 +1037,8 @@ private fun CreateChallenge_BetEditor_Preview() {
             saveLabel = "Save bet",
             guessClosest = true,
             onGuessClosestChange = {},
+            overUnderLine = "",
+            onOverUnderLineChange = {},
             onSave = {},
             onCancel = {},
         )

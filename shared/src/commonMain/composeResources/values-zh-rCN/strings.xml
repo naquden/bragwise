@@ -313,4 +313,15 @@
     <string name="cc_snackbar_invite_needs_friends">至少选择一位朋友邀请</string>
 
     <string name="nav_create_challenge_a11y">创建挑战</string>
+    <string name="predict_over">高于</string>
+    <string name="predict_under">低于</string>
+    <string name="predict_over_under_line">基准: %1$d</string>
+    <string name="postresults_over">高于</string>
+    <string name="postresults_under">低于</string>
+    <string name="postresults_over_under_actual_label">输入实际值（基准：%1$d）</string>
+    <string name="cc_bet_type_multi_select">多选</string>
+    <string name="cc_bet_type_number">数字</string>
+    <string name="cc_bet_type_over_under">高于/低于</string>
+    <string name="cc_over_under_line_label">基准线</string>
+    <string name="cc_guess_pick_number_title">输入一个数字</string>
 </resources>

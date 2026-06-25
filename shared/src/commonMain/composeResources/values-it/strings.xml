@@ -313,4 +313,15 @@
     <string name="cc_snackbar_invite_needs_friends">Scegli almeno un amico da invitare</string>
 
     <string name="nav_create_challenge_a11y">Crea sfida</string>
+    <string name="predict_over">Sopra</string>
+    <string name="predict_under">Sotto</string>
+    <string name="predict_over_under_line">Linea: %1$d</string>
+    <string name="postresults_over">Sopra</string>
+    <string name="postresults_under">Sotto</string>
+    <string name="postresults_over_under_actual_label">Inserisci il valore reale (linea: %1$d)</string>
+    <string name="cc_bet_type_multi_select">Selezione multipla</string>
+    <string name="cc_bet_type_number">Numero</string>
+    <string name="cc_bet_type_over_under">Sopra / Sotto</string>
+    <string name="cc_over_under_line_label">Linea</string>
+    <string name="cc_guess_pick_number_title">Inserisci un numero</string>
 </resources>

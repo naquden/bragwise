@@ -30,6 +30,12 @@ export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('RANKING'), orderedOptionIds: z.array(z.string().min(1)) }),
   z.object({ kind: z.literal('BOOLEAN_PROP'), value: z.boolean() }),
   z.object({ kind: z.literal('GUESS'), guessValue: z.number().int() }),
+  z.object({ kind: z.literal('MULTI_SELECT'), selectedOptionIds: z.array(z.string()) }),
+  z.object({
+    kind: z.literal('OVER_UNDER'),
+    over: z.boolean().optional(),
+    actualValue: z.number().int().optional(),
+  }),
 ]);
 
 // Phase 1.5: option shape extended with optional countryCode.
@@ -68,8 +74,21 @@ export const BetSchema = z.discriminatedUnion('kind', [
     kind: z.literal('GUESS'),
     id: z.string().min(1),
     title: z.string().min(1),
-    granularity: z.enum(['TIME', 'DAY']),
+    granularity: z.enum(['TIME', 'DAY', 'NUMBER']),
     closest: z.boolean().default(true),
+  }),
+  z.object({
+    kind: z.literal('MULTI_SELECT'),
+    id: z.string().min(1),
+    title: z.string().min(1),
+    optionType: z.enum(['NONE', 'COUNTRY']).optional().default('NONE'),
+    options: z.array(BetOptionSchema).min(1),
+  }),
+  z.object({
+    kind: z.literal('OVER_UNDER'),
+    id: z.string().min(1),
+    title: z.string().min(1),
+    line: z.number().int(),
   }),
 ]);
 
@@ -107,7 +126,7 @@ function validateRankingTopN(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z
 // Prevents ambiguous predictions and unresolvable results.
 function validateNoDuplicateOptions(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z.RefinementCtx) {
   data.bets.forEach((bet, betIndex) => {
-    if (bet.kind === 'BOOLEAN_PROP' || bet.kind === 'GUESS') return;
+    if (bet.kind === 'BOOLEAN_PROP' || bet.kind === 'GUESS' || bet.kind === 'OVER_UNDER') return;
     const seen = new Set<string>();
     bet.options.forEach((option, optionIndex) => {
       const key = option.countryCode ?? option.label.trim().toLowerCase();

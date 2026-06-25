@@ -85,6 +85,7 @@ class LocalDraftStore(db: BragwiseDatabase) {
         val topN: Int = 1,
         val granularity: String? = null,
         val closest: Boolean = true,
+        val line: Long? = null,
     )
 
     @Serializable
@@ -124,6 +125,14 @@ class LocalDraftStore(db: BragwiseDatabase) {
         )
         is Bet.BooleanProp -> BetDtoLocal(kind = "BOOLEAN_PROP", id = id, title = title)
         is Bet.Guess -> BetDtoLocal(kind = "GUESS", id = id, title = title, granularity = granularity.name, closest = closest)
+        is Bet.MultiSelect -> BetDtoLocal(
+            kind = "MULTI_SELECT",
+            id = id,
+            title = title,
+            optionType = optionType.name,
+            options = options.map { BetOptionDtoLocal(id = it.id, label = it.label, countryCode = it.countryCode) },
+        )
+        is Bet.OverUnder -> BetDtoLocal(kind = "OVER_UNDER", id = id, title = title, line = line)
     }
 
     private fun DraftDto.toDomain(): Challenge = Challenge(
@@ -158,6 +167,8 @@ class LocalDraftStore(db: BragwiseDatabase) {
                 granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
                 closest = closest,
             )
+            "MULTI_SELECT" -> Bet.MultiSelect(id = id, title = title, optionType = ot, options = opts)
+            "OVER_UNDER" -> Bet.OverUnder(id = id, title = title, line = line ?: 0L)
             else -> Bet.BooleanProp(id = id, title = title)
         }
     }

@@ -114,6 +114,20 @@ class ChallengeRemoteDataSource(
         )
     }
 
+    fun observeChallengesByIds(ids: List<String>): Flow<List<Challenge>> {
+        if (ids.isEmpty()) return flowOf(emptyList())
+        return combine(
+            ids.map { challengeId ->
+                db.document("challenges/$challengeId").snapshots
+                    .map { snap -> runCatching { if (snap.exists) snap.toChallenge() else null }.getOrNull() }
+                    .catch { e ->
+                        if (e is FirebaseFirestoreException && e.code == FirestoreExceptionCode.PERMISSION_DENIED) emit(null)
+                        else throw e
+                    }
+            },
+        ) { challenges -> challenges.filterNotNull() }
+    }
+
     fun observeChallengeDetail(challengeId: String, myUid: String): Flow<ChallengeDetail> = flow {
         val challengeFlow = db.document("challenges/$challengeId").snapshots
             .map { snap -> snap.toChallenge() }
@@ -334,6 +348,15 @@ private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this)
     is se.atte.bragwise.domain.Bet.Guess -> mapOf(
         "kind" to "GUESS", "id" to id, "title" to title,
         "granularity" to granularity.name, "closest" to closest,
+    )
+    is se.atte.bragwise.domain.Bet.MultiSelect -> mapOf(
+        "kind" to "MULTI_SELECT", "id" to id, "title" to title,
+        "optionType" to optionType.name,
+        "options" to options.map { it.toMap() },
+    )
+    is se.atte.bragwise.domain.Bet.OverUnder -> mapOf(
+        "kind" to "OVER_UNDER", "id" to id, "title" to title,
+        "line" to line,
     )
 }
 

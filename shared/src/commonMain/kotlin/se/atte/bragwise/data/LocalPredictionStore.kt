@@ -54,6 +54,16 @@ class LocalPredictionStore(db: BragwiseDatabase) {
         "BOOLEAN_PROP" -> boolValue?.let { PredictionPayload.BooleanProp(value = it != 0L) }
         // Guess value stored as stringified Long in the optionId TEXT column (no schema migration needed).
         "GUESS" -> optionId?.toLongOrNull()?.let { PredictionPayload.Guess(value = it) }
+        // MultiSelect: selectedOptionIds stored as JSON in orderedOptionIds column.
+        "MULTI_SELECT" -> PredictionPayload.MultiSelect(
+            selectedOptionIds = if (orderedOptionIds.isEmpty()) emptyList()
+            else json.decodeFromString(ListSerializer(serializer()), orderedOptionIds)
+        )
+        // OverUnder prediction: over (Boolean) in boolValue; actualValue in optionId as stringified Long.
+        "OVER_UNDER" -> PredictionPayload.OverUnder(
+            over = boolValue?.let { it != 0L },
+            actualValue = optionId?.toLongOrNull(),
+        )
         else -> null
     }
 
@@ -91,6 +101,18 @@ class LocalPredictionStore(db: BragwiseDatabase) {
             optionId = value.toString(),
             orderedOptionIds = "",
             boolValue = null,
+        )
+        is PredictionPayload.MultiSelect -> Columns(
+            kind = "MULTI_SELECT",
+            optionId = null,
+            orderedOptionIds = json.encodeToString(ListSerializer(serializer()), selectedOptionIds),
+            boolValue = null,
+        )
+        is PredictionPayload.OverUnder -> Columns(
+            kind = "OVER_UNDER",
+            optionId = actualValue?.toString(),
+            orderedOptionIds = "",
+            boolValue = over?.let { if (it) 1L else 0L },
         )
     }
 }

@@ -482,6 +482,9 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
   if (!challengeSnap.exists) throw new HttpsError('not-found', 'challenge-not-found');
   const challenge = challengeSnap.data()!;
   if (challenge.createdBy !== uid) throw new HttpsError('permission-denied', 'not-creator');
+  if (challenge.status !== 'OPEN') throw new HttpsError('failed-precondition', 'challenge-not-open');
+  const inviteLocksAt = locksAtMillis(challenge.locksAt);
+  if (inviteLocksAt !== null && inviteLocksAt <= Date.now()) throw new HttpsError('failed-precondition', 'challenge-locked');
 
   const friends: Record<string, unknown> = socialSnap.exists
     ? (socialSnap.data()!.friends ?? {})
