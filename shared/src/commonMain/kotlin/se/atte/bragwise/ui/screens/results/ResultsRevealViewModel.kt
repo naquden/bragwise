@@ -91,9 +91,12 @@ class ResultsRevealViewModel(
         const val FIELD_LIMIT = 10
     }
 
+    private data class ReactionOverride(val emoji: String?)
+
     private var confettiEmitted = false
     private var alreadySeenAtEntry: Boolean? = null
     private val friendsOnlyState = MutableStateFlow(false)
+    private val reactionOverride = MutableStateFlow<ReactionOverride?>(null)
 
     override fun onIntent(intent: Intent) {
         when (intent) {
@@ -104,9 +107,10 @@ class ResultsRevealViewModel(
             is Intent.React -> {
                 val current = (state.value.ui as? UiState.Ready)?.data?.myReaction
                 val next = if (intent.emoji == current) null else intent.emoji
+                reactionOverride.value = ReactionOverride(next)
                 viewModelScope.launch {
                     challenges.setReaction(challengeId, next)
-                        .onFailure { /* best-effort; snapshot reconciles */ }
+                        .onFailure { reactionOverride.value = null }
                 }
             }
             is Intent.ShareResults -> {
@@ -153,9 +157,19 @@ class ResultsRevealViewModel(
                         iAmCreator = detail.challenge.createdBy == myUid,
                     )
                 }.combine(challenges.observeReactions(challengeId = challengeId)) { data, reactions ->
+                    data to reactions
+                }.combine(reactionOverride) { (data, reactions), override ->
+                    val serverMine = reactions.firstOrNull { it.uid == myUid }?.emoji
+                    if (override != null && override.emoji == serverMine) reactionOverride.value = null
+                    val effectiveMine = override?.emoji ?: serverMine
+                    val counts = reactions.groupingBy { it.emoji }.eachCount().toMutableMap()
+                    if (override != null) {
+                        serverMine?.let { counts[it] = (counts[it] ?: 1) - 1 }
+                        effectiveMine?.let { counts[it] = (counts[it] ?: 0) + 1 }
+                    }
                     data.copy(
-                        reactionCounts = reactions.groupingBy { it.emoji }.eachCount(),
-                        myReaction = reactions.firstOrNull { it.uid == myUid }?.emoji,
+                        reactionCounts = counts.filterValues { it > 0 },
+                        myReaction = effectiveMine,
                     )
                 }
             }
