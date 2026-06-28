@@ -75,9 +75,11 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trophy
 import com.composables.icons.lucide.UsersRound
+import se.atte.bragwise.ui.components.CardGrid
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.WaveSeparator
 import se.atte.bragwise.ui.icons.BragIcon
+import se.atte.bragwise.ui.listColumns
 import kotlin.time.Instant
 
 @Composable
@@ -264,6 +266,7 @@ private fun ChallengesContent(
     onCreate: () -> Unit,
     onClone: (String) -> Unit,
 ) {
+    val columns = listColumns()
     val joinedIds = sections.joinedIds
     val sc = LocalSectionColors.current
     val entries = buildList {
@@ -277,7 +280,7 @@ private fun ChallengesContent(
                 trailing = if (sections.mine.size == 1) stringResource(Res.string.cl_active_count_one) else stringResource(Res.string.cl_active_count, sections.mine.size),
                 topInset = topInset,
             ) {
-                sections.mine.forEach { c ->
+                CardGrid(items = sections.mine, columns = columns) { c ->
                     val isDraft = c.status == ChallengeStatus.DRAFT
                     val onClick = if (isDraft) ({ onDraft(c.id) }) else ({ onChallenge(c.id) })
                     CloneableCard(
@@ -293,7 +296,7 @@ private fun ChallengesContent(
         })
         if (sections.promoted.isNotEmpty()) add(SectionEntry(sc.promotedBg) { topInset ->
             ColoredSection(bg = sc.promotedBg, title = stringResource(Res.string.cl_section_promoted), icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
-                sections.promoted.forEach { c ->
+                CardGrid(items = sections.promoted, columns = columns) { c ->
                     CloneableCard(
                         challenge = c,
                         predicted = c.id in joinedIds,
@@ -308,7 +311,7 @@ private fun ChallengesContent(
         })
         if (sections.fromFriends.isNotEmpty()) add(SectionEntry(sc.friendsBg) { topInset ->
             ColoredSection(bg = sc.friendsBg, title = stringResource(Res.string.cl_section_from_friends), icon = "👥", onTitleColor = sc.onFriends, iconVector = Lucide.UsersRound, topInset = topInset) {
-                sections.fromFriends.forEach { c ->
+                CardGrid(items = sections.fromFriends, columns = columns) { c ->
                     CloneableCard(
                         challenge = c,
                         predicted = c.id in joinedIds,
@@ -322,7 +325,7 @@ private fun ChallengesContent(
         })
         if (sections.invites.isNotEmpty()) add(SectionEntry(sc.invitesBg) { topInset ->
             ColoredSection(bg = sc.invitesBg, title = stringResource(Res.string.cl_section_invites), icon = "✉️", onTitleColor = sc.onInvites, topInset = topInset) {
-                sections.invites.forEach { entry ->
+                CardGrid(items = sections.invites, columns = columns) { entry ->
                     ChallengeCard(
                         challenge = entry.challenge,
                         surfaceColor = sc.invitesCard,
@@ -338,14 +341,16 @@ private fun ChallengesContent(
     val bgColor = MaterialTheme.colorScheme.background
     val lastBg = entries.lastOrNull()?.bg ?: bgColor
     Box(modifier = Modifier.fillMaxSize().background(lastBg)) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            if (showIntro) {
-                IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
-            }
-            entries.forEachIndexed { i, entry ->
-                val prevBg = if (i == 0 && showIntro) bgColor else if (i > 0) entries[i - 1].bg else null
-                if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
-                entry.render(i == 0 && !showIntro)
+        se.atte.bragwise.ui.CenteredMaxWidth {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                if (showIntro) {
+                    IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
+                }
+                entries.forEachIndexed { i, entry ->
+                    val prevBg = if (i == 0 && showIntro) bgColor else if (i > 0) entries[i - 1].bg else null
+                    if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
+                    entry.render(i == 0 && !showIntro)
+                }
             }
         }
     }

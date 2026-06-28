@@ -56,9 +56,11 @@ import se.atte.bragwise.theme.LocalSectionColors
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
+import se.atte.bragwise.ui.components.CardGrid
 import se.atte.bragwise.ui.components.ChallengeCard
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.PlatinumBackground
+import se.atte.bragwise.ui.listColumns
 import se.atte.bragwise.ui.icons.LucideSparkles
 import kotlin.time.Instant
 
@@ -96,49 +98,51 @@ private fun ResultsBody(
     Box(modifier = Modifier.fillMaxSize()) {
         PlatinumBackground(modifier = Modifier.matchParentSize())
         Box(Modifier.matchParentSize().background(scrim))
-        when (val ui = state.ui) {
-            UiState.Loading -> Box(
-                modifier = Modifier.fillMaxSize().statusBarsPadding(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-            is UiState.Empty -> Box(
-                modifier = Modifier.fillMaxSize().statusBarsPadding(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(imageVector = Lucide.Trophy, contentDescription = null, modifier = Modifier.size(34.dp))
-                    Spacer(Modifier.height(standardPadding))
+        se.atte.bragwise.ui.CenteredMaxWidth {
+            when (val ui = state.ui) {
+                UiState.Loading -> Box(
+                    modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+                is UiState.Empty -> Box(
+                    modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(imageVector = Lucide.Trophy, contentDescription = null, modifier = Modifier.size(34.dp))
+                        Spacer(Modifier.height(standardPadding))
+                        Text(
+                            text = stringResource(Res.string.results_empty_title),
+                            style = MaterialTheme.typography.headlineLarge,
+                        )
+                        Spacer(Modifier.height(standardPaddingSmall))
+                        Text(
+                            text = stringResource(Res.string.results_empty_body),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                is UiState.Failed -> Box(
+                    modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
-                        text = stringResource(Res.string.results_empty_title),
-                        style = MaterialTheme.typography.headlineLarge,
-                    )
-                    Spacer(Modifier.height(standardPaddingSmall))
-                    Text(
-                        text = stringResource(Res.string.results_empty_body),
+                        text = ui.cause.toUserMessage(),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-            is UiState.Failed -> Box(
-                modifier = Modifier.fillMaxSize().statusBarsPadding(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = ui.cause.toUserMessage(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                is UiState.Ready -> ResultsContent(
+                    sections = ui.data,
+                    onChallenge = onChallenge,
+                    onArchive = onArchive,
+                    onMarkUnseen = onMarkUnseen,
+                    onClone = onClone,
                 )
             }
-            is UiState.Ready -> ResultsContent(
-                sections = ui.data,
-                onChallenge = onChallenge,
-                onArchive = onArchive,
-                onMarkUnseen = onMarkUnseen,
-                onClone = onClone,
-            )
         }
     }
 }
@@ -151,6 +155,7 @@ private fun ResultsContent(
     onMarkUnseen: (String) -> Unit,
     onClone: (String) -> Unit,
 ) {
+    val columns = listColumns()
     val sc = LocalSectionColors.current
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -167,7 +172,7 @@ private fun ResultsContent(
                     trailing = stringResource(Res.string.results_new_count, sections.unseen.size),
                     topInset = true,
                 ) {
-                    sections.unseen.forEach { challenge ->
+                    CardGrid(items = sections.unseen, columns = columns) { challenge ->
                         ResultCardWithMenu(
                             challenge = challenge,
                             rank = myRankFor(challenge = challenge, myUid = sections.myUid),
@@ -192,7 +197,7 @@ private fun ResultsContent(
                     trailing = stringResource(Res.string.results_finished_count, sections.history.size),
                     topInset = sections.unseen.isEmpty(),
                 ) {
-                    sections.history.forEach { challenge ->
+                    CardGrid(items = sections.history, columns = columns) { challenge ->
                         ResultCardWithMenu(
                             challenge = challenge,
                             rank = myRankFor(challenge = challenge, myUid = sections.myUid),

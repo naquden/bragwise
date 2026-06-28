@@ -84,28 +84,30 @@ fun ResultsRevealScreen(
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
-        when (val ui = state.ui) {
-            UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            is UiState.Empty -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "No results yet")
-            }
-            is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = ui.cause.toUserMessage(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        se.atte.bragwise.ui.CenteredMaxWidth {
+            when (val ui = state.ui) {
+                UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                is UiState.Empty -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "No results yet")
+                }
+                is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = ui.cause.toUserMessage(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                is UiState.Ready -> ResultsRevealBody(
+                    data = ui.data,
+                    friendsOnly = state.friendsOnly,
+                    onToggleFriendsFilter = { viewModel.onIntent(ResultsRevealViewModel.Intent.ToggleFriendsFilter) },
+                    onReact = { emoji -> viewModel.onIntent(ResultsRevealViewModel.Intent.React(emoji)) },
+                    onShare = { viewModel.onIntent(ResultsRevealViewModel.Intent.ShareResults) },
+                    onParticipantClick = onParticipantClick,
                 )
             }
-            is UiState.Ready -> ResultsRevealBody(
-                data = ui.data,
-                friendsOnly = state.friendsOnly,
-                onToggleFriendsFilter = { viewModel.onIntent(ResultsRevealViewModel.Intent.ToggleFriendsFilter) },
-                onReact = { emoji -> viewModel.onIntent(ResultsRevealViewModel.Intent.React(emoji)) },
-                onShare = { viewModel.onIntent(ResultsRevealViewModel.Intent.ShareResults) },
-                onParticipantClick = onParticipantClick,
-            )
         }
         if (showConfetti) Confetti(modifier = Modifier.fillMaxSize())
     }

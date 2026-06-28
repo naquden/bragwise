@@ -168,6 +168,40 @@ fun ColoredSection(
     }
 }
 
+/**
+ * Multi-column card grid that avoids FlowRow's stretching-of-lone-last-items problem.
+ * Items are chunked into rows of [columns]; each item gets equal weight. If the last
+ * row is short, empty Spacer weight slots fill the remaining positions so cards stay
+ * the same width as in full rows.
+ *
+ * When [columns] == 1 (mobile default) each Row contains one weight(1f) Box = full
+ * width, visually identical to a plain Column forEach.
+ */
+@Composable
+fun <T> CardGrid(
+    items: List<T>,
+    columns: Int,
+    modifier: Modifier = Modifier,
+    item: @Composable (T) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().then(modifier),
+        verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+    ) {
+        items.chunked(columns).forEach { rowItems ->
+            Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                rowItems.forEach { data ->
+                    Box(Modifier.weight(1f)) { item(data) }
+                }
+                val missing = columns - rowItems.size
+                repeat(missing) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
 /** Pinned bottom action bar — single primary CTA, optionally with neutral secondary. */
 @Composable
 fun BottomActionBar(

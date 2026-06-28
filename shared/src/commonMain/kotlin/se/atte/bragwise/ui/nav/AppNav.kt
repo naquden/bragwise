@@ -7,7 +7,9 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -21,10 +23,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import se.atte.bragwise.ui.CenteredMaxWidth
+import se.atte.bragwise.ui.isWideScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -209,6 +216,7 @@ fun AppNav() {
     val currentDest = currentBackStackEntry?.destination
     val isAtTab = tabRoutes.any { currentDest?.hasRoute(it::class) == true }
     val isAtChallengesTab = currentDest?.hasRoute(RouteChallenges::class) == true
+    val wide = isWideScreen()
 
     fun navigateToTab(route: Any) {
         navController.navigate(route) {
@@ -242,7 +250,7 @@ fun AppNav() {
             )
         },
         bottomBar = {
-            if (isAtTab) {
+            if (isAtTab && !wide) {
                 val navItemColors = NavigationBarItemDefaults.colors(
                     indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -310,7 +318,8 @@ fun AppNav() {
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         CompositionLocalProvider(LocalSnackbarHost provides snackbarHostState) {
-            NavHost(
+            val navHostContent = @Composable {
+                NavHost(
                 navController = navController,
                 startDestination = startDestination,
                 modifier = Modifier
@@ -356,63 +365,72 @@ fun AppNav() {
                     )
                 }
                 composable<RouteMe> {
-                    MeScreen(
-                        viewModel = koinViewModel<MeViewModel>(),
-                        snackbarHostState = snackbarHostState,
-                        onNavigateToFriends = {
-                            navController.navigate(RouteFriends)
-                        },
-                        onNavigateToSignIn = { navController.navigate(RouteSignIn) },
-                        onNavigateToEditProfile = { navController.navigate(RouteEditProfile) },
-                        onNavigateToAbout = { navController.navigate(RouteAbout) },
-                        onSignedOut = {
-                            navController.navigate(RouteChallenges) {
-                                popUpTo(startDestination) { inclusive = true }
-                            }
-                        },
-                        onDeleted = {
-                            navController.navigate(RouteWelcome) {
-                                popUpTo(startDestination) { inclusive = true }
-                            }
-                        },
-                    )
+                    CenteredMaxWidth {
+                        MeScreen(
+                            viewModel = koinViewModel<MeViewModel>(),
+                            snackbarHostState = snackbarHostState,
+                            onNavigateToFriends = {
+                                navController.navigate(RouteFriends)
+                            },
+                            onNavigateToSignIn = { navController.navigate(RouteSignIn) },
+                            onNavigateToEditProfile = { navController.navigate(RouteEditProfile) },
+                            onNavigateToAbout = { navController.navigate(RouteAbout) },
+                            onSignedOut = {
+                                navController.navigate(RouteChallenges) {
+                                    popUpTo(startDestination) { inclusive = true }
+                                }
+                            },
+                            onDeleted = {
+                                navController.navigate(RouteWelcome) {
+                                    popUpTo(startDestination) { inclusive = true }
+                                }
+                            },
+                        )
+                    }
                 }
                 composable<RouteChallengeDetail> { entry ->
                     val route = entry.toRoute<RouteChallengeDetail>()
-                    ChallengeDetailScreen(
-                        viewModel = koinViewModel<ChallengeDetailViewModel> { parametersOf(route.id) },
-                        platformShare = platformShare,
-                        snackbarHostState = snackbarHostState,
-                        onNavigateToBet = { navController.navigate(RoutePredict(route.id)) },
-                        onNavigateToSummary = { navController.navigate(RouteChallengeSummary(route.id)) },
-                        onNavigateToPostResults = { id -> navController.navigate(RoutePostResults(id)) },
-                        onNavigateToParticipant = { challengeId, uid -> navController.navigate(RouteParticipantBets(challengeId = challengeId, uid = uid)) },
-                        onNavigateToClone = { id -> navController.navigate(RouteCreate(cloneSourceId = id)) },
-                        onDeleted = { navController.popBackStack() },
-                    )
+                    CenteredMaxWidth {
+                        ChallengeDetailScreen(
+                            viewModel = koinViewModel<ChallengeDetailViewModel> { parametersOf(route.id) },
+                            platformShare = platformShare,
+                            snackbarHostState = snackbarHostState,
+                            onNavigateToBet = { navController.navigate(RoutePredict(route.id)) },
+                            onNavigateToSummary = { navController.navigate(RouteChallengeSummary(route.id)) },
+                            onNavigateToPostResults = { id -> navController.navigate(RoutePostResults(id)) },
+                            onNavigateToParticipant = { challengeId, uid -> navController.navigate(RouteParticipantBets(challengeId = challengeId, uid = uid)) },
+                            onNavigateToClone = { id -> navController.navigate(RouteCreate(cloneSourceId = id)) },
+                            onDeleted = { navController.popBackStack() },
+                        )
+                    }
                 }
                 composable<RoutePredict> { entry ->
                     val route = entry.toRoute<RoutePredict>()
-                    PredictScreen(
-                        viewModel = koinViewModel<PredictViewModel> { parametersOf(route.challengeId) },
-                        snackbarHostState = snackbarHostState,
-                        onSubmitted = { navController.popBackStack() },
-                    )
+                    CenteredMaxWidth {
+                        PredictScreen(
+                            viewModel = koinViewModel<PredictViewModel> { parametersOf(route.challengeId) },
+                            snackbarHostState = snackbarHostState,
+                            onSubmitted = { navController.popBackStack() },
+                        )
+                    }
                 }
                 composable<RouteCreate> { entry ->
                     val route = entry.toRoute<RouteCreate>()
-                    CreateChallengeScreen(
-                        viewModel = koinViewModel<CreateChallengeViewModel> { parametersOf(route.draftId, route.cloneSourceId) },
-                        snackbarHostState = snackbarHostState,
-                        onPublished = { id ->
-                            navController.navigate(RouteChallengeDetail(id)) {
-                                popUpTo(navController.currentBackStackEntry!!.destination.id) { inclusive = true }
-                            }
-                        },
-                        onDraftSaved = { navController.popBackStack() },
-                    )
+                    CenteredMaxWidth {
+                        CreateChallengeScreen(
+                            viewModel = koinViewModel<CreateChallengeViewModel> { parametersOf(route.draftId, route.cloneSourceId) },
+                            snackbarHostState = snackbarHostState,
+                            onPublished = { id ->
+                                navController.navigate(RouteChallengeDetail(id)) {
+                                    popUpTo(navController.currentBackStackEntry!!.destination.id) { inclusive = true }
+                                }
+                            },
+                            onDraftSaved = { navController.popBackStack() },
+                        )
+                    }
                 }
                 composable<RouteSignIn> {
+                    CenteredMaxWidth {
                     SignInScreen(
                         viewModel = koinViewModel<SignInViewModel>(),
                         snackbarHostState = snackbarHostState,
@@ -439,65 +457,82 @@ fun AppNav() {
                             }
                         },
                     )
+                    }
                 }
                 composable<RouteFriends> {
-                    FriendsScreen(
-                        viewModel = koinViewModel<FriendsViewModel>(),
-                        snackbarHostState = snackbarHostState,
-                        onOpenCloudProfile = { uid -> navController.navigate(RoutePlayerProfile(uid)) },
-                        onOpenFriendRequests = { navController.navigate(RouteFriendRequests) },
-                    )
+                    CenteredMaxWidth {
+                        FriendsScreen(
+                            viewModel = koinViewModel<FriendsViewModel>(),
+                            snackbarHostState = snackbarHostState,
+                            onOpenCloudProfile = { uid -> navController.navigate(RoutePlayerProfile(uid)) },
+                            onOpenFriendRequests = { navController.navigate(RouteFriendRequests) },
+                        )
+                    }
                 }
                 composable<RouteFriendRequests> {
-                    FriendRequestsScreen(
-                        viewModel = koinViewModel<FriendRequestsViewModel>(),
-                        snackbarHostState = snackbarHostState,
-                    )
+                    CenteredMaxWidth {
+                        FriendRequestsScreen(
+                            viewModel = koinViewModel<FriendRequestsViewModel>(),
+                            snackbarHostState = snackbarHostState,
+                        )
+                    }
                 }
                 composable<RoutePlayerProfile> { entry ->
                     val route = entry.toRoute<RoutePlayerProfile>()
-                    PlayerProfileScreen(
-                        viewModel = koinViewModel<PlayerProfileViewModel> { parametersOf(route.uid) },
-                    )
+                    CenteredMaxWidth {
+                        PlayerProfileScreen(
+                            viewModel = koinViewModel<PlayerProfileViewModel> { parametersOf(route.uid) },
+                        )
+                    }
                 }
                 composable<RouteEditProfile> {
-                    EditProfileScreen(
-                        viewModel = koinViewModel<EditProfileViewModel>(),
-                        snackbarHostState = snackbarHostState,
-                        onSaved = { navController.popBackStack() },
-                    )
+                    CenteredMaxWidth {
+                        EditProfileScreen(
+                            viewModel = koinViewModel<EditProfileViewModel>(),
+                            snackbarHostState = snackbarHostState,
+                            onSaved = { navController.popBackStack() },
+                        )
+                    }
                 }
                 composable<RouteAbout> {
-                    AboutScreen()
+                    CenteredMaxWidth {
+                        AboutScreen()
+                    }
                 }
                 composable<RouteParticipantBets> { entry ->
                     val route = entry.toRoute<RouteParticipantBets>()
-                    ParticipantBetsScreen(
-                        viewModel = koinViewModel<ParticipantBetsViewModel> { parametersOf(route.challengeId, route.uid) },
-                        snackbarHostState = snackbarHostState,
-                    )
+                    CenteredMaxWidth {
+                        ParticipantBetsScreen(
+                            viewModel = koinViewModel<ParticipantBetsViewModel> { parametersOf(route.challengeId, route.uid) },
+                            snackbarHostState = snackbarHostState,
+                        )
+                    }
                 }
                 composable<RoutePostResults> { entry ->
                     val route = entry.toRoute<RoutePostResults>()
-                    PostResultsScreen(
-                        viewModel = koinViewModel<PostResultsViewModel> { parametersOf(route.challengeId) },
-                        snackbarHostState = snackbarHostState,
-                        onPosted = {
-                            navController.navigate(RouteResultsReveal(challengeId = route.challengeId)) {
-                                popUpTo(RouteChallengeDetail::class) { inclusive = true }
-                            }
-                        },
-                    )
+                    CenteredMaxWidth {
+                        PostResultsScreen(
+                            viewModel = koinViewModel<PostResultsViewModel> { parametersOf(route.challengeId) },
+                            snackbarHostState = snackbarHostState,
+                            onPosted = {
+                                navController.navigate(RouteResultsReveal(challengeId = route.challengeId)) {
+                                    popUpTo(RouteChallengeDetail::class) { inclusive = true }
+                                }
+                            },
+                        )
+                    }
                 }
                 composable<RouteChallengeSummary> { entry ->
                     val route = entry.toRoute<RouteChallengeSummary>()
-                    ChallengeSummaryScreen(
-                        viewModel = koinViewModel<BetListViewModel> { parametersOf(route.challengeId) },
-                        onEdit = { id -> navController.navigate(RoutePredict(id)) },
-                        onOpenParticipant = { uid ->
-                            navController.navigate(RouteParticipantBets(challengeId = route.challengeId, uid = uid))
-                        },
-                    )
+                    CenteredMaxWidth {
+                        ChallengeSummaryScreen(
+                            viewModel = koinViewModel<BetListViewModel> { parametersOf(route.challengeId) },
+                            onEdit = { id -> navController.navigate(RoutePredict(id)) },
+                            onOpenParticipant = { uid ->
+                                navController.navigate(RouteParticipantBets(challengeId = route.challengeId, uid = uid))
+                            },
+                        )
+                    }
                 }
                 composable<RouteResultsReveal> { entry ->
                     val route = entry.toRoute<RouteResultsReveal>()
@@ -510,21 +545,93 @@ fun AppNav() {
                     )
                 }
                 composable<RouteWelcome> {
-                    WelcomeScreen(
-                        onSignIn = {
-                            onboardingPrefs.hasSeenWelcome = true
-                            navController.navigate(RouteSignIn) {
-                                popUpTo(RouteWelcome) { inclusive = true }
-                            }
-                        },
-                        onContinueAsGuest = {
-                            onboardingPrefs.hasSeenWelcome = true
-                            navController.navigate(RouteChallenges) {
-                                popUpTo(RouteWelcome) { inclusive = true }
-                            }
-                        },
-                    )
+                    CenteredMaxWidth {
+                        WelcomeScreen(
+                            onSignIn = {
+                                onboardingPrefs.hasSeenWelcome = true
+                                navController.navigate(RouteSignIn) {
+                                    popUpTo(RouteWelcome) { inclusive = true }
+                                }
+                            },
+                            onContinueAsGuest = {
+                                onboardingPrefs.hasSeenWelcome = true
+                                navController.navigate(RouteChallenges) {
+                                    popUpTo(RouteWelcome) { inclusive = true }
+                                }
+                            },
+                        )
+                    }
                 }
+            }
+            }
+            if (wide && isAtTab) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    NavigationRail(modifier = Modifier.statusBarsPadding()) {
+                        NavigationRailItem(
+                            selected = isAtChallengesTab,
+                            onClick = { navigateToTab(RouteChallenges) },
+                            icon = { Icon(imageVector = BragIcon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+                            label = { Text(stringResource(Res.string.nav_tab_challenges)) },
+                            colors = NavigationRailItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                            modifier = Modifier.testTag("nav_tab_challenges"),
+                        )
+                        NavigationRailItem(
+                            selected = currentDest?.hasRoute(RouteResults::class) == true,
+                            onClick = { navigateToTab(RouteResults) },
+                            icon = {
+                                Box {
+                                    Icon(imageVector = Lucide.Trophy, contentDescription = null)
+                                    if (unseenResultsCount > 0) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .offset(x = 10.dp, y = (-2).dp)
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    shape = CircleShape,
+                                                )
+                                                .align(Alignment.TopEnd),
+                                        )
+                                    }
+                                }
+                            },
+                            label = { Text(stringResource(Res.string.nav_tab_results)) },
+                            colors = NavigationRailItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                            modifier = Modifier.testTag("nav_tab_results"),
+                        )
+                        NavigationRailItem(
+                            selected = currentDest?.hasRoute(RouteMe::class) == true,
+                            onClick = { navigateToTab(RouteMe) },
+                            icon = { Icon(imageVector = Lucide.User, contentDescription = null) },
+                            label = { Text(stringResource(Res.string.nav_tab_me)) },
+                            colors = NavigationRailItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                            modifier = Modifier.testTag("nav_tab_me"),
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        navHostContent()
+                    }
+                }
+            } else {
+                navHostContent()
             }
         }
     }
