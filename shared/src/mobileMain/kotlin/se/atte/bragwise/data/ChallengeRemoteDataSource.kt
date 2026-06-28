@@ -33,16 +33,13 @@ import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.Reaction
 import se.atte.bragwise.domain.scoring.competitionRanks
 
-/** Thrown when a Firestore PERMISSION_DENIED indicates the challenge no longer exists for this user. */
-class ChallengeGoneException : Exception("challenge-gone")
-
 class ChallengeRemoteDataSource(
     private val db: FirebaseFirestore = Firebase.firestore,
     private val functions: FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
-) {
+) : ChallengeRemote {
     // ── Reads ────────────────────────────────────────────────────────────────
 
-    fun observePromoted(): Flow<List<Challenge>> = flow {
+    override fun observePromoted(): Flow<List<Challenge>> = flow {
         emitAll(
             db.collection("challenges")
                 .where { "visibility" equalTo "PROMOTED" }
@@ -57,7 +54,7 @@ class ChallengeRemoteDataSource(
         )
     }
 
-    fun observeCreatedBy(uid: String): Flow<List<Challenge>> = flow {
+    override fun observeCreatedBy(uid: String): Flow<List<Challenge>> = flow {
         emitAll(
             db.collection("challenges")
                 .where { "createdBy" equalTo uid }
@@ -76,7 +73,7 @@ class ChallengeRemoteDataSource(
      * query on `players` to find their membership docs, then fetches each parent
      * challenge doc. Re-subscribes whenever the membership set changes.
      */
-    fun observeJoined(uid: String): Flow<List<Challenge>> = flow {
+    override fun observeJoined(uid: String): Flow<List<Challenge>> = flow {
         emitAll(
             db.collectionGroup("players")
                 .where { "uid" equalTo uid }
@@ -100,7 +97,7 @@ class ChallengeRemoteDataSource(
         )
     }
 
-    fun observePendingInvites(uid: String): Flow<List<Invitation>> = flow {
+    override fun observePendingInvites(uid: String): Flow<List<Invitation>> = flow {
         emitAll(
             db.collectionGroup("invitations")
                 .where { "invitedUid" equalTo uid }
@@ -114,7 +111,7 @@ class ChallengeRemoteDataSource(
         )
     }
 
-    fun observeChallengesByIds(ids: List<String>): Flow<List<Challenge>> {
+    override fun observeChallengesByIds(ids: List<String>): Flow<List<Challenge>> {
         if (ids.isEmpty()) return flowOf(emptyList())
         return combine(
             ids.map { challengeId ->
@@ -128,7 +125,7 @@ class ChallengeRemoteDataSource(
         ) { challenges -> challenges.filterNotNull() }
     }
 
-    fun observeChallengeDetail(challengeId: String, myUid: String): Flow<ChallengeDetail> = flow {
+    override fun observeChallengeDetail(challengeId: String, myUid: String): Flow<ChallengeDetail> = flow {
         val challengeFlow = db.document("challenges/$challengeId").snapshots
             .map { snap -> snap.toChallenge() }
             .catch { e ->
@@ -166,7 +163,7 @@ class ChallengeRemoteDataSource(
      * Co-winners (equal points) share a rank number and have isTied = true.
      * Secondary sort is by uid for deterministic stable ordering.
      */
-    fun observeLeaderboard(challengeId: String): Flow<List<LeaderboardEntry>> = flow {
+    override fun observeLeaderboard(challengeId: String): Flow<List<LeaderboardEntry>> = flow {
         emitAll(
             db.document("challenges/$challengeId").snapshots
                 .flatMapLatest { snap ->
@@ -191,7 +188,7 @@ class ChallengeRemoteDataSource(
      * Chunked into groups of 30 (Firestore `inArray` limit); chunks are
      * combined into a single deduplicated list.
      */
-    fun observeFromFriends(friendUids: List<String>): Flow<List<Challenge>> {
+    override fun observeFromFriends(friendUids: List<String>): Flow<List<Challenge>> {
         if (friendUids.isEmpty()) return flowOf(emptyList())
         val chunks = friendUids.chunked(30)
         val chunkFlows = chunks.map { chunk ->
@@ -215,7 +212,7 @@ class ChallengeRemoteDataSource(
 
     // ── Writes (callables) ───────────────────────────────────────────────────
 
-    suspend fun createChallenge(challenge: Challenge): String {
+    override suspend fun createChallenge(challenge: Challenge): String = mapErrors {
         val data = hashMapOf<String, Any?>(
             "title" to challenge.title,
             "description" to challenge.description,
@@ -228,10 +225,10 @@ class ChallengeRemoteDataSource(
         )
         val result = functions.httpsCallable("createChallenge")(data)
         val resultData = result.data(MapSerializer(String.serializer(), String.serializer().nullable))
-        return resultData["challengeId"] ?: error("createChallenge returned no challengeId")
+        resultData["challengeId"] ?: error("createChallenge returned no challengeId")
     }
 
-    fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> = flow {
+    override fun observeParticipantPredictions(challengeId: String, uid: String): Flow<Map<String, PredictionPayload>> = flow {
         emitAll(
             db.document("challenges/$challengeId/players/$uid").snapshots
                 .map { snap ->
@@ -241,7 +238,7 @@ class ChallengeRemoteDataSource(
         )
     }
 
-    suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>) {
+    override suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>) = mapErrors {
         val data = hashMapOf(
             "challengeId" to challengeId,
             "predictions" to predictions.map { p ->
@@ -249,25 +246,29 @@ class ChallengeRemoteDataSource(
             },
         )
         functions.httpsCallable("submitPredictions")(data)
+        Unit
     }
 
-    suspend fun postResults(challengeId: String, results: Map<String, se.atte.bragwise.domain.PredictionPayload>) {
+    override suspend fun postResults(challengeId: String, results: Map<String, se.atte.bragwise.domain.PredictionPayload>) = mapErrors {
         val data = hashMapOf(
             "challengeId" to challengeId,
             "results" to results.mapValues { (_, v) -> v.toMap() },
         )
         functions.httpsCallable("postResults")(data)
+        Unit
     }
 
-    suspend fun inviteFriends(challengeId: String, uids: List<String>) {
+    override suspend fun inviteFriends(challengeId: String, uids: List<String>) = mapErrors {
         functions.httpsCallable("inviteFriends")(hashMapOf("challengeId" to challengeId, "uids" to uids))
+        Unit
     }
 
-    suspend fun deleteChallenge(challengeId: String) {
+    override suspend fun deleteChallenge(challengeId: String) = mapErrors {
         functions.httpsCallable("deleteChallenge")(hashMapOf("challengeId" to challengeId))
+        Unit
     }
 
-    fun observeReactions(challengeId: String): Flow<List<Reaction>> = flow {
+    override fun observeReactions(challengeId: String): Flow<List<Reaction>> = flow {
         emitAll(
             db.collection("challenges/$challengeId/reactions").snapshots
                 .map { snap ->
@@ -283,8 +284,9 @@ class ChallengeRemoteDataSource(
         )
     }
 
-    suspend fun setReaction(challengeId: String, emoji: String?) {
+    override suspend fun setReaction(challengeId: String, emoji: String?) = mapErrors {
         functions.httpsCallable("setReaction")(hashMapOf("challengeId" to challengeId, "emoji" to emoji))
+        Unit
     }
 
     /**
@@ -293,7 +295,7 @@ class ChallengeRemoteDataSource(
      * Returns per-challenge id arrays: migrated (new), skipped (already existed),
      * failed (locked / ineligible / invalid).
      */
-    suspend fun migrateGuestData(predictions: List<LocalPrediction>): MigrationSummary {
+    override suspend fun migrateGuestData(predictions: List<LocalPrediction>): MigrationSummary = mapErrors {
         val data = hashMapOf(
             "predictions" to predictions.map { p ->
                 hashMapOf("challengeId" to p.challengeId, "betId" to p.betId, "payload" to p.payload.toMap())
@@ -304,7 +306,7 @@ class ChallengeRemoteDataSource(
         val migrated = lists["migrated"]?.size ?: 0
         val skipped = lists["skipped"]?.size ?: 0
         val failed = lists["failed"]?.size ?: 0
-        return MigrationSummary(migrated = migrated, skipped = skipped, failed = failed)
+        MigrationSummary(migrated = migrated, skipped = skipped, failed = failed)
     }
 }
 
@@ -365,4 +367,3 @@ private fun se.atte.bragwise.domain.BetOption.toMap(): Map<String, Any> = buildM
     put("label", label)
     countryCode?.let { put("countryCode", it) }
 }
-

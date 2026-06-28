@@ -35,8 +35,26 @@ kotlin {
            isIncludeAndroidResources = true
        }
     }
-    
+
+    wasmJs {
+        browser()
+    }
+
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
+        val mobileMain by creating { dependsOn(commonMain.get()) }
+        androidMain.get().dependsOn(mobileMain)
+        iosMain.get().dependsOn(mobileMain)
+        mobileMain.dependencies {
+            implementation(libs.gitlive.firebase.auth)
+            implementation(libs.gitlive.firebase.firestore)
+            implementation(libs.gitlive.firebase.functions)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(npm("firebase", "11.3.0"))
+        }
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             // GitLive's firebase-auth-android depends on com.google.firebase:firebase-auth
@@ -70,9 +88,6 @@ kotlin {
             implementation(libs.composables.icons.lucide)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.gitlive.firebase.auth)
-            implementation(libs.gitlive.firebase.firestore)
-            implementation(libs.gitlive.firebase.functions)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines.extensions)

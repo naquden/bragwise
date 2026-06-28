@@ -3,14 +3,13 @@ package se.atte.bragwise.data
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.ActionCodeSettings
 import dev.gitlive.firebase.auth.AndroidPackageName
-import dev.gitlive.firebase.auth.AuthResult
 import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
-import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.functions.FirebaseFunctions
 import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Thin wrapper around `Firebase.auth`. Holds the `ActionCodeSettings` we
@@ -30,17 +29,17 @@ class AuthRemoteDataSource(
     private val auth: FirebaseAuth = Firebase.auth,
     private val actionCodeSettings: ActionCodeSettings = defaultActionCodeSettings(packageName = "se.atte.bragwise"),
     private val functions: FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
-) {
-    val currentUser: FirebaseUser? get() = auth.currentUser
-    val authStateChanged: Flow<FirebaseUser?> get() = auth.authStateChanged
+) : AuthRemote {
+    override val currentUser: AuthUser? get() = auth.currentUser?.toAuthUser()
+    override val authStateChanged: Flow<AuthUser?> get() = auth.authStateChanged.map { it?.toAuthUser() }
 
-    suspend fun sendSignInLink(email: String) {
+    override suspend fun sendSignInLink(email: String) {
         auth.sendSignInLinkToEmail(email = email, actionCodeSettings = actionCodeSettings)
     }
 
-    fun isSignInWithEmailLink(link: String): Boolean = auth.isSignInWithEmailLink(link)
+    override fun isSignInWithEmailLink(link: String): Boolean = auth.isSignInWithEmailLink(link)
 
-    suspend fun signInAnonymously() {
+    override suspend fun signInAnonymously() {
         auth.signInAnonymously()
     }
 
@@ -49,26 +48,29 @@ class AuthRemoteDataSource(
      * the uid (and all cloud predictions/scores). Falls back to a fresh sign-in
      * if linking fails (e.g. email already in use by another account).
      */
-    suspend fun completeSignIn(email: String, link: String): AuthResult {
+    override suspend fun completeSignIn(email: String, link: String) {
         val currentUser = auth.currentUser
         if (currentUser != null && currentUser.isAnonymous) {
             runCatching {
                 val credential = EmailAuthProvider.credentialWithLink(email = email, emailLink = link)
                 currentUser.linkWithCredential(credential = credential)
-            }.onSuccess { return it }
+            }.onSuccess { return }
         }
-        return auth.signInWithEmailLink(email = email, link = link)
+        auth.signInWithEmailLink(email = email, link = link)
     }
 
-    suspend fun signInWithEmailLink(email: String, link: String): AuthResult =
+    override suspend fun signInWithEmailLink(email: String, link: String) {
         auth.signInWithEmailLink(email = email, link = link)
+    }
 
-    suspend fun signOut() {
+    override suspend fun signOut() {
         auth.signOut()
     }
 
-    suspend fun deleteAccount() {
-        functions.httpsCallable("deleteAccount")(emptyMap<String, Any?>())
+    override suspend fun deleteAccount() {
+        mapErrors {
+            functions.httpsCallable("deleteAccount")(emptyMap<String, Any?>())
+        }
     }
 
     companion object {
@@ -92,3 +94,9 @@ class AuthRemoteDataSource(
         )
     }
 }
+
+private fun dev.gitlive.firebase.auth.FirebaseUser.toAuthUser() = AuthUser(
+    uid = uid,
+    email = email,
+    isAnonymous = isAnonymous,
+)

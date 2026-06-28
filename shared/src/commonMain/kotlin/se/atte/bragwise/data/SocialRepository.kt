@@ -26,7 +26,7 @@ interface SocialRepository {
 }
 
 class FirebaseSocialRepository(
-    val remote: SocialRemoteDataSource,
+    val remote: SocialRemote,
     private val local: SocialLocalDataSource,
     private val auth: AuthRepository,
     private val profiles: ProfileRepository,

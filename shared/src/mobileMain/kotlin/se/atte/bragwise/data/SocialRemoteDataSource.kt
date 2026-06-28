@@ -16,8 +16,8 @@ import se.atte.bragwise.domain.HeadToHead
 class SocialRemoteDataSource(
     private val db: FirebaseFirestore = Firebase.firestore,
     private val functions: FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
-) {
-    fun observeCloudFriends(uid: String): Flow<List<CloudFriend>> = flow {
+) : SocialRemote {
+    override fun observeCloudFriends(uid: String): Flow<List<CloudFriend>> = flow {
         emitAll(
             db.document("players/$uid/private/social").snapshots.map { snap ->
                 if (snap.exists) snap.toCloudFriends() else emptyList()
@@ -25,7 +25,7 @@ class SocialRemoteDataSource(
         )
     }
 
-    fun observeFriendRequests(uid: String): Flow<FriendRequests> = flow {
+    override fun observeFriendRequests(uid: String): Flow<FriendRequests> = flow {
         emitAll(
             db.document("players/$uid/private/social").snapshots.map { snap ->
                 if (snap.exists) snap.toFriendRequests() else FriendRequests(emptyMap(), emptyMap())
@@ -33,7 +33,7 @@ class SocialRemoteDataSource(
         )
     }
 
-    fun observeHeadToHead(uid: String): Flow<HeadToHead> = flow {
+    override fun observeHeadToHead(uid: String): Flow<HeadToHead> = flow {
         emitAll(
             db.document("players/$uid/private/headToHead").snapshots.map { snap ->
                 if (snap.exists) snap.toHeadToHead() else HeadToHead(emptyMap())
@@ -41,23 +41,28 @@ class SocialRemoteDataSource(
         )
     }
 
-    suspend fun sendFriendRequest(username: String) {
+    override suspend fun sendFriendRequest(username: String) = mapErrors {
         functions.httpsCallable("sendFriendRequest")(hashMapOf("handle" to username))
+        Unit
     }
 
-    suspend fun acceptFriendRequest(requesterUid: String) {
+    override suspend fun acceptFriendRequest(requesterUid: String) = mapErrors {
         functions.httpsCallable("acceptFriendRequest")(hashMapOf("requesterUid" to requesterUid))
+        Unit
     }
 
-    suspend fun declineFriendRequest(requesterUid: String) {
+    override suspend fun declineFriendRequest(requesterUid: String) = mapErrors {
         functions.httpsCallable("declineFriendRequest")(hashMapOf("requesterUid" to requesterUid))
+        Unit
     }
 
-    suspend fun withdrawFriendRequest(otherUid: String) {
+    override suspend fun withdrawFriendRequest(otherUid: String) = mapErrors {
         functions.httpsCallable("withdrawFriendRequest")(hashMapOf("otherUid" to otherUid))
+        Unit
     }
 
-    suspend fun unfriend(otherUid: String) {
+    override suspend fun unfriend(otherUid: String) = mapErrors {
         functions.httpsCallable("unfriend")(hashMapOf("otherUid" to otherUid))
+        Unit
     }
 }

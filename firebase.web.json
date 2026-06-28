@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "target": "web",
+    "public": "webApp/build/dist/wasmJs/productionExecutable",
+    "ignore": ["firebase.json", "**/.git/**", "**/.DS_Store"],
+    "headers": [
+      {
+        "source": "**/*.wasm",
+        "headers": [{ "key": "Content-Type", "value": "application/wasm" }]
+      }
+    ],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+  }
+}

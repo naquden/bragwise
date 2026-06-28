@@ -108,10 +108,10 @@ interface AuthRepository {
  * `updateProfile` callable after the first sign-in, not here.
  */
 class FirebaseAuthRepository(
-    val remote: AuthRemoteDataSource,
+    val remote: AuthRemote,
     private val local: AuthLocalDataSource,
     private val localPredictions: LocalPredictionStore,
-    private val challengeRemote: ChallengeRemoteDataSource,
+    private val challengeRemote: ChallengeRemote,
     private val analytics: Analytics,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) : AuthRepository {

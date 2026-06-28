@@ -70,7 +70,7 @@ private fun <T> Flow<T>.tagCR(name: String): Flow<T> = this
 // #endregion
 
 class FirebaseChallengeRepository(
-    val remote: ChallengeRemoteDataSource,
+    val remote: ChallengeRemote,
     private val local: ChallengeLocalDataSource,
     private val localDrafts: LocalDraftStore,
     private val auth: AuthRepository,

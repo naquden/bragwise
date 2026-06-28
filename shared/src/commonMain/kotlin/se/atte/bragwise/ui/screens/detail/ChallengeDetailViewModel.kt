@@ -1,8 +1,8 @@
 package se.atte.bragwise.ui.screens.detail
 
 import androidx.lifecycle.viewModelScope
-import dev.gitlive.firebase.functions.FirebaseFunctionsException
-import dev.gitlive.firebase.functions.FunctionsExceptionCode
+import se.atte.bragwise.data.AppError
+import se.atte.bragwise.data.AppErrorCode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -151,7 +151,7 @@ class ChallengeDetailViewModel(
             .distinctUntilChanged()
             .catch { e ->
                 if (e is ChallengeGoneException ||
-                    (e is FirebaseFunctionsException && e.code == FunctionsExceptionCode.NOT_FOUND)
+                    (e is AppError && e.code == AppErrorCode.NotFound)
                 ) {
                     emitDeleted()
                 } else {
@@ -177,7 +177,7 @@ class ChallengeDetailViewModel(
                 challenges.deleteChallenge(challengeId)
                     .onSuccess { emitDeleted() }
                     .onFailure { e ->
-                        if (e is FirebaseFunctionsException && e.code == FunctionsExceptionCode.NOT_FOUND) {
+                        if (e is AppError && e.code == AppErrorCode.NotFound) {
                             emitDeleted()
                         } else {
                             errorReporter.report(e)

@@ -6,9 +6,8 @@ import bragwise.shared.generated.resources.edit_error_username_format
 import bragwise.shared.generated.resources.edit_error_username_taken
 import bragwise.shared.generated.resources.edit_snackbar_avatar_error
 import androidx.lifecycle.viewModelScope
-import dev.gitlive.firebase.functions.FirebaseFunctionsException
-import dev.gitlive.firebase.functions.FunctionsExceptionCode
-import dev.gitlive.firebase.functions.code
+import se.atte.bragwise.data.AppError
+import se.atte.bragwise.data.AppErrorCode
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -133,10 +132,10 @@ class EditProfileViewModel(
                         emitEffect(Effect.Saved)
                     }
                         .onFailure { error ->
-                            val msg = (error as? FirebaseFunctionsException)?.message ?: error.message ?: ""
-                            val code = (error as? FirebaseFunctionsException)?.code
+                            val msg = error.message ?: ""
+                            val code = (error as? AppError)?.code
                             when {
-                                code == FunctionsExceptionCode.ALREADY_EXISTS
+                                code == AppErrorCode.AlreadyExists
                                     || msg.contains("handle-taken", ignoreCase = true) ->
                                     update { it.copy(usernameError = UiText(Res.string.edit_error_username_taken)) }
 
@@ -147,7 +146,7 @@ class EditProfileViewModel(
                                     emitEffect(Effect.Snackbar(UiText(Res.string.edit_snackbar_avatar_error)))
 
                                 msg.contains("invalid-handle", ignoreCase = true)
-                                    || code == FunctionsExceptionCode.INVALID_ARGUMENT ->
+                                    || code == AppErrorCode.InvalidArgument ->
                                     update { it.copy(usernameError = USERNAME_FORMAT_MESSAGE) }
 
                                 else -> errorReporter.report(error)

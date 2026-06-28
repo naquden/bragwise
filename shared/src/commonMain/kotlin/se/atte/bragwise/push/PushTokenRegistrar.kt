@@ -1,17 +1,14 @@
 package se.atte.bragwise.push
 
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.functions.FirebaseFunctions
-import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.Serializable
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
+import se.atte.bragwise.data.PushTokenRemote
 
 /**
  * Registers fresh FCM/APNs tokens with the `registerPushToken` callable.
@@ -24,7 +21,7 @@ import se.atte.bragwise.data.AuthState
 class PushTokenRegistrar(
     private val push: PushNotifications,
     private val auth: AuthRepository,
-    private val functions: FirebaseFunctions = Firebase.functions("europe-west1"),
+    private val pushRemote: PushTokenRemote,
 ) {
     fun start(scope: CoroutineScope) {
         combine(
@@ -34,22 +31,15 @@ class PushTokenRegistrar(
             .distinctUntilChanged()
             .onEach { token ->
                 runCatching {
-                    functions
-                        .httpsCallable("registerPushToken")
-                        .invoke(
-                            RegisterPushTokenPayload(
-                                token = token.value,
-                                platform = when (token.platform) {
-                                    PushPlatform.FCM -> "fcm"
-                                    PushPlatform.APNS -> "apns"
-                                },
-                            ),
-                        )
+                    pushRemote.registerPushToken(
+                        token = token.value,
+                        platform = when (token.platform) {
+                            PushPlatform.FCM -> "fcm"
+                            PushPlatform.APNS -> "apns"
+                        },
+                    )
                 }
             }
             .launchIn(scope)
     }
 }
-
-@Serializable
-private data class RegisterPushTokenPayload(val token: String, val platform: String)

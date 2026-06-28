@@ -1,28 +1,20 @@
 package se.atte.bragwise.di
 
-import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import se.atte.bragwise.data.ActivityRegistrar
 import se.atte.bragwise.data.EnsureNamedAccount
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.ChallengeLocalDataSource
-import se.atte.bragwise.data.ChallengeRemoteDataSource
 import se.atte.bragwise.data.ChallengeRepository
 import se.atte.bragwise.data.FirebaseAuthRepository
 import se.atte.bragwise.data.FirebaseChallengeRepository
 import se.atte.bragwise.data.FirebaseProfileRepository
 import se.atte.bragwise.data.FirebaseSocialRepository
-import se.atte.bragwise.data.LocalDraftStore
-import se.atte.bragwise.data.LocalPredictionStore
-import se.atte.bragwise.data.ResultsSeenStore
-import se.atte.bragwise.db.BragwiseDatabase
 import se.atte.bragwise.push.PushTokenRegistrar
 import se.atte.bragwise.data.ProfileLocalDataSource
-import se.atte.bragwise.data.ProfileRemoteDataSource
 import se.atte.bragwise.data.ProfileRepository
 import se.atte.bragwise.data.SocialLocalDataSource
-import se.atte.bragwise.data.SocialRemoteDataSource
 import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.crash.CrashReporter
 import se.atte.bragwise.crash.createCrashReporter
@@ -31,21 +23,14 @@ val dataModule = module {
     single<CrashReporter> { createCrashReporter() }
     single { se.atte.bragwise.mvi.ErrorReporter(crash = get()) }
 
-    // Data sources — use no-arg construction so each class relies on its own
-    // default Firebase singleton (Firebase.auth / Firebase.firestore / Firebase.functions).
-    // AuthRemoteDataSource is registered in platformModule (Android/iOS) so it can
-    // supply the runtime package name for magic-link ActionCodeSettings.
-    single { ChallengeRemoteDataSource() }
+    // Data sources — concrete remotes are registered per-platform in platformModule
+    // (Android/iOS), bound to their interfaces. AuthRemoteDataSource is there too
+    // because it needs the runtime package name for magic-link ActionCodeSettings.
     singleOf(::ChallengeLocalDataSource)
-    single { SocialRemoteDataSource() }
     singleOf(::SocialLocalDataSource)
-    single { LocalPredictionStore(get<BragwiseDatabase>()) }
-    single { LocalDraftStore(get<BragwiseDatabase>()) }
-    single { ResultsSeenStore(get<BragwiseDatabase>(), Dispatchers.Default) }
-    single { PushTokenRegistrar(push = get(), auth = get()) }
+    single { PushTokenRegistrar(push = get(), auth = get(), pushRemote = get()) }
     single { ActivityRegistrar(auth = get(), profile = get()) }
     single { EnsureNamedAccount(auth = get(), profile = get(), onboardingPrefs = get()) }
-    single { ProfileRemoteDataSource() }
     singleOf(::ProfileLocalDataSource)
 
     // AuthLocalDataSource is platform-specific and lives in platformModule.

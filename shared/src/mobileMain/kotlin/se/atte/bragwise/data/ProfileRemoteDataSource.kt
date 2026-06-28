@@ -10,23 +10,11 @@ import kotlinx.coroutines.flow.map
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 
-data class NotificationPrefs(
-    val master: Boolean = true,
-    val social: Boolean = true,
-    val results: Boolean = true,
-    val participations: Boolean = true,
-    val invites: Boolean = true,
-) {
-    companion object {
-        val DEFAULT = NotificationPrefs()
-    }
-}
-
 class ProfileRemoteDataSource(
     private val db: dev.gitlive.firebase.firestore.FirebaseFirestore = Firebase.firestore,
     private val functions: dev.gitlive.firebase.functions.FirebaseFunctions = Firebase.functions(FUNCTIONS_REGION),
-) {
-    fun observePlayer(uid: String): Flow<Player?> = flow {
+) : ProfileRemote {
+    override fun observePlayer(uid: String): Flow<Player?> = flow {
         emitAll(
             db.document("players/$uid").snapshots.map { snap ->
                 if (snap.exists) snap.toPlayer() else null
@@ -34,7 +22,7 @@ class ProfileRemoteDataSource(
         )
     }
 
-    fun observePublicProfile(uid: String): Flow<PublicProfile?> = flow {
+    override fun observePublicProfile(uid: String): Flow<PublicProfile?> = flow {
         emitAll(
             db.document("publicProfiles/$uid").snapshots.map { snap ->
                 if (snap.exists) snap.toPublicProfile() else null
@@ -42,7 +30,7 @@ class ProfileRemoteDataSource(
         )
     }
 
-    fun observeNotificationPrefs(uid: String): Flow<NotificationPrefs> = flow {
+    override fun observeNotificationPrefs(uid: String): Flow<NotificationPrefs> = flow {
         emitAll(
             db.document("players/$uid/private/preferences").snapshots.map { snap ->
                 if (!snap.exists) return@map NotificationPrefs.DEFAULT
@@ -58,27 +46,31 @@ class ProfileRemoteDataSource(
         )
     }
 
-    suspend fun setMasterNotification(enabled: Boolean) {
+    override suspend fun setMasterNotification(enabled: Boolean) = mapErrors {
         functions.httpsCallable("setNotificationPref")(hashMapOf("enabled" to enabled))
+        Unit
     }
 
-    suspend fun setCategoryNotification(key: String, enabled: Boolean) {
+    override suspend fun setCategoryNotification(key: String, enabled: Boolean) = mapErrors {
         functions.httpsCallable("setNotificationPref")(hashMapOf("categories" to hashMapOf(key to enabled)))
+        Unit
     }
 
-    suspend fun recordActivity() {
+    override suspend fun recordActivity() = mapErrors {
         functions.httpsCallable("recordActivity")(emptyMap<String, Any?>())
+        Unit
     }
 
-    suspend fun claimUsername(username: String) {
+    override suspend fun claimUsername(username: String) = mapErrors {
         functions.httpsCallable("claimHandle")(hashMapOf("handle" to username))
+        Unit
     }
 
-    suspend fun updateProfile(
+    override suspend fun updateProfile(
         displayName: String?,
         username: String?,
         avatarSeed: String?,
-    ) {
+    ) = mapErrors {
         val data = hashMapOf<String, Any?>()
         displayName?.let { data["displayName"] = it }
         username?.let { data["handle"] = it }
@@ -86,5 +78,6 @@ class ProfileRemoteDataSource(
         if (data.isNotEmpty()) {
             functions.httpsCallable("updateProfile")(data)
         }
+        Unit
     }
 }

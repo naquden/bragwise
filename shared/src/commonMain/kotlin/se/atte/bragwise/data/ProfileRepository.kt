@@ -39,7 +39,7 @@ interface ProfileRepository {
 }
 
 class FirebaseProfileRepository(
-    val remote: ProfileRemoteDataSource,
+    val remote: ProfileRemote,
     private val local: ProfileLocalDataSource,
     private val auth: AuthRepository,
 ) : ProfileRepository {
