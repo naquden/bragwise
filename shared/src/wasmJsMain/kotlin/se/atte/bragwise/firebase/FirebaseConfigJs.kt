@@ -18,7 +18,7 @@ external fun makeActionCodeSettings(url: String): JsAny
 private const val MEASUREMENT_ID = ""
 
 fun initFirebase() {
-    initializeApp(makeFirebaseConfig(
+    val app = initializeApp(makeFirebaseConfig(
         apiKey = "AIzaSyAJKnsdEiQBPV5kzFA5isbMyTrzk01ebCM",
         authDomain = "bragwise.firebaseapp.com",
         projectId = "bragwise",
@@ -27,6 +27,7 @@ fun initFirebase() {
         appId = "1:984144877933:web:8c48d6677766cabb412264",
         measurementId = MEASUREMENT_ID,
     ))
+    bootstrapAppCheck(app)
     bootstrapFirestoreImports()
     bootstrapFunctionsImports()
     // GA4 needs a measurementId; skip init when absent so getAnalytics() doesn't throw.

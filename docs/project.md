@@ -230,6 +230,20 @@ ALTER TABLE ExistingTable ADD COLUMN newCol TEXT;
 
 **Pre-release note:** No migrations were written before first release. Schema versioning starts at the first public release version. Do not backfill migrations for changes made before that point — just ensure the version counter and migration files stay in sync going forward.
 
+## App Check enforcement (wasmJs web)
+
+App Check with reCAPTCHA v3 is deployed to `bragwise-web.web.app` (site key `6LdQujstAAAAAKV97CrT3tW1z3ZbgfdJ5y_rmfOu`). Enforcement is **not yet enabled** — enabling too early blocks real users before Firebase has seen their tokens.
+
+**When to enable:** After a few days, check the App Check metrics dashboard in Firebase console. When unverified traffic is ~0% of total requests, enable enforcement:
+
+1. Firebase console → App Check → APIs tab
+2. Firestore → click **Enforce** → confirm
+3. Cloud Functions → click **Enforce** → confirm
+
+If valid-token % is <100% when enforcing, real users/browsers are being blocked — investigate before enforcing.
+
+**Why:** The `apiKey` is visible in the JS bundle; anyone can extract it and hammer Firestore reads or Functions calls, inflating costs. App Check + enforcement rejects un-attested requests at the Firebase SDK layer.
+
 ---
 
 # Platform-Specific Notes
