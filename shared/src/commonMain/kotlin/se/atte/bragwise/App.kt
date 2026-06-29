@@ -3,6 +3,7 @@ package se.atte.bragwise
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -14,17 +15,20 @@ import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import se.atte.bragwise.data.ActivityRegistrar
+import se.atte.bragwise.data.LanguagePrefs
 import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.push.PushTokenRegistrar
 import se.atte.bragwise.theme.BragwiseTheme
 import se.atte.bragwise.theme.ThemeMode
 import se.atte.bragwise.theme.emojiFallbackFamily
+import se.atte.bragwise.ui.LocalAppLocale
 import se.atte.bragwise.ui.nav.AppNav
 
 @Composable
 @Preview
 fun App() {
     val themePrefs: ThemePrefs = koinInject()
+    val languagePrefs: LanguagePrefs = koinInject()
     val pushTokenRegistrar: PushTokenRegistrar = koinInject()
     val activityRegistrar: ActivityRegistrar = koinInject()
 
@@ -52,6 +56,8 @@ fun App() {
         fontsLoaded = true
     }
 
+    val language by languagePrefs.language.collectAsState()
+
     val mode by themePrefs.mode.collectAsState()
     val dark = when (mode) {
         ThemeMode.System -> isSystemInDarkTheme()
@@ -67,7 +73,11 @@ fun App() {
         return
     }
 
-    BragwiseTheme(darkTheme = dark) {
-        AppNav()
+    CompositionLocalProvider(
+        LocalAppLocale provides language.tag.ifEmpty { null },
+    ) {
+        BragwiseTheme(darkTheme = dark) {
+            AppNav()
+        }
     }
 }

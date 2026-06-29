@@ -76,9 +76,13 @@ Podfile.lock
 
 # Xcode DerivedData
 iosApp/DerivedData/
+iosApp/build-sim/
 
 # Personal work-in-progress notes
 plan.md
+
+# One-off verification screenshots
+verify_*.png
 
 # Claude Code local worktrees
 .claude/worktrees/
