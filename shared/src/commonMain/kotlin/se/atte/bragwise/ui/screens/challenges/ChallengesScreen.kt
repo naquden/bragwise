@@ -351,7 +351,7 @@ private fun ChallengesContent(
                     IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
                 }
                 entries.forEachIndexed { i, entry ->
-                    val prevBg = if (i == 0 && showIntro) bgColor else if (i > 0) entries[i - 1].bg else null
+                    val prevBg = if (i > 0) entries[i - 1].bg else null
                     if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
                     entry.render(i == 0 && !showIntro)
                 }
