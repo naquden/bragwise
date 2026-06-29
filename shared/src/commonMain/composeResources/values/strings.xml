@@ -163,7 +163,7 @@
     <string name="cd_invite_friends">Invite friends</string>
     <string name="cd_results_posted">Results posted</string>
     <string name="cd_post_results">Post results</string>
-    <string name="cd_use_as_template">Use as template</string>
+    <string name="cd_use_as_template">Copy to new challenge</string>
     <string name="cd_delete_challenge">Delete challenge</string>
     <string name="cd_delete_challenge_title">Delete challenge?</string>
     <string name="cd_delete_challenge_body">This permanently removes the challenge, all predictions, and invitations. This cannot be undone.</string>
@@ -198,8 +198,8 @@
     <string name="results_finished_count">%1$d finished</string>
     <string name="results_empty_title">No results yet</string>
     <string name="results_empty_body">Finished challenges will appear here.</string>
-    <string name="cl_menu_clone">Use as template</string>
-    <string name="results_menu_clone">Use as template</string>
+    <string name="cl_menu_clone">Copy to new challenge</string>
+    <string name="results_menu_clone">Copy to new challenge</string>
     <string name="results_menu_archive">Archive</string>
     <string name="results_menu_mark_unseen">Mark as unseen</string>
 

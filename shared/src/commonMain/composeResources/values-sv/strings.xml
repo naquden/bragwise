@@ -128,7 +128,7 @@
     <string name="cd_invite_friends">Bjud in vänner</string>
     <string name="cd_results_posted">Resultat publicerade</string>
     <string name="cd_post_results">Publicera resultat</string>
-    <string name="cd_use_as_template">Använd som mall</string>
+    <string name="cd_use_as_template">Kopiera till ny utmaning</string>
     <string name="cd_delete_challenge">Ta bort utmaning</string>
     <string name="cd_delete_challenge_title">Ta bort utmaning?</string>
     <string name="cd_delete_challenge_body">Detta tar permanent bort utmaningen, alla tipsningar och inbjudningar. Det går inte att ångra.</string>
@@ -161,8 +161,8 @@
     <string name="results_finished_count">%1$d avslutade</string>
     <string name="results_empty_title">Inga resultat än</string>
     <string name="results_empty_body">Avslutade utmaningar visas här.</string>
-    <string name="cl_menu_clone">Använd som mall</string>
-    <string name="results_menu_clone">Använd som mall</string>
+    <string name="cl_menu_clone">Kopiera till ny utmaning</string>
+    <string name="results_menu_clone">Kopiera till ny utmaning</string>
     <string name="results_menu_archive">Arkivera</string>
     <string name="results_menu_mark_unseen">Markera som osedd</string>
 
@@ -335,4 +335,9 @@
     <string name="cc_bet_type_over_under">Över / Under</string>
     <string name="cc_over_under_line_label">Linje</string>
     <string name="cc_guess_pick_number_title">Ange ett nummer</string>
+    <string name="cc_mode_single">Enskild satsning</string>
+    <string name="cc_mode_multiple">Flera satsningar</string>
+    <string name="cc_mode_single_hint">En gissningssatsning, placering poängsätts bland alla deltagare</string>
+    <string name="cc_single_question_label">Fråga</string>
+    <string name="cl_invited_by">Inbjuden av %1$s</string>
 </resources>

@@ -126,7 +126,7 @@
     <string name="cd_invite_friends">Пригласить друзей</string>
     <string name="cd_results_posted">Результаты опубликованы</string>
     <string name="cd_post_results">Опубликовать результаты</string>
-    <string name="cd_use_as_template">Использовать как шаблон</string>
+    <string name="cd_use_as_template">Копировать в новый вызов</string>
     <string name="cd_delete_challenge">Удалить испытание</string>
     <string name="cd_delete_challenge_title">Удалить испытание?</string>
     <string name="cd_delete_challenge_body">Это навсегда удалит испытание, все прогнозы и приглашения. Это невозможно отменить.</string>
@@ -159,8 +159,8 @@
     <string name="results_finished_count">%1$d завершено</string>
     <string name="results_empty_title">Результатов нет</string>
     <string name="results_empty_body">Завершённые испытания будут показаны здесь.</string>
-    <string name="cl_menu_clone">Использовать как шаблон</string>
-    <string name="results_menu_clone">Использовать как шаблон</string>
+    <string name="cl_menu_clone">Копировать в новый вызов</string>
+    <string name="results_menu_clone">Копировать в новый вызов</string>
     <string name="results_menu_archive">Архивировать</string>
     <string name="results_menu_mark_unseen">Отметить как непросмотренное</string>
 
@@ -322,4 +322,20 @@
     <string name="cc_bet_type_over_under">Выше / Ниже</string>
     <string name="cc_over_under_line_label">Линия</string>
     <string name="cc_guess_pick_number_title">Введите число</string>
+    <string name="cc_mode_single">Одна ставка</string>
+    <string name="cc_mode_multiple">Несколько ставок</string>
+    <string name="cc_mode_single_hint">Один вопрос, результаты сравниваются между всеми участниками</string>
+    <string name="cc_single_question_label">Вопрос</string>
+    <string name="cl_invited_by">Приглашён пользователем %1$s</string>
+    <string name="me_legal_section">Правовая информация</string>
+    <string name="me_terms_of_service">Условия использования</string>
+    <string name="me_privacy_policy">Политика конфиденциальности</string>
+    <string name="me_support">Поддержка</string>
+    <string name="pb_add_friend">Добавить друга</string>
+    <string name="pb_friend_requested">Запрос отправлен</string>
+    <string name="pb_already_friends">Друзья</string>
+    <string name="pb_snackbar_request_sent">Запрос в друзья отправлен @%1$s</string>
+    <string name="pb_snackbar_request_failed">Не удалось отправить запрос — попробуйте ещё раз</string>
+    <string name="settings_language_title">Язык</string>
+    <string name="settings_language_system">Системный язык</string>
 </resources>

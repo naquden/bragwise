@@ -126,7 +126,7 @@
     <string name="cd_invite_friends">Invitar amigos</string>
     <string name="cd_results_posted">Resultados publicados</string>
     <string name="cd_post_results">Publicar resultados</string>
-    <string name="cd_use_as_template">Usar como plantilla</string>
+    <string name="cd_use_as_template">Copiar a nuevo desafío</string>
     <string name="cd_delete_challenge">Eliminar desafío</string>
     <string name="cd_delete_challenge_title">¿Eliminar desafío?</string>
     <string name="cd_delete_challenge_body">Esto elimina permanentemente el desafío, todas las predicciones e invitaciones. Esto no se puede deshacer.</string>
@@ -159,8 +159,8 @@
     <string name="results_finished_count">%1$d completado</string>
     <string name="results_empty_title">Sin resultados aún</string>
     <string name="results_empty_body">Los desafíos completados aparecerán aquí.</string>
-    <string name="cl_menu_clone">Usar como plantilla</string>
-    <string name="results_menu_clone">Usar como plantilla</string>
+    <string name="cl_menu_clone">Copiar a nuevo desafío</string>
+    <string name="results_menu_clone">Copiar a nuevo desafío</string>
     <string name="results_menu_archive">Archivar</string>
     <string name="results_menu_mark_unseen">Marcar como no visto</string>
 
@@ -322,4 +322,20 @@
     <string name="cc_bet_type_over_under">Por encima / Por debajo</string>
     <string name="cc_over_under_line_label">Línea</string>
     <string name="cc_guess_pick_number_title">Introduce un número</string>
+    <string name="cc_mode_single">Apuesta única</string>
+    <string name="cc_mode_multiple">Múltiples apuestas</string>
+    <string name="cc_mode_single_hint">Una apuesta de predicción, puntuación calculada entre todos los participantes</string>
+    <string name="cc_single_question_label">Pregunta</string>
+    <string name="cl_invited_by">Invitado por %1$s</string>
+    <string name="me_legal_section">Legal</string>
+    <string name="me_terms_of_service">Términos de servicio</string>
+    <string name="me_privacy_policy">Política de privacidad</string>
+    <string name="me_support">Soporte</string>
+    <string name="pb_add_friend">Agregar amigo</string>
+    <string name="pb_friend_requested">Solicitado</string>
+    <string name="pb_already_friends">Amigos</string>
+    <string name="pb_snackbar_request_sent">Solicitud de amistad enviada a @%1$s</string>
+    <string name="pb_snackbar_request_failed">No se pudo enviar la solicitud — inténtalo de nuevo</string>
+    <string name="settings_language_title">Idioma</string>
+    <string name="settings_language_system">Predeterminado del sistema</string>
 </resources>

@@ -126,7 +126,7 @@
     <string name="cd_invite_friends">邀请朋友</string>
     <string name="cd_results_posted">结果已发布</string>
     <string name="cd_post_results">发布结果</string>
-    <string name="cd_use_as_template">用作模板</string>
+    <string name="cd_use_as_template">复制到新挑战</string>
     <string name="cd_delete_challenge">删除挑战</string>
     <string name="cd_delete_challenge_title">删除挑战?</string>
     <string name="cd_delete_challenge_body">这将永久删除挑战、所有预测和邀请。这无法撤销。</string>
@@ -159,8 +159,8 @@
     <string name="results_finished_count">%1$d 个已完成</string>
     <string name="results_empty_title">还没有结果</string>
     <string name="results_empty_body">已完成的挑战将出现在这里。</string>
-    <string name="cl_menu_clone">用作模板</string>
-    <string name="results_menu_clone">用作模板</string>
+    <string name="cl_menu_clone">复制到新挑战</string>
+    <string name="results_menu_clone">复制到新挑战</string>
     <string name="results_menu_archive">归档</string>
     <string name="results_menu_mark_unseen">标记为未看</string>
 
@@ -322,4 +322,20 @@
     <string name="cc_bet_type_over_under">高于/低于</string>
     <string name="cc_over_under_line_label">基准线</string>
     <string name="cc_guess_pick_number_title">输入一个数字</string>
+    <string name="cc_mode_single">单项投注</string>
+    <string name="cc_mode_multiple">多项投注</string>
+    <string name="cc_mode_single_hint">单题猜测，按所有参与者的排名计分</string>
+    <string name="cc_single_question_label">问题</string>
+    <string name="cl_invited_by">由 %1$s 邀请</string>
+    <string name="me_legal_section">法律条款</string>
+    <string name="me_terms_of_service">服务条款</string>
+    <string name="me_privacy_policy">隐私政策</string>
+    <string name="me_support">支持</string>
+    <string name="pb_add_friend">添加好友</string>
+    <string name="pb_friend_requested">已申请</string>
+    <string name="pb_already_friends">已是好友</string>
+    <string name="pb_snackbar_request_sent">好友请求已发送给 @%1$s</string>
+    <string name="pb_snackbar_request_failed">发送失败，请重试</string>
+    <string name="settings_language_title">语言</string>
+    <string name="settings_language_system">系统默认</string>
 </resources>

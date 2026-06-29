@@ -126,7 +126,7 @@
     <string name="cd_invite_friends">मित्रों को आमंत्रित करें</string>
     <string name="cd_results_posted">परिणाम पोस्ट हुए</string>
     <string name="cd_post_results">परिणाम पोस्ट करें</string>
-    <string name="cd_use_as_template">टेम्पलेट के रूप में उपयोग करें</string>
+    <string name="cd_use_as_template">नई चुनौती में कॉपी करें</string>
     <string name="cd_delete_challenge">चैलेंज हटाएं</string>
     <string name="cd_delete_challenge_title">चैलेंज हटाएं?</string>
     <string name="cd_delete_challenge_body">यह चैलेंज, सभी भविष्यवाणियां और आमंत्रण स्थायी रूप से हटा देगा। यह पूर्ववत नहीं हो सकता।</string>
@@ -159,8 +159,8 @@
     <string name="results_finished_count">%1$d समाप्त</string>
     <string name="results_empty_title">अभी कोई परिणाम नहीं</string>
     <string name="results_empty_body">समाप्त चैलेंज यहां दिखेंगे।</string>
-    <string name="cl_menu_clone">टेम्पलेट के रूप में उपयोग करें</string>
-    <string name="results_menu_clone">टेम्पलेट के रूप में उपयोग करें</string>
+    <string name="cl_menu_clone">नई चुनौती में कॉपी करें</string>
+    <string name="results_menu_clone">नई चुनौती में कॉपी करें</string>
     <string name="results_menu_archive">संग्रहित करें</string>
     <string name="results_menu_mark_unseen">अनदेखा के रूप में चिह्नित करें</string>
 
@@ -322,4 +322,20 @@
     <string name="cc_bet_type_over_under">ऊपर / नीचे</string>
     <string name="cc_over_under_line_label">रेखा</string>
     <string name="cc_guess_pick_number_title">एक संख्या दर्ज करें</string>
+    <string name="cc_mode_single">Single bet</string>
+    <string name="cc_mode_multiple">Multiple bets</string>
+    <string name="cc_mode_single_hint">एक अनुमान वाला bet, सभी प्रतिभागियों में स्कोर किया जाता है</string>
+    <string name="cc_single_question_label">प्रश्न</string>
+    <string name="cl_invited_by">%1$s द्वारा आमंत्रित</string>
+    <string name="me_legal_section">कानूनी</string>
+    <string name="me_terms_of_service">सेवा की शर्तें</string>
+    <string name="me_privacy_policy">गोपनीयता नीति</string>
+    <string name="me_support">सहायता</string>
+    <string name="pb_add_friend">मित्र जोड़ें</string>
+    <string name="pb_friend_requested">अनुरोध भेजा गया</string>
+    <string name="pb_already_friends">मित्र</string>
+    <string name="pb_snackbar_request_sent">@%1$s को मित्र अनुरोध भेजा गया</string>
+    <string name="pb_snackbar_request_failed">अनुरोध नहीं भेजा जा सका — पुनः प्रयास करें</string>
+    <string name="settings_language_title">भाषा</string>
+    <string name="settings_language_system">सिस्टम डिफ़ॉल्ट</string>
 </resources>
