@@ -33,6 +33,9 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
+/** Whether the challenge has a single placement-scored guess bet, or multiple freeform bets. */
+enum class CreateMode { SINGLE, MULTI }
+
 /** Single-screen challenge creator/editor — title, visibility and bets all on one form. */
 class CreateChallengeViewModel(
     private val challenges: ChallengeRepository,
@@ -63,6 +66,7 @@ class CreateChallengeViewModel(
         val error: String? = null,
         val needsName: Boolean = false,
         val pendingPublish: Boolean = false,
+        val mode: CreateMode = CreateMode.MULTI,
     )
 
     sealed interface Intent {
@@ -82,7 +86,8 @@ class CreateChallengeViewModel(
             val topN: Int = 3,
         ) : Intent
         data class AddBoolean(val title: String) : Intent
-        data class AddGuess(val title: String, val granularity: GuessGranularity, val closest: Boolean = true) : Intent
+        data class AddGuess(val title: String, val granularity: GuessGranularity, val closest: Boolean = true, val placement: Boolean = false) : Intent
+        data class SetCreateMode(val mode: CreateMode) : Intent
         data class AddMultiSelect(
             val title: String,
             val options: List<BetOption>,
@@ -188,8 +193,11 @@ class CreateChallengeViewModel(
             }
             is Intent.AddGuess -> update {
                 val seq = it.betSeq + 1
-                val bet = Bet.Guess(id = "b$seq", title = intent.title, granularity = intent.granularity, closest = intent.closest)
+                val bet = Bet.Guess(id = "b$seq", title = intent.title, granularity = intent.granularity, closest = intent.closest, placement = intent.placement)
                 it.copy(bets = it.bets + bet, betSeq = seq)
+            }
+            is Intent.SetCreateMode -> update {
+                it.copy(mode = intent.mode, bets = emptyList(), betSeq = 0)
             }
             is Intent.AddMultiSelect -> update {
                 val seq = it.betSeq + 1

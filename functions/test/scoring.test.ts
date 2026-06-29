@@ -29,3 +29,20 @@ describe('ScoringEngine TS parity', () => {
     });
   }
 });
+
+describe('score — GUESS placement=true returns 0', () => {
+  it('placement=true is cross-player; score() must return 0 to avoid double-counting', () => {
+    const bet: Bet = {
+      kind: 'GUESS',
+      id: 'bp1',
+      title: 'Final score',
+      granularity: 'NUMBER',
+      closest: true,
+      placement: true,
+    };
+    const prediction: PredictionPayload = { kind: 'GUESS', guessValue: 42 };
+    const result: PredictionPayload = { kind: 'GUESS', guessValue: 42 };
+    // Even with a perfect guess, score() returns 0 — points are added by computeLeaderboard.
+    expect(score(bet, prediction, result)).toBe(0);
+  });
+});

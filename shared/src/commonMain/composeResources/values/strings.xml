@@ -113,6 +113,10 @@
     <string name="cc_over_under_line_label">Line (threshold)</string>
     <string name="cc_guess_scoring_closest">Closest wins</string>
     <string name="cc_guess_scoring_exact">Exact match</string>
+    <string name="cc_mode_single">Single bet</string>
+    <string name="cc_mode_multiple">Multiple bets</string>
+    <string name="cc_mode_single_hint">One guess bet, placement scored across all participants</string>
+    <string name="cc_single_question_label">Question</string>
     <string name="cc_guess_pick_time_title">Pick a time</string>
     <string name="cc_guess_pick_day_title">Pick a day</string>
     <string name="cc_guess_pick_number_title">Enter a number</string>

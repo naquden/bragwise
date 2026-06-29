@@ -49,12 +49,15 @@ sealed interface Bet {
      *   NUMBER → any integer
      * [closest] = true → closest-wins (cross-player, scored by leaderboard aggregator);
      *           = false → exact match only (pairwise, scored by ScoringEngine.score).
+     * [placement] = true → closest-wins ranked descending across the full field;
+     *             requires closest=true. Scored server-side by the leaderboard aggregator.
      */
     data class Guess(
         override val id: String,
         override val title: String,
         val granularity: GuessGranularity,
         val closest: Boolean = true,
+        val placement: Boolean = false,
     ) : Bet {
         override val optionType: OptionType = OptionType.NONE
     }

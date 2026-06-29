@@ -349,7 +349,7 @@ private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this)
     )
     is se.atte.bragwise.domain.Bet.Guess -> mapOf(
         "kind" to "GUESS", "id" to id, "title" to title,
-        "granularity" to granularity.name, "closest" to closest,
+        "granularity" to granularity.name, "closest" to closest, "placement" to placement,
     )
     is se.atte.bragwise.domain.Bet.MultiSelect -> mapOf(
         "kind" to "MULTI_SELECT", "id" to id, "title" to title,

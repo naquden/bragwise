@@ -9,7 +9,7 @@ export type Bet =
   | { kind: 'SINGLE_PICK'; id: string; title: string; options: { id: string; label: string }[] }
   | { kind: 'RANKING'; id: string; title: string; topN: number; options: { id: string; label: string }[] }
   | { kind: 'BOOLEAN_PROP'; id: string; title: string }
-  | { kind: 'GUESS'; id: string; title: string; granularity: 'TIME' | 'DAY' | 'NUMBER'; closest: boolean }
+  | { kind: 'GUESS'; id: string; title: string; granularity: 'TIME' | 'DAY' | 'NUMBER'; closest: boolean; placement?: boolean }
   | { kind: 'MULTI_SELECT'; id: string; title: string; options: { id: string; label: string }[] }
   | { kind: 'OVER_UNDER'; id: string; title: string; line: number };
 
@@ -59,7 +59,7 @@ export function score(bet: Bet, prediction: PredictionPayload, result: Predictio
         throw new Error(`payload kind mismatch for GUESS bet ${bet.id}`);
       }
       if (bet.closest) {
-        // Closest-wins is cross-player; scored by computeLeaderboard, not here.
+        // Closest-wins (and placement) is cross-player; scored by computeLeaderboard, not here.
         return 0;
       }
       return prediction.guessValue === result.guessValue ? 1 : 0;

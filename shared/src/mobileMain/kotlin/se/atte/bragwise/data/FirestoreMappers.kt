@@ -43,6 +43,7 @@ private data class BetDto(
     val topN: Int = 1,
     val granularity: String? = null,
     val closest: Boolean = true,
+    val placement: Boolean = false,
     val line: Long? = null,
 )
 
@@ -161,6 +162,7 @@ private fun BetDto.toDomain(): Bet {
             title = title,
             granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
             closest = closest,
+            placement = placement,
         )
         "MULTI_SELECT" -> Bet.MultiSelect(id = id, title = title, optionType = ot, options = opts)
         "OVER_UNDER" -> Bet.OverUnder(id = id, title = title, line = line ?: 0L)

@@ -1,5 +1,9 @@
 package se.atte.bragwise.ui.screens.create
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,6 +51,10 @@ import bragwise.shared.generated.resources.cc_bet_type_yes_no
 import bragwise.shared.generated.resources.cc_over_under_line_label
 import bragwise.shared.generated.resources.cc_guess_scoring_closest
 import bragwise.shared.generated.resources.cc_guess_scoring_exact
+import bragwise.shared.generated.resources.cc_mode_single
+import bragwise.shared.generated.resources.cc_mode_multiple
+import bragwise.shared.generated.resources.cc_mode_single_hint
+import bragwise.shared.generated.resources.cc_single_question_label
 import bragwise.shared.generated.resources.cc_bets_visible_hint
 import bragwise.shared.generated.resources.cc_bets_visible_label
 import bragwise.shared.generated.resources.cc_cancel
@@ -273,6 +281,33 @@ fun CreateChallengeScreen(
             }
 
             item {
+                SectionCard {
+                    Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+                        AppFilterChip(
+                            selected = state.mode == CreateMode.MULTI,
+                            onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetCreateMode(CreateMode.MULTI)) },
+                            label = { Text(stringResource(Res.string.cc_mode_multiple)) },
+                            modifier = Modifier.testTag("create_mode_multi"),
+                        )
+                        AppFilterChip(
+                            selected = state.mode == CreateMode.SINGLE,
+                            onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetCreateMode(CreateMode.SINGLE)) },
+                            label = { Text(stringResource(Res.string.cc_mode_single)) },
+                            modifier = Modifier.testTag("create_mode_single"),
+                        )
+                    }
+                    if (state.mode == CreateMode.SINGLE) {
+                        Text(
+                            text = stringResource(Res.string.cc_mode_single_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                }
+            }
+
+            item {
                 SectionCard(title = stringResource(Res.string.cc_deadline_label)) {
                     DeadlinePickerField(
                         locksAt = state.locksAt,
@@ -350,198 +385,239 @@ fun CreateChallengeScreen(
                 }
             }
 
-            items(items = state.bets, key = { it.id }) { bet ->
-                if (editingBetId == bet.id) {
-                    BetEditor(
-                        title = stringResource(Res.string.cc_edit_bet_title),
-                        betType = betType,
-                        onBetTypeChange = { newType ->
-                            betType = newType
-                            if (newType == BetType.YesNo) {
-                                options = listOf("", "")
-                                optionType = OptionType.NONE
-                            }
-                        },
-                        optionType = optionType,
-                        onOptionTypeChange = { optionType = it },
-                        question = newBetTitle,
-                        onQuestionChange = { newBetTitle = it },
-                        options = options,
-                        onOptionsChange = { options = it },
-                        countryOptions = countryOptions,
-                        onCountryOptionsChange = { countryOptions = it },
-                        topN = topN,
-                        onTopNChange = { topN = it },
-                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
-                            BetType.YesNo -> true
-                            BetType.SinglePick -> resolvedOptions.size >= 2
-                            BetType.Ranking -> resolvedOptions.size >= topN
-                            BetType.Time, BetType.Day, BetType.Number -> true
-                            BetType.MultiSelect -> resolvedOptions.size >= 2
-                            BetType.OverUnder -> overUnderLine.toLongOrNull() != null
-                        },
-                        saveLabel = stringResource(Res.string.cc_save_bet),
-                        guessClosest = guessClosest,
-                        onGuessClosestChange = { guessClosest = it },
-                        overUnderLine = overUnderLine,
-                        onOverUnderLineChange = { overUnderLine = it },
-                        duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
-                        onCancel = {
-                            editingBetId = null
-                            resetEditor()
-                        },
-                        onSave = {
-                            val updated: Bet = when (betType) {
-                                BetType.YesNo -> Bet.BooleanProp(id = bet.id, title = newBetTitle)
-                                BetType.SinglePick -> Bet.SinglePick(
-                                    id = bet.id,
-                                    title = newBetTitle,
-                                    optionType = optionType,
-                                    options = resolvedOptions,
-                                )
-                                BetType.Ranking -> Bet.Ranking(
-                                    id = bet.id,
-                                    title = newBetTitle,
-                                    optionType = optionType,
-                                    options = resolvedOptions,
-                                    topN = topN,
-                                )
-                                BetType.Time -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.TIME, closest = guessClosest)
-                                BetType.Day -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.DAY, closest = guessClosest)
-                                BetType.Number -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.NUMBER, closest = guessClosest)
-                                BetType.MultiSelect -> Bet.MultiSelect(
-                                    id = bet.id,
-                                    title = newBetTitle,
-                                    optionType = optionType,
-                                    options = resolvedOptions,
-                                )
-                                BetType.OverUnder -> Bet.OverUnder(
-                                    id = bet.id,
-                                    title = newBetTitle,
-                                    line = overUnderLine.toLongOrNull() ?: 0L,
-                                )
-                            }
-                            viewModel.onIntent(CreateChallengeViewModel.Intent.UpdateBet(updated))
-                            editingBetId = null
-                            resetEditor()
-                        },
-                    )
-                } else {
-                    BetCard(
-                        bet = bet,
-                        onRemove = { viewModel.onIntent(CreateChallengeViewModel.Intent.RemoveBet(bet.id)) },
-                        onClick = {
-                            seedEditorFrom(bet)
-                            editingBetId = bet.id
-                        },
-                    )
-                }
-            }
-
             item {
-                if (editingBetId == "") {
-                    BetEditor(
-                        title = stringResource(Res.string.cc_add_bet_title),
-                        betType = betType,
-                        onBetTypeChange = { newType ->
-                            betType = newType
-                            if (newType == BetType.YesNo) {
-                                options = listOf("", "")
-                                optionType = OptionType.NONE
-                            }
-                        },
-                        optionType = optionType,
-                        onOptionTypeChange = { optionType = it },
-                        question = newBetTitle,
-                        onQuestionChange = { newBetTitle = it },
-                        options = options,
-                        onOptionsChange = { options = it },
-                        countryOptions = countryOptions,
-                        onCountryOptionsChange = { countryOptions = it },
-                        topN = topN,
-                        onTopNChange = { topN = it },
-                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
-                            BetType.YesNo -> true
-                            BetType.SinglePick -> resolvedOptions.size >= 2
-                            BetType.Ranking -> resolvedOptions.size >= topN
-                            BetType.Time, BetType.Day, BetType.Number -> true
-                            BetType.MultiSelect -> resolvedOptions.size >= 2
-                            BetType.OverUnder -> overUnderLine.toLongOrNull() != null
-                        },
-                        saveLabel = stringResource(Res.string.cc_save_bet),
-                        guessClosest = guessClosest,
-                        onGuessClosestChange = { guessClosest = it },
-                        overUnderLine = overUnderLine,
-                        onOverUnderLineChange = { overUnderLine = it },
-                        duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
-                        onCancel = {
-                            editingBetId = null
-                            resetEditor()
-                        },
-                        onSave = {
-                            when (betType) {
-                                BetType.YesNo -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddBoolean(title = newBetTitle),
-                                )
-                                BetType.SinglePick -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddSinglePick(
-                                        title = newBetTitle,
+                AnimatedContent(
+                    targetState = state.mode,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { mode ->
+                    when (mode) {
+                        CreateMode.MULTI -> {
+                            Column(verticalArrangement = Arrangement.spacedBy(standardPadding)) {
+                                state.bets.forEach { bet ->
+                                    if (editingBetId == bet.id) {
+                                        BetEditor(
+                                            title = stringResource(Res.string.cc_edit_bet_title),
+                                            betType = betType,
+                                            onBetTypeChange = { newType ->
+                                                betType = newType
+                                                if (newType == BetType.YesNo) {
+                                                    options = listOf("", "")
+                                                    optionType = OptionType.NONE
+                                                }
+                                            },
+                                            optionType = optionType,
+                                            onOptionTypeChange = { optionType = it },
+                                            question = newBetTitle,
+                                            onQuestionChange = { newBetTitle = it },
+                                            options = options,
+                                            onOptionsChange = { options = it },
+                                            countryOptions = countryOptions,
+                                            onCountryOptionsChange = { countryOptions = it },
+                                            topN = topN,
+                                            onTopNChange = { topN = it },
+                                            canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
+                                                BetType.YesNo -> true
+                                                BetType.SinglePick -> resolvedOptions.size >= 2
+                                                BetType.Ranking -> resolvedOptions.size >= topN
+                                                BetType.Time, BetType.Day, BetType.Number -> true
+                                                BetType.MultiSelect -> resolvedOptions.size >= 2
+                                                BetType.OverUnder -> overUnderLine.toLongOrNull() != null
+                                            },
+                                            saveLabel = stringResource(Res.string.cc_save_bet),
+                                            guessClosest = guessClosest,
+                                            onGuessClosestChange = { guessClosest = it },
+                                            overUnderLine = overUnderLine,
+                                            onOverUnderLineChange = { overUnderLine = it },
+                                            duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
+                                            onCancel = {
+                                                editingBetId = null
+                                                resetEditor()
+                                            },
+                                            onSave = {
+                                                val updated: Bet = when (betType) {
+                                                    BetType.YesNo -> Bet.BooleanProp(id = bet.id, title = newBetTitle)
+                                                    BetType.SinglePick -> Bet.SinglePick(
+                                                        id = bet.id,
+                                                        title = newBetTitle,
+                                                        optionType = optionType,
+                                                        options = resolvedOptions,
+                                                    )
+                                                    BetType.Ranking -> Bet.Ranking(
+                                                        id = bet.id,
+                                                        title = newBetTitle,
+                                                        optionType = optionType,
+                                                        options = resolvedOptions,
+                                                        topN = topN,
+                                                    )
+                                                    BetType.Time -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.TIME, closest = guessClosest)
+                                                    BetType.Day -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.DAY, closest = guessClosest)
+                                                    BetType.Number -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.NUMBER, closest = guessClosest)
+                                                    BetType.MultiSelect -> Bet.MultiSelect(
+                                                        id = bet.id,
+                                                        title = newBetTitle,
+                                                        optionType = optionType,
+                                                        options = resolvedOptions,
+                                                    )
+                                                    BetType.OverUnder -> Bet.OverUnder(
+                                                        id = bet.id,
+                                                        title = newBetTitle,
+                                                        line = overUnderLine.toLongOrNull() ?: 0L,
+                                                    )
+                                                }
+                                                viewModel.onIntent(CreateChallengeViewModel.Intent.UpdateBet(updated))
+                                                editingBetId = null
+                                                resetEditor()
+                                            },
+                                        )
+                                    } else {
+                                        BetCard(
+                                            bet = bet,
+                                            onRemove = { viewModel.onIntent(CreateChallengeViewModel.Intent.RemoveBet(bet.id)) },
+                                            onClick = {
+                                                seedEditorFrom(bet)
+                                                editingBetId = bet.id
+                                            },
+                                        )
+                                    }
+                                }
+                                if (editingBetId == "") {
+                                    BetEditor(
+                                        title = stringResource(Res.string.cc_add_bet_title),
+                                        betType = betType,
+                                        onBetTypeChange = { newType ->
+                                            betType = newType
+                                            if (newType == BetType.YesNo) {
+                                                options = listOf("", "")
+                                                optionType = OptionType.NONE
+                                            }
+                                        },
                                         optionType = optionType,
-                                        options = resolvedOptions,
-                                    ),
-                                )
-                                BetType.Ranking -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddRanking(
-                                        title = newBetTitle,
-                                        optionType = optionType,
-                                        options = resolvedOptions,
+                                        onOptionTypeChange = { optionType = it },
+                                        question = newBetTitle,
+                                        onQuestionChange = { newBetTitle = it },
+                                        options = options,
+                                        onOptionsChange = { options = it },
+                                        countryOptions = countryOptions,
+                                        onCountryOptionsChange = { countryOptions = it },
                                         topN = topN,
-                                    ),
-                                )
-                                BetType.Time -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddGuess(
-                                        title = newBetTitle,
-                                        granularity = GuessGranularity.TIME,
-                                        closest = guessClosest,
-                                    ),
-                                )
-                                BetType.Day -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddGuess(
-                                        title = newBetTitle,
-                                        granularity = GuessGranularity.DAY,
-                                        closest = guessClosest,
-                                    ),
-                                )
-                                BetType.Number -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddGuess(
-                                        title = newBetTitle,
-                                        granularity = GuessGranularity.NUMBER,
-                                        closest = guessClosest,
-                                    ),
-                                )
-                                BetType.MultiSelect -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddMultiSelect(
-                                        title = newBetTitle,
-                                        optionType = optionType,
-                                        options = resolvedOptions,
-                                    ),
-                                )
-                                BetType.OverUnder -> viewModel.onIntent(
-                                    CreateChallengeViewModel.Intent.AddOverUnder(
-                                        title = newBetTitle,
-                                        line = overUnderLine.toLongOrNull() ?: 0L,
-                                    ),
-                                )
+                                        onTopNChange = { topN = it },
+                                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
+                                            BetType.YesNo -> true
+                                            BetType.SinglePick -> resolvedOptions.size >= 2
+                                            BetType.Ranking -> resolvedOptions.size >= topN
+                                            BetType.Time, BetType.Day, BetType.Number -> true
+                                            BetType.MultiSelect -> resolvedOptions.size >= 2
+                                            BetType.OverUnder -> overUnderLine.toLongOrNull() != null
+                                        },
+                                        saveLabel = stringResource(Res.string.cc_save_bet),
+                                        guessClosest = guessClosest,
+                                        onGuessClosestChange = { guessClosest = it },
+                                        overUnderLine = overUnderLine,
+                                        onOverUnderLineChange = { overUnderLine = it },
+                                        duplicateOptionError = if (hasDuplicateOptions) stringResource(Res.string.cc_duplicate_options_error) else null,
+                                        onCancel = {
+                                            editingBetId = null
+                                            resetEditor()
+                                        },
+                                        onSave = {
+                                            when (betType) {
+                                                BetType.YesNo -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddBoolean(title = newBetTitle),
+                                                )
+                                                BetType.SinglePick -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddSinglePick(
+                                                        title = newBetTitle,
+                                                        optionType = optionType,
+                                                        options = resolvedOptions,
+                                                    ),
+                                                )
+                                                BetType.Ranking -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddRanking(
+                                                        title = newBetTitle,
+                                                        optionType = optionType,
+                                                        options = resolvedOptions,
+                                                        topN = topN,
+                                                    ),
+                                                )
+                                                BetType.Time -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddGuess(
+                                                        title = newBetTitle,
+                                                        granularity = GuessGranularity.TIME,
+                                                        closest = guessClosest,
+                                                    ),
+                                                )
+                                                BetType.Day -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddGuess(
+                                                        title = newBetTitle,
+                                                        granularity = GuessGranularity.DAY,
+                                                        closest = guessClosest,
+                                                    ),
+                                                )
+                                                BetType.Number -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddGuess(
+                                                        title = newBetTitle,
+                                                        granularity = GuessGranularity.NUMBER,
+                                                        closest = guessClosest,
+                                                    ),
+                                                )
+                                                BetType.MultiSelect -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddMultiSelect(
+                                                        title = newBetTitle,
+                                                        optionType = optionType,
+                                                        options = resolvedOptions,
+                                                    ),
+                                                )
+                                                BetType.OverUnder -> viewModel.onIntent(
+                                                    CreateChallengeViewModel.Intent.AddOverUnder(
+                                                        title = newBetTitle,
+                                                        line = overUnderLine.toLongOrNull() ?: 0L,
+                                                    ),
+                                                )
+                                            }
+                                            editingBetId = null
+                                            resetEditor()
+                                        },
+                                    )
+                                } else if (!isEditing) {
+                                    AppOutlinedButton(
+                                        modifier = Modifier.fillMaxWidth().testTag("create_add_bet"),
+                                        onClick = { editingBetId = "" },
+                                    ) { Text(stringResource(Res.string.cc_add_bet)) }
+                                }
                             }
-                            editingBetId = null
-                            resetEditor()
-                        },
-                    )
-                } else if (!isEditing) {
-                    AppOutlinedButton(
-                        modifier = Modifier.fillMaxWidth().testTag("create_add_bet"),
-                        onClick = { editingBetId = "" },
-                    ) { Text(stringResource(Res.string.cc_add_bet)) }
+                        }
+                        CreateMode.SINGLE -> {
+                            SingleBetEditor(
+                                singleBet = state.bets.firstOrNull() as? Bet.Guess,
+                                onSave = { title, granularity ->
+                                    val existing = state.bets.firstOrNull()
+                                    if (existing != null) {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.UpdateBet(
+                                                Bet.Guess(
+                                                    id = existing.id,
+                                                    title = title,
+                                                    granularity = granularity,
+                                                    closest = true,
+                                                    placement = true,
+                                                )
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.AddGuess(
+                                                title = title,
+                                                granularity = granularity,
+                                                closest = true,
+                                                placement = true,
+                                            )
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -814,6 +890,65 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
 }
 
 
+/**
+ * Focused editor for SINGLE mode: one Guess bet with placement=true forced.
+ * Shows granularity chips (Time / Day / Number) and a question field.
+ * Calls [onSave] each time the question or granularity changes (auto-save style —
+ * no explicit Save button needed since there is exactly one bet).
+ */
+@Composable
+private fun SingleBetEditor(
+    singleBet: Bet.Guess?,
+    onSave: (title: String, granularity: GuessGranularity) -> Unit,
+) {
+    var question by remember(singleBet?.title) { mutableStateOf(singleBet?.title ?: "") }
+    var granularity by remember(singleBet?.granularity) { mutableStateOf(singleBet?.granularity ?: GuessGranularity.NUMBER) }
+
+    SectionCard {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+            verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+        ) {
+            AppFilterChip(
+                selected = granularity == GuessGranularity.TIME,
+                onClick = {
+                    granularity = GuessGranularity.TIME
+                    if (question.isNotBlank()) onSave(question, GuessGranularity.TIME)
+                },
+                label = { Text(stringResource(Res.string.cc_bet_type_time)) },
+            )
+            AppFilterChip(
+                selected = granularity == GuessGranularity.DAY,
+                onClick = {
+                    granularity = GuessGranularity.DAY
+                    if (question.isNotBlank()) onSave(question, GuessGranularity.DAY)
+                },
+                label = { Text(stringResource(Res.string.cc_bet_type_day)) },
+            )
+            AppFilterChip(
+                selected = granularity == GuessGranularity.NUMBER,
+                onClick = {
+                    granularity = GuessGranularity.NUMBER
+                    if (question.isNotBlank()) onSave(question, GuessGranularity.NUMBER)
+                },
+                label = { Text(stringResource(Res.string.cc_bet_type_number)) },
+            )
+        }
+        OutlinedTextField(
+            value = question,
+            onValueChange = { v ->
+                if (v.length <= InputLimits.BET_TITLE) {
+                    question = v
+                    if (v.isNotBlank()) onSave(v, granularity)
+                }
+            },
+            label = { Text(stringResource(Res.string.cc_single_question_label)) },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_single_question"),
+            singleLine = true,
+        )
+    }
+}
+
 @Composable
 private fun OptionsEditor(
     options: List<String>,
@@ -953,9 +1088,9 @@ private fun Bet.kindLabel(): String = when (this) {
         OptionType.NONE -> "Ranking · top $topN of ${options.size}"
     }
     is Bet.Guess -> when (granularity) {
-        GuessGranularity.TIME -> if (closest) "Time · closest wins" else "Time · exact"
-        GuessGranularity.DAY -> if (closest) "Day · closest wins" else "Day · exact"
-        GuessGranularity.NUMBER -> if (closest) "Number · closest wins" else "Number · exact"
+        GuessGranularity.TIME -> if (placement) "Time · placement" else if (closest) "Time · closest wins" else "Time · exact"
+        GuessGranularity.DAY -> if (placement) "Day · placement" else if (closest) "Day · closest wins" else "Day · exact"
+        GuessGranularity.NUMBER -> if (placement) "Number · placement" else if (closest) "Number · closest wins" else "Number · exact"
     }
     is Bet.MultiSelect -> when (optionType) {
         OptionType.COUNTRY -> "Multi-select · ${options.size} countries"

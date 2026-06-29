@@ -64,6 +64,7 @@ internal data class BetDto(
     val topN: Int = 1,
     val granularity: String? = null,
     val closest: Boolean = true,
+    val placement: Boolean = false,
     val line: Long? = null,
 )
 
@@ -149,6 +150,7 @@ internal fun BetDto.toDomain(): Bet {
             title = title,
             granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
             closest = closest,
+            placement = placement,
         )
         "MULTI_SELECT" -> Bet.MultiSelect(id = id, title = title, optionType = ot, options = opts)
         "OVER_UNDER" -> Bet.OverUnder(id = id, title = title, line = line ?: 0L)
@@ -363,7 +365,7 @@ internal fun Bet.toJsonObject(): JsonObject = when (this) {
     }
     is Bet.Guess -> buildJsonObj {
         put("kind", "GUESS"); put("id", id); put("title", title)
-        put("granularity", granularity.name); put("closest", closest)
+        put("granularity", granularity.name); put("closest", closest); put("placement", placement)
     }
     is Bet.MultiSelect -> buildJsonObj {
         put("kind", "MULTI_SELECT"); put("id", id); put("title", title)

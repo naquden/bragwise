@@ -76,6 +76,7 @@ export const BetSchema = z.discriminatedUnion('kind', [
     title: z.string().min(1),
     granularity: z.enum(['TIME', 'DAY', 'NUMBER']),
     closest: z.boolean().default(true),
+    placement: z.boolean().default(false),
   }),
   z.object({
     kind: z.literal('MULTI_SELECT'),
@@ -121,6 +122,20 @@ function validateRankingTopN(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z
   });
 }
 
+// Validates that placement=true bets also have closest=true.
+// placement is a tiebreaker scoring mode that only makes sense for closest-wins bets.
+function validatePlacementRequiresClosest(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z.RefinementCtx) {
+  data.bets.forEach((bet, index) => {
+    if (bet.kind === 'GUESS' && bet.placement === true && bet.closest !== true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'placement-requires-closest',
+        path: ['bets', index, 'placement'],
+      });
+    }
+  });
+}
+
 // Validates that no bet contains duplicate options.
 // Dedup key: countryCode when present, otherwise normalized label (trim + lowercase).
 // Prevents ambiguous predictions and unresolvable results.
@@ -160,6 +175,7 @@ const CreateChallengeBaseSchema = z.object({
 
 export const CreateChallengeSchema = CreateChallengeBaseSchema
   .superRefine(validateRankingTopN)
+  .superRefine(validatePlacementRequiresClosest)
   .superRefine(validateNoDuplicateOptions)
   .superRefine(validateInviteOnlyHasInvitees);
 
