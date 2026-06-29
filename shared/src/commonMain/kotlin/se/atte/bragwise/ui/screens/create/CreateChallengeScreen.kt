@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -80,10 +82,27 @@ import bragwise.shared.generated.resources.cc_save_draft
 import bragwise.shared.generated.resources.cc_saving_dialog
 import bragwise.shared.generated.resources.cc_show_less
 import bragwise.shared.generated.resources.cc_show_more_options
+import bragwise.shared.generated.resources.cc_help_mode_title
+import bragwise.shared.generated.resources.cc_help_mode_body
+import bragwise.shared.generated.resources.cc_help_deadline_title
+import bragwise.shared.generated.resources.cc_help_deadline_body
+import bragwise.shared.generated.resources.cc_help_visibility_title
+import bragwise.shared.generated.resources.cc_help_visibility_body
+import bragwise.shared.generated.resources.cc_help_bets_visible_title
+import bragwise.shared.generated.resources.cc_help_bets_visible_body
+import bragwise.shared.generated.resources.cc_help_bet_type_title
+import bragwise.shared.generated.resources.cc_help_bet_type_body
+import bragwise.shared.generated.resources.cc_help_option_type_title
+import bragwise.shared.generated.resources.cc_help_option_type_body
+import bragwise.shared.generated.resources.cc_help_scoring_title
+import bragwise.shared.generated.resources.cc_help_scoring_body
+import bragwise.shared.generated.resources.cc_label_bet_type
+import bragwise.shared.generated.resources.cc_label_scoring
 import bragwise.shared.generated.resources.cc_title_field
 import bragwise.shared.generated.resources.cc_top_n_ranked
 import bragwise.shared.generated.resources.cc_visibility_friends
 import bragwise.shared.generated.resources.cc_visibility_friends_hint
+import bragwise.shared.generated.resources.cc_visibility_link_note
 import bragwise.shared.generated.resources.cc_visibility_invite_only
 import bragwise.shared.generated.resources.cc_visibility_invite_only_hint
 import bragwise.shared.generated.resources.cc_who_can_join
@@ -118,7 +137,9 @@ import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
 import se.atte.bragwise.ui.components.DeadlinePickerField
 import se.atte.bragwise.ui.components.FriendPickerDialog
+import se.atte.bragwise.ui.components.InfoIcon
 import se.atte.bragwise.ui.components.SectionCard
+import se.atte.bragwise.ui.components.SectionTitleRow
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 
@@ -282,6 +303,12 @@ fun CreateChallengeScreen(
 
             item {
                 SectionCard {
+                    SectionTitleRow(
+                        title = stringResource(Res.string.cc_help_mode_title),
+                        infoTitle = stringResource(Res.string.cc_help_mode_title),
+                        infoBody = stringResource(Res.string.cc_help_mode_body),
+                    )
+                    Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
                         AppFilterChip(
                             selected = state.mode == CreateMode.MULTI,
@@ -308,7 +335,13 @@ fun CreateChallengeScreen(
             }
 
             item {
-                SectionCard(title = stringResource(Res.string.cc_deadline_label)) {
+                SectionCard {
+                    SectionTitleRow(
+                        title = stringResource(Res.string.cc_deadline_label),
+                        infoTitle = stringResource(Res.string.cc_help_deadline_title),
+                        infoBody = stringResource(Res.string.cc_help_deadline_body),
+                    )
+                    Spacer(Modifier.height(12.dp))
                     DeadlinePickerField(
                         locksAt = state.locksAt,
                         onLocksAtChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetLocksAt(it)) },
@@ -317,7 +350,13 @@ fun CreateChallengeScreen(
             }
 
             item {
-                SectionCard(title = stringResource(Res.string.cc_who_can_join)) {
+                SectionCard {
+                    SectionTitleRow(
+                        title = stringResource(Res.string.cc_who_can_join),
+                        infoTitle = stringResource(Res.string.cc_help_visibility_title),
+                        infoBody = stringResource(Res.string.cc_help_visibility_body),
+                    )
+                    Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
                         AppFilterChip(
                             selected = state.visibility == Visibility.FRIENDS,
@@ -358,6 +397,12 @@ fun CreateChallengeScreen(
                                 .clickable { showFriendPicker = true },
                         )
                     }
+                    Text(
+                        text = stringResource(Res.string.cc_visibility_link_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
                     HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
                     Row(
                         modifier = Modifier
@@ -377,6 +422,10 @@ fun CreateChallengeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+                        InfoIcon(
+                            title = stringResource(Res.string.cc_help_bets_visible_title),
+                            body = stringResource(Res.string.cc_help_bets_visible_body),
+                        )
                         Switch(
                             checked = state.betsVisible,
                             onCheckedChange = { viewModel.onIntent(CreateChallengeViewModel.Intent.SetBetsVisible(it)) },
@@ -679,6 +728,21 @@ private fun BetEditor(
                 )
             }
         }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(Res.string.cc_label_bet_type),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            InfoIcon(
+                title = stringResource(Res.string.cc_help_bet_type_title),
+                body = stringResource(Res.string.cc_help_bet_type_body),
+            )
+        }
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
             verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
@@ -733,6 +797,21 @@ private fun BetEditor(
         }
         if (betType == BetType.SinglePick || betType == BetType.Ranking || betType == BetType.MultiSelect) {
             Row(
+                modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.cc_help_option_type_title),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                InfoIcon(
+                    title = stringResource(Res.string.cc_help_option_type_title),
+                    body = stringResource(Res.string.cc_help_option_type_body),
+                )
+            }
+            Row(
                 horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
                 modifier = Modifier.padding(top = standardPaddingSmall),
             ) {
@@ -782,6 +861,21 @@ private fun BetEditor(
             )
         }
         if (betType == BetType.Time || betType == BetType.Day || betType == BetType.Number) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.cc_label_scoring),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                InfoIcon(
+                    title = stringResource(Res.string.cc_help_scoring_title),
+                    body = stringResource(Res.string.cc_help_scoring_body),
+                )
+            }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
                 modifier = Modifier.padding(top = standardPaddingSmall),

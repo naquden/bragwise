@@ -20,9 +20,9 @@
     <string name="error_no_access">You don't have access to this challenge. Ask the creator to invite you.</string>
     <string name="error_challenge_closed">This challenge is locked — predictions are closed.</string>
     <string name="error_not_found">This challenge no longer exists.</string>
-    <string name="error_already_friends">You\'re already friends with this person.</string>
-    <string name="error_request_already_sent">You\'ve already sent a friend request to this person.</string>
-    <string name="error_cannot_friend_self">You can\'t add yourself as a friend.</string>
+    <string name="error_already_friends">You're already friends with this person.</string>
+    <string name="error_request_already_sent">You've already sent a friend request to this person.</string>
+    <string name="error_cannot_friend_self">You can't add yourself as a friend.</string>
     <string name="error_handle_not_found">No user found with that username.</string>
     <string name="error_unknown">Something went wrong.</string>
     <string name="error_dialog_dismiss">OK</string>
@@ -60,7 +60,7 @@
     <!-- Auth. -->
     <string name="auth_sign_in">Sign in</string>
     <string name="auth_continue_guest">Continue as guest</string>
-    <string name="auth_guest_signin_failed">Couldn\'t start a guest session. You can keep using the app, but sign in for the full experience.</string>
+    <string name="auth_guest_signin_failed">Couldn't start a guest session. You can keep using the app, but sign in for the full experience.</string>
     <string name="auth_email_label">Email</string>
     <string name="auth_password_label">Password</string>
     <string name="auth_google">Sign in with Google</string>
@@ -92,8 +92,9 @@
     <string name="cc_who_can_join">Who can join</string>
     <string name="cc_visibility_friends">Friends</string>
     <string name="cc_visibility_invite_only">Invite only</string>
-    <string name="cc_visibility_friends_hint">Any of your friends can join with the link.</string>
+    <string name="cc_visibility_friends_hint">Your friends can find this challenge themselves in their Challenges view and join.</string>
     <string name="cc_visibility_invite_only_hint">Only people you explicitly invite can join.</string>
+    <string name="cc_visibility_link_note">Anyone with the direct link can always open and join this challenge.</string>
     <string name="cc_pick_friends">Pick friends</string>
     <string name="cc_invited_summary">%1$d friends invited — Edit</string>
     <string name="cc_invite_dialog_title">Invite friends</string>
@@ -133,7 +134,7 @@
     <string name="cc_publish">Publish</string>
 
     <!-- Guest migration (auto-merge on sign-in). `%1$d` is the number of failed predictions. -->
-    <string name="migration_failed_notice">%1$d guest prediction(s) couldn\'t be imported — their deadline had passed.</string>
+    <string name="migration_failed_notice">%1$d guest prediction(s) couldn't be imported — their deadline had passed.</string>
 
     <!-- Welcome / onboarding. -->
     <string name="welcome_tagline">Predict. Compete. Brag.</string>
@@ -143,7 +144,7 @@
     <string name="auth_sign_in_with_email">Sign in with email</string>
     <string name="auth_send_link">Send sign-in link</string>
     <string name="auth_sending">Sending…</string>
-    <string name="auth_email_hint">We\'ll email you a link. Tap it on this device to finish signing in.</string>
+    <string name="auth_email_hint">We'll email you a link. Tap it on this device to finish signing in.</string>
     <string name="auth_check_inbox">Check your inbox</string>
     <string name="auth_sent_link_to">We sent a sign-in link to:</string>
     <string name="auth_tap_link_hint">Tap the link on this device to finish signing in.</string>
@@ -172,7 +173,7 @@
     <string name="cd_edit_predictions">Edit predictions</string>
     <string name="cd_make_predictions">Make predictions</string>
     <string name="cd_view_predictions">View predictions</string>
-    <string name="cd_snackbar_share_failed">Couldn\'t share challenge</string>
+    <string name="cd_snackbar_share_failed">Couldn't share challenge</string>
     <string name="cd_snackbar_delete_failed">Delete failed: %1$s</string>
     <string name="cd_snackbar_invites_sent">Invites sent</string>
 
@@ -210,7 +211,7 @@
     <string name="predict_submitting">Submitting…</string>
     <string name="predict_progress">Predict %1$d/%2$d</string>
     <string name="predict_saving">Saving predictions…</string>
-    <string name="predict_snackbar_save_failed">Couldn\'t save predictions — try again</string>
+    <string name="predict_snackbar_save_failed">Couldn't save predictions — try again</string>
 
     <!-- Post results screen. -->
     <string name="postresults_yes">Yes</string>
@@ -249,9 +250,9 @@
     <string name="friends_decline">Decline</string>
     <string name="friends_accept">Accept</string>
     <string name="friends_snackbar_request_sent">Friend request sent to @%1$s</string>
-    <string name="friends_snackbar_already_friends">You\'re already friends with @%1$s</string>
-    <string name="friends_snackbar_request_already_sent">You\'ve already sent a request to @%1$s</string>
-    <string name="friends_snackbar_cannot_friend_self">You can\'t add yourself</string>
+    <string name="friends_snackbar_already_friends">You're already friends with @%1$s</string>
+    <string name="friends_snackbar_request_already_sent">You've already sent a request to @%1$s</string>
+    <string name="friends_snackbar_cannot_friend_self">You can't add yourself</string>
     <string name="friends_snackbar_handle_not_found">No user found with username @%1$s</string>
     <string name="friends_snackbar_request_unavailable">This request is no longer available</string>
 
@@ -277,7 +278,7 @@
     <string name="edit_saving">Saving…</string>
     <string name="edit_save">Save</string>
     <string name="edit_saving_dialog">Saving…</string>
-    <string name="edit_snackbar_avatar_error">That avatar can\'t be used. Pick another.</string>
+    <string name="edit_snackbar_avatar_error">That avatar can't be used. Pick another.</string>
     <string name="edit_error_username_taken">That username is already taken</string>
     <string name="edit_error_username_format">3–20 characters: lowercase letters, numbers and _ only</string>
     <string name="edit_error_display_name_format">Display name must be 40 characters or fewer</string>
@@ -340,7 +341,7 @@
     <string name="cc_deadline_section">Deadline</string>
     <string name="cc_who_can_join_section">Who can join</string>
     <string name="cc_bets_visible_label">Bets visible to others</string>
-    <string name="cc_bets_visible_hint">Participants can see each other\'s predictions</string>
+    <string name="cc_bets_visible_hint">Participants can see each other's predictions</string>
     <string name="cc_edit_bet_title">Edit bet</string>
     <string name="cc_add_bet_title">Add bet</string>
     <string name="cc_bet_cancel_a11y">Cancel</string>
@@ -367,6 +368,25 @@
     <string name="cc_snackbar_no_reachable_invitees">None of your invited friends are reachable — pick at least one</string>
     <string name="cc_snackbar_invite_needs_friends">Pick at least one friend to invite</string>
 
+    <!-- Create challenge — section help dialogs (cc_info_*, cc_help_*, cc_label_*). -->
+    <string name="cc_info_a11y">More info about %1$s</string>
+    <string name="cc_label_bet_type">Bet type</string>
+    <string name="cc_label_scoring">Scoring</string>
+    <string name="cc_help_mode_title">Bet structure</string>
+    <string name="cc_help_mode_body">Multiple bets — bundle several questions in one challenge. Great for a themed quiz night or a match-day pack.\n\nSingle bet — one guess question scored by placement across all participants. Use this for one quick, clean prediction.</string>
+    <string name="cc_help_deadline_title">Deadline</string>
+    <string name="cc_help_deadline_body">Predictions lock at this time. Nobody can submit or change a guess after the deadline. Set it just before the event starts so everyone commits first.</string>
+    <string name="cc_help_visibility_title">Who can join</string>
+    <string name="cc_help_visibility_body">Friends — your friends can discover this challenge themselves in their Challenges view and join.\n\nInvite only — only the specific people you pick can join. Use this for private groups or when you want to control exactly who competes.\n\nEither way, anyone you share the direct link with can always open and join.</string>
+    <string name="cc_help_bets_visible_title">Bets visible</string>
+    <string name="cc_help_bets_visible_body">On — everyone can see each other's predictions before the deadline.\n\nOff — predictions stay hidden until the deadline.</string>
+    <string name="cc_help_bet_type_title">Bet types</string>
+    <string name="cc_help_bet_type_body">Yes / No — simple true or false.\nSingle pick — choose one option from a list.\nRanking — order the top N items.\nTime — guess a clock time.\nDay — guess a date.\nNumber — guess a number.\nMulti-select — pick several options.\nOver / Under — guess above or below a threshold.</string>
+    <string name="cc_help_option_type_title">Options</string>
+    <string name="cc_help_option_type_body">Custom — type your own choices for the bet.\n\nCountries — pick from a full country list with flags and autocomplete. Use Countries for sports or geography bets.</string>
+    <string name="cc_help_scoring_title">Scoring</string>
+    <string name="cc_help_scoring_body">Closest wins — the nearest guess scores points. Good for hard-to-predict values like a time or score.\n\nExact match — only a spot-on guess scores. Rewards precision.</string>
+
     <!-- AppNav. -->
     <string name="nav_create_challenge_a11y">Create challenge</string>
 
@@ -375,5 +395,5 @@
     <string name="pb_friend_requested">Requested</string>
     <string name="pb_already_friends">Friends</string>
     <string name="pb_snackbar_request_sent">Friend request sent to @%1$s</string>
-    <string name="pb_snackbar_request_failed">Couldn\'t send request — try again</string>
+    <string name="pb_snackbar_request_failed">Couldn't send request — try again</string>
 </resources>
