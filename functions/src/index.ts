@@ -28,7 +28,6 @@ import {
   requireAuth,
   requireVerifiedEmail,
   validate,
-  verifyAppCheck,
 } from './lib/middleware';
 import { db, FieldValue, Timestamp, auth as adminAuth } from './lib/admin';
 import { validateResults, validatePredictionMap } from './predictionValidation';
@@ -82,8 +81,7 @@ async function applyHandleChange(
 // ─── claimHandle ────────────────────────────────────────────────────────────
 // Standalone first-claim / onboarding flow. Edit-profile uses updateProfile.
 
-export const claimHandle = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const claimHandle = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'claimHandle', 86400, 10);
   const { handle } = validate(ClaimHandleSchema, req.data);
@@ -102,8 +100,7 @@ export const claimHandle = onCall(async (req: CallableRequest<unknown>) => {
 // Single transactional write covering handle claim + publicProfiles + players.
 // Throws field-tagged HttpsError messages so the client can route to the right field.
 
-export const updateProfile = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const updateProfile = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'updateProfile', 3600, 10);
   const payload = validate(UpdateProfileSchema, req.data);
@@ -139,8 +136,7 @@ const ACTIVE_CHALLENGE_CAP = 30;
 // Creates the challenge as OPEN in a single transaction (cap check + player doc).
 // Drafts are now local-only on the client; publishing is a single server call.
 
-export const createChallenge = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const createChallenge = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'createChallenge', 3600, 10);
@@ -299,8 +295,7 @@ async function applyPredictions(
 
 // ─── submitPredictions ───────────────────────────────────────────────────────
 
-export const submitPredictions = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const submitPredictions = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   // Anonymous guests have a real uid and can submit — email verification is NOT required.
   const uid = requireAuth(req);
   await rateLimit(uid, 'submitPredictions', 3600, 600);
@@ -343,8 +338,7 @@ async function recomputeLeaderboardTx(
 
 // ─── postResults ─────────────────────────────────────────────────────────────
 
-export const postResults = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const postResults = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'postResults', 3600, 20);
@@ -395,8 +389,7 @@ export const postResults = onCall(async (req: CallableRequest<unknown>) => {
 
 // ─── deleteChallenge ─────────────────────────────────────────────────────────
 
-export const deleteChallenge = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const deleteChallenge = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'deleteChallenge', 3600, 10);
@@ -442,8 +435,7 @@ export const deleteChallenge = onCall(async (req: CallableRequest<unknown>) => {
  * or to correct a calculation. Does NOT bump `resultsPostedAt`, so
  * `onResultsPosted` (push notifications / H2H) will not re-fire.
  */
-export const recomputeLeaderboard = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const recomputeLeaderboard = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'recomputeLeaderboard', 3600, 30);
@@ -465,8 +457,7 @@ export const recomputeLeaderboard = onCall(async (req: CallableRequest<unknown>)
 
 // ─── inviteFriends ────────────────────────────────────────────────────────────
 
-export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const inviteFriends = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'inviteFriends', 3600, 30);
   const { challengeId, uids } = validate(InviteFriendsSchema, req.data);
@@ -520,8 +511,7 @@ export const inviteFriends = onCall(async (req: CallableRequest<unknown>) => {
 
 // ─── sendFriendRequest ────────────────────────────────────────────────────────
 
-export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const sendFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'sendFriendRequest', 86400, 50);
   const { handle } = validate(SendFriendRequestSchema, req.data);
@@ -549,8 +539,7 @@ export const sendFriendRequest = onCall(async (req: CallableRequest<unknown>) =>
 
 // ─── acceptFriendRequest ──────────────────────────────────────────────────────
 
-export const acceptFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const acceptFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'acceptFriendRequest', 3600, 100);
   const { requesterUid } = validate(FriendRequestActionSchema, req.data);
@@ -562,8 +551,7 @@ export const acceptFriendRequest = onCall(async (req: CallableRequest<unknown>) 
 
 // ─── declineFriendRequest ─────────────────────────────────────────────────────
 
-export const declineFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const declineFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'declineFriendRequest', 3600, 100);
   const { requesterUid } = validate(FriendRequestActionSchema, req.data);
@@ -575,8 +563,7 @@ export const declineFriendRequest = onCall(async (req: CallableRequest<unknown>)
 
 // ─── withdrawFriendRequest ────────────────────────────────────────────────────
 
-export const withdrawFriendRequest = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const withdrawFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'withdrawFriendRequest', 3600, 100);
   const { otherUid } = validate(WithdrawFriendRequestSchema, req.data);
@@ -588,8 +575,7 @@ export const withdrawFriendRequest = onCall(async (req: CallableRequest<unknown>
 
 // ─── unfriend ─────────────────────────────────────────────────────────────────
 
-export const unfriend = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const unfriend = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'unfriend', 3600, 50);
   const { otherUid } = validate(UnfriendSchema, req.data);
@@ -601,8 +587,7 @@ export const unfriend = onCall(async (req: CallableRequest<unknown>) => {
 
 // ─── deleteAccount ────────────────────────────────────────────────────────────
 
-export const deleteAccount = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const deleteAccount = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'deleteAccount', 86400, 1);
   await audit(uid, 'deleteAccount', {});
@@ -633,8 +618,7 @@ export const deleteAccount = onCall(async (req: CallableRequest<unknown>) => {
 
 // ─── migrateGuestData ─────────────────────────────────────────────────────────
 
-export const migrateGuestData = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const migrateGuestData = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'migrateGuestData', 86400, 1);
@@ -678,8 +662,7 @@ export const migrateGuestData = onCall(async (req: CallableRequest<unknown>) => 
 
 // ─── registerPushToken ────────────────────────────────────────────────────────
 
-export const registerPushToken = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const registerPushToken = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'registerPushToken', 86400, 100);
   const { token, platform } = validate(RegisterPushTokenSchema, req.data);
@@ -694,8 +677,7 @@ export const registerPushToken = onCall(async (req: CallableRequest<unknown>) =>
 
 // ─── setNotificationPref ──────────────────────────────────────────────────────
 
-export const setNotificationPref = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const setNotificationPref = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'setNotificationPref', 3600, 50);
   const { enabled, categories } = validate(SetNotificationPrefSchema, req.data);
@@ -774,8 +756,7 @@ async function assignRandomHandle(uid: string, maxAttempts = 10): Promise<void> 
  * emoji == null clears the reaction. Toggling to the same emoji also clears.
  * No email verification — guests can react (same as submitPredictions).
  */
-export const setReaction = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const setReaction = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'setReaction', 3600, 600);
   const { challengeId, emoji } = validate(SetReactionSchema, req.data);
@@ -819,8 +800,7 @@ export const setReaction = onCall(async (req: CallableRequest<unknown>) => {
  * `purgeStaleGuests` job uses both fields to delete guest accounts that have
  * been inactive for 90 days. No request payload.
  */
-export const recordActivity = onCall(async (req: CallableRequest<unknown>) => {
-  verifyAppCheck(req);
+export const recordActivity = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'recordActivity', 3600, 30);
 

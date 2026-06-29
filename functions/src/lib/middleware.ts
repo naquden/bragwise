@@ -3,12 +3,6 @@ import { HttpsError, CallableRequest } from 'firebase-functions/v2/https';
 import { ZodSchema, ZodError } from 'zod';
 import { db, FieldValue, Timestamp } from './admin';
 
-export function verifyAppCheck(req: CallableRequest<unknown>): void {
-  if (!req.app) {
-    throw new HttpsError('failed-precondition', 'app-check-required');
-  }
-}
-
 export function requireAuth(req: CallableRequest<unknown>): string {
   if (!req.auth) {
     throw new HttpsError('unauthenticated', 'auth-required');
