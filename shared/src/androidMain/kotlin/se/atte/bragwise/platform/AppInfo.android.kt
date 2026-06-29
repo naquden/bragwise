@@ -1,5 +1,5 @@
 package se.atte.bragwise.platform
 
 actual object AppInfo {
-    actual val version: String = "1.0.0"
+    actual val version: String = APP_VERSION_NAME
 }

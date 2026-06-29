@@ -143,3 +143,32 @@ val generateScoringFixtures = tasks.register<GenerateScoringFixturesTask>("gener
 kotlin.sourceSets.named("commonTest") {
     kotlin.srcDir(generateScoringFixtures.map { it.outputDir })
 }
+
+abstract class GenerateAppVersionTask : org.gradle.api.DefaultTask() {
+    @get:org.gradle.api.tasks.Input
+    abstract val version: org.gradle.api.provider.Property<String>
+
+    @get:org.gradle.api.tasks.OutputDirectory
+    abstract val outputDir: org.gradle.api.file.DirectoryProperty
+
+    @org.gradle.api.tasks.TaskAction
+    fun generate() {
+        val outDir = outputDir.get().asFile
+        outDir.mkdirs()
+        val source = "package se.atte.bragwise.platform\n\n" +
+            "internal const val APP_VERSION_NAME: String = \"${version.get()}\"\n"
+        outDir.resolve("AppVersionName.kt").writeText(source)
+    }
+}
+
+val generatedAppVersionDir =
+    layout.buildDirectory.dir("generated/appVersion/commonMain/kotlin")
+
+val generateAppVersion = tasks.register<GenerateAppVersionTask>("generateAppVersion") {
+    version.set(providers.gradleProperty("app.versionName"))
+    outputDir.set(generatedAppVersionDir)
+}
+
+kotlin.sourceSets.named("commonMain") {
+    kotlin.srcDir(generateAppVersion.map { it.outputDir })
+}
