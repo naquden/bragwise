@@ -3,13 +3,12 @@ package se.atte.bragwise.theme
 import androidx.compose.ui.text.font.FontFamily
 
 /**
- * Returns a FontFamily built from raw font bytes that the Skia/wasmJs resolver
- * can use as an emoji fallback, or null on platforms that don't need it.
+ * Font families to register as Skia resolver fallbacks on web — emoji plus scripts
+ * (Devanagari, Han) not reliably covered by browser system fonts.  Empty on mobile
+ * where native font fallback handles all scripts.
  *
- * The composable-resource Font() wrapper produced by Font(Res.font.x) is not
- * a LoadedFont on wasmJs, so preload() is a no-op and emojis tofu.  The fix
- * is to construct the Font via the skiko-only Font(identity, ByteArray) path
- * (androidx.compose.ui.text.platform.Font) which produces a LoadedFont that
- * the skia font cache registers correctly.
+ * On wasmJs, Font(Res.font.x) does not produce a LoadedFont, so preload() is a
+ * no-op.  Fonts are loaded via Font(identity, ByteArray) (skiko-only) which creates
+ * a real LoadedFont that the Skia cache registers correctly.
  */
-expect suspend fun emojiFallbackFamily(): FontFamily?
+expect suspend fun webFallbackFamilies(): List<FontFamily>

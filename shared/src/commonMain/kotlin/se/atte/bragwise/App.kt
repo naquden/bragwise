@@ -20,7 +20,7 @@ import se.atte.bragwise.data.ThemePrefs
 import se.atte.bragwise.push.PushTokenRegistrar
 import se.atte.bragwise.theme.BragwiseTheme
 import se.atte.bragwise.theme.ThemeMode
-import se.atte.bragwise.theme.emojiFallbackFamily
+import se.atte.bragwise.theme.webFallbackFamilies
 import se.atte.bragwise.ui.LocalAppLocale
 import se.atte.bragwise.ui.nav.AppNav
 
@@ -41,18 +41,12 @@ fun App() {
         activityRegistrar.start(appScope)
     }
 
-    // Register NotoColorEmoji as a resolver fallback so any Text containing
-    // emoji codepoints resolves them — without setting a per-Text fontFamily.
-    // On wasmJs the composable Font(Res.font.x) wrapper does not produce a
-    // LoadedFont, so preload() was a no-op and emojis tofu'd.  emojiFallbackFamily()
-    // uses the skiko-only Font(identity, ByteArray) constructor (LoadedFont) which
-    // the Skia font cache actually registers.  On Android/iOS it returns null
-    // (native emoji support; no custom fallback needed).
+    // Preload web fallback fonts (emoji, Devanagari, Han) as Skia resolver fallbacks
+    // so all Text nodes resolve glyphs without a per-Text fontFamily.  Empty on mobile.
     val fontFamilyResolver = LocalFontFamilyResolver.current
     var fontsLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        val fam = emojiFallbackFamily()
-        if (fam != null) fontFamilyResolver.preload(fam)
+        webFallbackFamilies().forEach { fontFamilyResolver.preload(it) }
         fontsLoaded = true
     }
 
@@ -65,9 +59,8 @@ fun App() {
         ThemeMode.Dark -> true
     }
 
-    // Gate first render until emoji font is registered to avoid first-paint tofu.
-    // The preload is fast (font bytes are bundled in the wasm module), so this
-    // produces no visible delay.
+    // Gate first render until web fallback fonts are registered to avoid first-paint tofu.
+    // Fonts are bundled in the wasm module so preload is fast — no visible delay.
     if (!fontsLoaded) {
         Box {}
         return
