@@ -23,6 +23,7 @@ fun BragwiseTheme(
 ) {
     val colors = if (darkTheme) DarkColorScheme else LightColorScheme
     val sectionColors = if (darkTheme) DarkSectionColors else LightSectionColors
+
     CompositionLocalProvider(
         LocalSectionColors provides sectionColors,
         LocalIsDark provides darkTheme,

@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "bragwise"
-  }
+  },
+  "targets": {
+    "bragwise": {
+      "hosting": {
+        "web": [
+          "bragwise-web"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
