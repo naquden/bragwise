@@ -49,12 +49,13 @@ sign-in works in dev.
    the real `G-XXXXXXXX`. While empty, analytics calls are silent no-ops.
 3. **Hosting** — the existing `firebase.json` hosting serves the mobile
    app-links landing (`/c/**`, `/u/**`, `/auth/finish` → `landing` function) and
-   must NOT be repurposed. Deploy the web app to a **separate Hosting site**:
+   must NOT be repurposed. The web app deploys to a **separate Hosting site**
+   (`bragwise-web`); the target `web` → site `bragwise-web` is already mapped in
+   `.firebaserc` — no one-time setup needed. Build and deploy:
    ```bash
-   # one-time: create a Hosting site in the console, then map a target
-   firebase target:apply hosting web <your-web-site-id>
    ./gradlew :webApp:wasmJsBrowserDistribution
    firebase deploy --only hosting:web --config firebase.web.json
    ```
-   Then add the web site's domain to Firebase console → Authentication →
-   Settings → Authorized domains so email-link sign-in works in prod.
+   This deploy publishes to `https://bragwise-web.web.app` (the production URL).
+   Add `bragwise-web.web.app` to Firebase console → Authentication → Settings →
+   Authorized domains so email-link sign-in works in prod.
