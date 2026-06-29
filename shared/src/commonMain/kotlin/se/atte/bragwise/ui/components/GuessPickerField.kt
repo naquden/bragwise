@@ -18,14 +18,20 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
@@ -167,15 +173,25 @@ private fun NumberGuessPicker(
     onConfirm: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var text by remember { mutableStateOf(initialValue?.toString() ?: "") }
-    val parsed = text.toLongOrNull()
+    val initialText = initialValue?.toString() ?: ""
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(initialText, selection = TextRange(initialText.length)))
+    }
+    val parsed = textFieldValue.text.toLongOrNull()
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboard?.show()
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.cc_guess_pick_number_title)) },
         text = {
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                value = textFieldValue,
+                onValueChange = { textFieldValue = it },
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
             )
