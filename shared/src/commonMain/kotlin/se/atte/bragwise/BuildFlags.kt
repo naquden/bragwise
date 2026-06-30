@@ -6,5 +6,5 @@ package se.atte.bragwise
  * See docs/project.md § "Mock data build". MUST be `false` on main / any release build.
  */
 object BuildFlags {
-    const val USE_MOCK_DATA: Boolean = true
+    const val USE_MOCK_DATA: Boolean = false
 }
