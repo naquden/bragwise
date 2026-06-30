@@ -60,7 +60,7 @@ import se.atte.bragwise.ui.components.CardGrid
 import se.atte.bragwise.ui.components.ChallengeCard
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.PlatinumBackground
-import se.atte.bragwise.ui.listColumns
+import se.atte.bragwise.ui.contentColumns
 import se.atte.bragwise.ui.icons.LucideSparkles
 import kotlin.time.Instant
 
@@ -98,15 +98,17 @@ private fun ResultsBody(
     Box(modifier = Modifier.fillMaxSize()) {
         PlatinumBackground(modifier = Modifier.matchParentSize())
         Box(Modifier.matchParentSize().background(scrim))
-        se.atte.bragwise.ui.CenteredMaxWidth {
-            when (val ui = state.ui) {
-                UiState.Loading -> Box(
+        when (val ui = state.ui) {
+            UiState.Loading -> se.atte.bragwise.ui.CenteredMaxWidth {
+                Box(
                     modifier = Modifier.fillMaxSize().statusBarsPadding(),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
                 }
-                is UiState.Empty -> Box(
+            }
+            is UiState.Empty -> se.atte.bragwise.ui.CenteredMaxWidth {
+                Box(
                     modifier = Modifier.fillMaxSize().statusBarsPadding(),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -125,7 +127,9 @@ private fun ResultsBody(
                         )
                     }
                 }
-                is UiState.Failed -> Box(
+            }
+            is UiState.Failed -> se.atte.bragwise.ui.CenteredMaxWidth {
+                Box(
                     modifier = Modifier.fillMaxSize().statusBarsPadding(),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -135,14 +139,14 @@ private fun ResultsBody(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                is UiState.Ready -> ResultsContent(
-                    sections = ui.data,
-                    onChallenge = onChallenge,
-                    onArchive = onArchive,
-                    onMarkUnseen = onMarkUnseen,
-                    onClone = onClone,
-                )
             }
+            is UiState.Ready -> ResultsContent(
+                sections = ui.data,
+                onChallenge = onChallenge,
+                onArchive = onArchive,
+                onMarkUnseen = onMarkUnseen,
+                onClone = onClone,
+            )
         }
     }
 }
@@ -155,7 +159,7 @@ private fun ResultsContent(
     onMarkUnseen: (String) -> Unit,
     onClone: (String) -> Unit,
 ) {
-    val columns = listColumns()
+    val columns = contentColumns()
     val sc = LocalSectionColors.current
     Box(modifier = Modifier.fillMaxSize()) {
         Column(

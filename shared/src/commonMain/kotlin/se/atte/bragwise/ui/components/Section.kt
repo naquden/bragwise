@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -115,6 +116,7 @@ fun SectionGap(height: androidx.compose.ui.unit.Dp = standardPadding) {
  * One full-width colored band that owns a Challenges-screen group.
  * No rounded corners — stacks edge-to-edge with WaveSeparator between bands.
  * Cards inside receive horizontal padding so they don't touch screen edges.
+ * Header + cards are centered within ContentMaxWidth on wide screens.
  */
 @Composable
 fun ColoredSection(
@@ -130,49 +132,57 @@ fun ColoredSection(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(modifier = modifier.fillMaxWidth().background(bg)) {
-        Column(modifier = Modifier
-            .then(if (topInset) Modifier.statusBarsPadding() else Modifier)
-            .padding(vertical = standardPadding)) {
-            Row(
-                modifier = Modifier.padding(horizontal = standardPadding),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                when {
-                    iconPainter != null -> Image(painter = iconPainter, contentDescription = null, modifier = Modifier.size(24.dp), colorFilter = ColorFilter.tint(onTitleColor))
-                    iconVector != null -> Icon(imageVector = iconVector, contentDescription = null, modifier = Modifier.size(24.dp), tint = onTitleColor)
-                    else -> Text(text = icon, style = MaterialTheme.typography.titleLarge)
-                }
-                Spacer(Modifier.width(standardPaddingSmall))
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = onTitleColor,
-                    )
-                    if (trailing != null) {
-                        Text(
-                            text = trailing,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = onTitleColor.copy(alpha = 0.75f),
-                        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            Box(modifier = Modifier.widthIn(max = se.atte.bragwise.ui.ContentMaxWidth).fillMaxWidth()) {
+                Column(modifier = Modifier
+                    .then(if (topInset) Modifier.statusBarsPadding() else Modifier)
+                    .padding(vertical = standardPadding)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = standardPadding),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        when {
+                            iconPainter != null -> Image(painter = iconPainter, contentDescription = null, modifier = Modifier.size(24.dp), colorFilter = ColorFilter.tint(onTitleColor))
+                            iconVector != null -> Icon(imageVector = iconVector, contentDescription = null, modifier = Modifier.size(24.dp), tint = onTitleColor)
+                            else -> Text(text = icon, style = MaterialTheme.typography.titleLarge)
+                        }
+                        Spacer(Modifier.width(standardPaddingSmall))
+                        Column {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = onTitleColor,
+                            )
+                            if (trailing != null) {
+                                Text(
+                                    text = trailing,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = onTitleColor.copy(alpha = 0.75f),
+                                )
+                            }
+                        }
                     }
+                    Spacer(Modifier.height(standardPaddingSmall))
+                    Column(
+                        modifier = Modifier.padding(horizontal = standardPadding),
+                        verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+                        content = content,
+                    )
                 }
             }
-            Spacer(Modifier.height(standardPaddingSmall))
-            Column(
-                modifier = Modifier.padding(horizontal = standardPadding),
-                verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
-                content = content,
-            )
         }
     }
 }
 
 /**
  * Multi-column card grid that avoids FlowRow's stretching-of-lone-last-items problem.
- * Items are chunked into rows of [columns]; each item gets equal weight. If the last
- * row is short, empty Spacer weight slots fill the remaining positions so cards stay
- * the same width as in full rows.
+ * Items are chunked into rows of [effectiveCols]; each item gets equal weight.
+ * effectiveCols = min(columns, items.size) so a lone item never becomes a full-width
+ * slab or a 1/4 sliver — it renders as one centered, width-capped card.
+ * If the last row is short, empty Spacer weight slots fill the remaining positions.
  *
  * When [columns] == 1 (mobile default) each Row contains one weight(1f) Box = full
  * width, visually identical to a plain Column forEach.
@@ -182,20 +192,25 @@ fun <T> CardGrid(
     items: List<T>,
     columns: Int,
     modifier: Modifier = Modifier,
+    maxItemWidth: androidx.compose.ui.unit.Dp = 400.dp,
     item: @Composable (T) -> Unit,
 ) {
+    val effectiveCols = columns.coerceAtMost(items.size).coerceAtLeast(1)
     Column(
         modifier = Modifier.fillMaxWidth().then(modifier),
         verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
     ) {
-        items.chunked(columns).forEach { rowItems ->
-            Row(horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall)) {
+        items.chunked(effectiveCols).forEach { rowItems ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall, Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 rowItems.forEach { data ->
-                    Box(Modifier.weight(1f)) { item(data) }
+                    Box(Modifier.weight(1f).widthIn(max = maxItemWidth)) { item(data) }
                 }
-                val missing = columns - rowItems.size
+                val missing = effectiveCols - rowItems.size
                 repeat(missing) {
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f).widthIn(max = maxItemWidth))
                 }
             }
         }

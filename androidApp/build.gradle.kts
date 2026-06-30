@@ -52,9 +52,6 @@ android {
         versionCode = providers.gradleProperty("app.versionCode").get().toInt()
         versionName = providers.gradleProperty("app.versionName").get()
 
-        val useMock = (project.findProperty("useMockData") as String?) == "true"
-        buildConfigField("boolean", "USE_MOCK_DATA", useMock.toString())
-
         // Fixed App Check debug secret, read from local.properties (never committed).
         // Pre-seeding this lets the debug provider reuse one registered token across
         // app-data wipes (pm clear, reinstalls, emulator snapshot resets) so the

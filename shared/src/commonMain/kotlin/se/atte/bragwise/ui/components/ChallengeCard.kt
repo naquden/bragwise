@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,6 +24,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Unspecified
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Check
+import com.composables.icons.lucide.Lock
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Star
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
@@ -80,9 +86,11 @@ fun ChallengeCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (accent) {
-                        Text(
-                            text = "⭐",
-                            style = MaterialTheme.typography.titleMedium,
+                        Icon(
+                            imageVector = Lucide.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.secondary,
                         )
                         Spacer(Modifier.width(standardPaddingSmall))
                     }
@@ -93,7 +101,12 @@ fun ChallengeCard(
                     )
                 }
                 if (predicted) {
-                    Text(text = "✓", color = MaterialTheme.colorScheme.tertiary)
+                    Icon(
+                        imageVector = Lucide.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.tertiary,
+                    )
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -116,12 +129,30 @@ fun ChallengeCard(
                         )
                         ChallengeStatus.LOCKED,
                         ChallengeStatus.RESULTS_POSTED -> {
-                            Text(
-                                text = if (challenge.status == ChallengeStatus.RESULTS_POSTED) "Finished"
-                                       else "🔒 LOCKED",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            if (challenge.status == ChallengeStatus.RESULTS_POSTED) {
+                                Text(
+                                    text = "Finished",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Lucide.Lock,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text = "LOCKED",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
                             Spacer(Modifier.width(standardPaddingSmall))
                         }
                         else -> Unit

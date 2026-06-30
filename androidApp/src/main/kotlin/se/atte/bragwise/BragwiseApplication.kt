@@ -13,6 +13,7 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.logger.Level
+import se.atte.bragwise.BuildFlags
 import se.atte.bragwise.di.initKoin
 import se.atte.bragwise.push.BragwiseFirebaseMessagingService
 
@@ -25,7 +26,7 @@ class BragwiseApplication : Application() {
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager,
         )
 
-        if (!BuildConfig.USE_MOCK_DATA) {
+        if (!BuildFlags.USE_MOCK_DATA) {
             // App Check MUST be installed before any Firebase API that attaches
             // App Check tokens (Auth, Firestore, Functions). Auto-init of FirebaseApp
             // itself happens via the google-services ContentProvider before onCreate.
@@ -36,7 +37,7 @@ class BragwiseApplication : Application() {
             val analytics = Firebase.analytics
         }
 
-        initKoin(useMock = BuildConfig.USE_MOCK_DATA) {
+        initKoin(useMock = BuildFlags.USE_MOCK_DATA) {
             androidLogger(if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) Level.DEBUG else Level.NONE)
             androidContext(this@BragwiseApplication)
         }

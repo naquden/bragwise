@@ -77,11 +77,13 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trophy
 import com.composables.icons.lucide.UsersRound
+import com.composables.icons.lucide.Mail
+import com.composables.icons.lucide.Star
 import se.atte.bragwise.ui.components.CardGrid
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.WaveSeparator
+import se.atte.bragwise.ui.contentColumns
 import se.atte.bragwise.ui.icons.BragIcon
-import se.atte.bragwise.ui.listColumns
 import kotlin.time.Instant
 
 @Composable
@@ -270,7 +272,7 @@ private fun ChallengesContent(
     onCreate: () -> Unit,
     onClone: (String) -> Unit,
 ) {
-    val columns = listColumns()
+    val columns = contentColumns()
     val joinedIds = sections.joinedIds
     val sc = LocalSectionColors.current
     val entries = buildList {
@@ -299,7 +301,7 @@ private fun ChallengesContent(
             }
         })
         if (sections.promoted.isNotEmpty()) add(SectionEntry(sc.promotedBg) { topInset ->
-            ColoredSection(bg = sc.promotedBg, title = stringResource(Res.string.cl_section_promoted), icon = "⭐", onTitleColor = sc.onPromoted, topInset = topInset) {
+            ColoredSection(bg = sc.promotedBg, title = stringResource(Res.string.cl_section_promoted), icon = "", iconVector = Lucide.Star, onTitleColor = sc.onPromoted, topInset = topInset) {
                 CardGrid(items = sections.promoted, columns = columns) { c ->
                     CloneableCard(
                         challenge = c,
@@ -328,7 +330,7 @@ private fun ChallengesContent(
             }
         })
         if (sections.invites.isNotEmpty()) add(SectionEntry(sc.invitesBg) { topInset ->
-            ColoredSection(bg = sc.invitesBg, title = stringResource(Res.string.cl_section_invites), icon = "✉️", onTitleColor = sc.onInvites, topInset = topInset) {
+            ColoredSection(bg = sc.invitesBg, title = stringResource(Res.string.cl_section_invites), icon = "", iconVector = Lucide.Mail, onTitleColor = sc.onInvites, topInset = topInset) {
                 CardGrid(items = sections.invites, columns = columns) { entry ->
                     ChallengeCard(
                         challenge = entry.challenge,
@@ -345,16 +347,14 @@ private fun ChallengesContent(
     val bgColor = MaterialTheme.colorScheme.background
     val lastBg = entries.lastOrNull()?.bg ?: bgColor
     Box(modifier = Modifier.fillMaxSize().background(lastBg)) {
-        se.atte.bragwise.ui.CenteredMaxWidth {
-            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                if (showIntro) {
-                    IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
-                }
-                entries.forEachIndexed { i, entry ->
-                    val prevBg = if (i > 0) entries[i - 1].bg else null
-                    if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
-                    entry.render(i == 0 && !showIntro)
-                }
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            if (showIntro) {
+                IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
+            }
+            entries.forEachIndexed { i, entry ->
+                val prevBg = if (i > 0) entries[i - 1].bg else null
+                if (prevBg != null) WaveSeparator(topColor = prevBg, bottomColor = entry.bg)
+                entry.render(i == 0 && !showIntro)
             }
         }
     }

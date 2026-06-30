@@ -56,7 +56,10 @@ import se.atte.bragwise.mvi.ObserveEffects
 import se.atte.bragwise.mvi.UiState
 import se.atte.bragwise.platform.PlatformShare
 import se.atte.bragwise.theme.ThemePreview
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.lucide.Clapperboard
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Medal
 import com.composables.icons.lucide.Share2
 import com.composables.icons.lucide.Trophy
 import se.atte.bragwise.ui.standardPadding
@@ -84,7 +87,7 @@ fun ResultsRevealScreen(
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
-        se.atte.bragwise.ui.CenteredMaxWidth {
+        se.atte.bragwise.ui.CenteredMaxWidth(maxWidth = 720.dp) {
             when (val ui = state.ui) {
                 UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -294,6 +297,10 @@ private fun ResultsRevealBody(
     }
 }
 
+private val goldColor = androidx.compose.ui.graphics.Color(0xFFFDD835)
+private val silverColor = androidx.compose.ui.graphics.Color(0xFFB0BEC5)
+private val bronzeColor = androidx.compose.ui.graphics.Color(0xFFBF8970)
+
 @Composable
 private fun YourResultBanner(
     myRank: Int?,
@@ -303,14 +310,14 @@ private fun YourResultBanner(
     iAmCreator: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    data class BannerData(val emoji: String?, val headline: String, val subtitle: String)
-    val (emoji, headline, subtitle) = when {
-        iAmWinner -> BannerData("🥇", "You won!", "You topped the leaderboard")
-        myRank == 2 -> BannerData("🥈", "Runner-up!", "#2 of $participantCount")
-        myRank == 3 -> BannerData("🥉", "3rd place!", "#3 of $participantCount")
-        myRank != null -> BannerData(null, "Your result", "#$myRank of $participantCount")
-        iAmCreator -> BannerData("🎬", "You hosted this!", "Here's how your challenge played out")
-        else -> BannerData(null, "You didn't predict", "Join next time to compete")
+    data class BannerData(val icon: ImageVector?, val iconTint: androidx.compose.ui.graphics.Color?, val headline: String, val subtitle: String)
+    val bannerData = when {
+        iAmWinner -> BannerData(Lucide.Medal, goldColor, "You won!", "You topped the leaderboard")
+        myRank == 2 -> BannerData(Lucide.Medal, silverColor, "Runner-up!", "#2 of $participantCount")
+        myRank == 3 -> BannerData(Lucide.Medal, bronzeColor, "3rd place!", "#3 of $participantCount")
+        myRank != null -> BannerData(null, null, "Your result", "#$myRank of $participantCount")
+        iAmCreator -> BannerData(Lucide.Clapperboard, null, "You hosted this!", "Here's how your challenge played out")
+        else -> BannerData(null, null, "You didn't predict", "Join next time to compete")
     }
     val surfaceColor = when {
         iAmWinner -> MaterialTheme.colorScheme.primaryContainer
@@ -327,8 +334,15 @@ private fun YourResultBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(standardPadding),
         ) {
-            if (emoji != null) {
-                Text(text = emoji, style = MaterialTheme.typography.headlineMedium)
+            val icon = bannerData.icon
+            val tint = bannerData.iconTint ?: MaterialTheme.colorScheme.onSurfaceVariant
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = tint,
+                )
             } else {
                 Icon(
                     imageVector = BragIconWithRing,
@@ -337,9 +351,9 @@ private fun YourResultBanner(
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = headline, style = MaterialTheme.typography.titleLarge)
+                Text(text = bannerData.headline, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    text = subtitle,
+                    text = bannerData.subtitle,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

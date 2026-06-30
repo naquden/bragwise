@@ -48,6 +48,8 @@ fun RankChip(rank: Int, modifier: Modifier = Modifier) {
     Text(
         text = "#$animated",
         style = AppType.rankBadge,
+        maxLines = 1,
+        softWrap = false,
         modifier = modifier
             .background(
                 color = chipBg,

@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        let useMock = false
+        let useMock = BuildFlags.shared.USE_MOCK_DATA
 
         // App Check provider factory MUST be installed BEFORE
         // FirebaseApp.configure(), otherwise the first network calls Firebase

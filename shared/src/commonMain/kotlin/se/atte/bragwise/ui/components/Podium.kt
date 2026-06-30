@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.lucide.Crown
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Medal
 import kotlinx.coroutines.launch
 import se.atte.bragwise.domain.LeaderboardEntry
 import se.atte.bragwise.theme.AppType
@@ -236,7 +240,12 @@ private fun PodiumSlot(
             contentAlignment = Alignment.Center,
         ) {
             if (crownOffset != null) {
-                Text(text = "👑", fontSize = 22.sp)
+                Icon(
+                    imageVector = Lucide.Crown,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = goldColor,
+                )
             }
         }
 
@@ -270,9 +279,8 @@ private fun PodiumSlot(
         Spacer(Modifier.height(4.dp))
 
         // Name
-        val nameText = if (isMe) "${entry.displayName} 🙋" else entry.displayName
         Text(
-            text = nameText,
+            text = entry.displayName,
             style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -309,12 +317,17 @@ private fun PodiumSlot(
                     .background(plinthColor),
                 contentAlignment = Alignment.Center,
             ) {
-                val rankEmoji = when (entry.rank) {
-                    1 -> "🥇"
-                    2 -> "🥈"
-                    else -> "🥉"
+                val medalTint = when (entry.rank) {
+                    1 -> Color.White
+                    2 -> Color(0xFF2A2E33)
+                    else -> Color.White
                 }
-                Text(text = rankEmoji, style = MaterialTheme.typography.titleMedium)
+                Icon(
+                    imageVector = Lucide.Medal,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = medalTint,
+                )
             }
         }
     }

@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 
 val WideBreakpoint = 600.dp
 val FormMaxWidth = 600.dp
+val ContentMaxWidth = 1100.dp
 
 @Composable
 fun windowWidthDp(): Dp = with(LocalDensity.current) {
@@ -26,6 +27,17 @@ fun isWideScreen(): Boolean = windowWidthDp() >= WideBreakpoint
 fun listColumns(): Int {
     val w = windowWidthDp()
     return if (w < WideBreakpoint) 1 else (w / 360.dp).toInt().coerceIn(2, 3)
+}
+
+@Composable
+fun contentColumns(): Int {
+    val w = windowWidthDp()
+    return when {
+        w < 600.dp -> 1
+        w < 900.dp -> 2
+        w < 1300.dp -> 3
+        else -> 4
+    }
 }
 
 @Composable

@@ -194,6 +194,37 @@ Why: Retroactively recomputing H2H for all past challenges on every friendship w
 
 # Platform & Infrastructure
 
+## Mock data build
+
+To debug / test UI without signing in or touching Firestore, flip one flag in
+`shared/src/commonMain/kotlin/se/atte/bragwise/BuildFlags.kt`:
+
+```kotlin
+const val USE_MOCK_DATA: Boolean = true   // ← change this, revert before committing
+```
+
+This single flag controls all three platforms:
+
+| Platform | What changes |
+|----------|-------------|
+| Android | Firebase App Check + Analytics skipped; Koin loads mock repositories |
+| iOS | Same — `FirebaseApp.configure()` still runs (needed to avoid a crash in the shared layer) but Analytics/Crashlytics/FCM are skipped |
+| wasmJs | `initFirebase()` skipped entirely; mock Koin graph loaded |
+
+**What you get in mock mode:**
+- Signed in automatically as "Demo Player" (uid `mock-user-001`) — no email link needed.
+- In-memory challenges from `MockData.kt` (Champions League final, Friday Quiz Night, FIFA
+  World Cup, etc.).
+- All writes (predict, post results, react) mutate the in-memory state only — nothing persists
+  across restarts.
+- No network calls to Firestore, Functions, or Auth.
+
+**Rule:** `USE_MOCK_DATA` must be `false` on `main` and for any release/production build.
+It is not gated by build type — a release APK with `true` would ship broken UI. Flip it
+manually, verify your change, revert before pushing.
+
+---
+
 ## Firebase environments: prod vs dev
 
 The `bragwise` Firebase project is **prod**. A separate `bragwise-dev` project will be created later for the debug build only (no separate dev project for iOS — Android debug build is the sole dev target).
@@ -248,7 +279,7 @@ If valid-token % is <100% when enforcing, real users/browsers are being blocked 
 
 # Platform-Specific Notes
 
-## Sign in with Apple not required (iOS)
+## Sign in with Apple not required (iOS)x
 
 We do NOT need Sign in with Apple as long as passwordless email (Firebase
 email-link) stays our only auth method. App Store Review Guideline 4.8

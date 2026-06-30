@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.context.GlobalContext
+import se.atte.bragwise.BuildFlags
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.di.initKoin
 import se.atte.bragwise.firebase.clearAuthQuery
@@ -20,6 +21,12 @@ private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
+    if (BuildFlags.USE_MOCK_DATA) {
+        initKoin(useMock = true)
+        ComposeViewport(document.body!!) { App() }
+        return
+    }
+
     // Firebase JS SDK must init before Koin constructs any Js*Remote (getAuth()/getFirestore()).
     initFirebase()
     initKoin()
