@@ -163,6 +163,8 @@
     <string name="results_menu_clone">Копировать в новый вызов</string>
     <string name="results_menu_archive">Архивировать</string>
     <string name="results_menu_mark_unseen">Отметить как непросмотренное</string>
+    <string name="results_day_today">Сегодня</string>
+    <string name="results_day_yesterday">Вчера</string>
 
     <string name="predict_no_bets">Нет ставок</string>
     <string name="predict_yes">Да</string>

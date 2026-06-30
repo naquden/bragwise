@@ -163,6 +163,8 @@
     <string name="results_menu_clone">Copiar para novo desafio</string>
     <string name="results_menu_archive">Arquivar</string>
     <string name="results_menu_mark_unseen">Marcar como não visto</string>
+    <string name="results_day_today">Hoje</string>
+    <string name="results_day_yesterday">Ontem</string>
 
     <string name="predict_no_bets">Sem apostas</string>
     <string name="predict_yes">Sim</string>

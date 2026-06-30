@@ -223,6 +223,11 @@ This single flag controls all three platforms:
 It is not gated by build type — a release APK with `true` would ship broken UI. Flip it
 manually, verify your change, revert before pushing.
 
+**Always verify `USE_MOCK_DATA = false` before:**
+- Building an IPA for App Store / TestFlight
+- Generating an AAB for Play Store (`./gradlew :androidApp:bundleRelease`)
+- Deploying wasmJs to Firebase Hosting (`./gradlew :webApp:wasmJsBrowserDistribution` + `firebase deploy`)
+
 ---
 
 ## Firebase environments: prod vs dev

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,6 +45,8 @@ import se.atte.bragwise.mvi.UiState
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.results_are_in
+import bragwise.shared.generated.resources.results_day_today
+import bragwise.shared.generated.resources.results_day_yesterday
 import bragwise.shared.generated.resources.results_empty_body
 import bragwise.shared.generated.resources.results_empty_title
 import bragwise.shared.generated.resources.results_finished_count
@@ -60,8 +65,11 @@ import se.atte.bragwise.ui.components.CardGrid
 import se.atte.bragwise.ui.components.ChallengeCard
 import se.atte.bragwise.ui.components.ColoredSection
 import se.atte.bragwise.ui.components.PlatinumBackground
+import se.atte.bragwise.ui.components.formatDay
+import se.atte.bragwise.ui.components.localEpochDay
 import se.atte.bragwise.ui.contentColumns
 import se.atte.bragwise.ui.icons.LucideSparkles
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 @Composable
@@ -176,18 +184,18 @@ private fun ResultsContent(
                     trailing = stringResource(Res.string.results_new_count, sections.unseen.size),
                     topInset = true,
                 ) {
-                    CardGrid(items = sections.unseen, columns = columns) { challenge ->
-                        ResultCardWithMenu(
-                            challenge = challenge,
-                            rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                            surfaceColor = sc.resultsCardFrost,
-                            showMarkUnseen = false,
-                            onClick = { onChallenge(challenge.id) },
-                            onArchive = { onArchive(challenge.id) },
-                            onMarkUnseen = { onMarkUnseen(challenge.id) },
-                            onClone = { onClone(challenge.id) },
-                        )
-                    }
+                    DayGroupedCards(
+                        items = sections.unseen,
+                        columns = columns,
+                        showMarkUnseen = false,
+                        myUid = sections.myUid,
+                        surfaceColor = sc.resultsCardFrost,
+                        onTitleColor = sc.onResultsBgHeader,
+                        onChallenge = onChallenge,
+                        onArchive = onArchive,
+                        onMarkUnseen = onMarkUnseen,
+                        onClone = onClone,
+                    )
                 }
             }
 
@@ -201,22 +209,89 @@ private fun ResultsContent(
                     trailing = stringResource(Res.string.results_finished_count, sections.history.size),
                     topInset = sections.unseen.isEmpty(),
                 ) {
-                    CardGrid(items = sections.history, columns = columns) { challenge ->
-                        ResultCardWithMenu(
-                            challenge = challenge,
-                            rank = myRankFor(challenge = challenge, myUid = sections.myUid),
-                            surfaceColor = sc.resultsCardFrost,
-                            showMarkUnseen = true,
-                            onClick = { onChallenge(challenge.id) },
-                            onArchive = { onArchive(challenge.id) },
-                            onMarkUnseen = { onMarkUnseen(challenge.id) },
-                            onClone = { onClone(challenge.id) },
-                        )
-                    }
+                    DayGroupedCards(
+                        items = sections.history,
+                        columns = columns,
+                        showMarkUnseen = true,
+                        myUid = sections.myUid,
+                        surfaceColor = sc.resultsCardFrost,
+                        onTitleColor = sc.onResultsBgHeader,
+                        onChallenge = onChallenge,
+                        onArchive = onArchive,
+                        onMarkUnseen = onMarkUnseen,
+                        onClone = onClone,
+                    )
                 }
             }
 
             Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun dayLabel(instant: Instant): String {
+    val today = localEpochDay(Clock.System.now())
+    val day = localEpochDay(instant)
+    return when (day) {
+        today -> stringResource(Res.string.results_day_today)
+        today - 1 -> stringResource(Res.string.results_day_yesterday)
+        else -> formatDay(instant)
+    }
+}
+
+@Composable
+private fun DayHeader(label: String, onColor: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+    ) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = onColor,
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = onColor.copy(alpha = 0.3f),
+        )
+    }
+}
+
+@Composable
+private fun DayGroupedCards(
+    items: List<Challenge>,
+    columns: Int,
+    showMarkUnseen: Boolean,
+    myUid: String,
+    surfaceColor: Color,
+    onTitleColor: Color,
+    onChallenge: (String) -> Unit,
+    onArchive: (String) -> Unit,
+    onMarkUnseen: (String) -> Unit,
+    onClone: (String) -> Unit,
+) {
+    val groups = items
+        .groupBy { localEpochDay(it.resultsPostedAt ?: Instant.fromEpochSeconds(0)) }
+        .entries
+        .sortedByDescending { it.key }
+
+    groups.forEach { (_, dayItems) ->
+        val representative = dayItems.first().resultsPostedAt ?: Instant.fromEpochSeconds(0)
+        DayHeader(label = dayLabel(representative), onColor = onTitleColor)
+        CardGrid(items = dayItems, columns = columns) { challenge ->
+            ResultCardWithMenu(
+                challenge = challenge,
+                rank = myRankFor(challenge = challenge, myUid = myUid),
+                surfaceColor = surfaceColor,
+                showMarkUnseen = showMarkUnseen,
+                onClick = { onChallenge(challenge.id) },
+                onArchive = { onArchive(challenge.id) },
+                onMarkUnseen = { onMarkUnseen(challenge.id) },
+                onClone = { onClone(challenge.id) },
+            )
         }
     }
 }
@@ -280,7 +355,7 @@ private fun myRankFor(challenge: Challenge, myUid: String): Int? {
 
 // region Previews
 
-private fun previewChallenge(id: String, title: String) = Challenge(
+private fun previewChallenge(id: String, title: String, resultsEpochSeconds: Long = 1_000_000) = Challenge(
     id = id,
     title = title,
     description = "",
@@ -289,7 +364,7 @@ private fun previewChallenge(id: String, title: String) = Challenge(
     createdBy = "u1",
     createdAt = Instant.fromEpochSeconds(0),
     locksAt = null,
-    resultsPostedAt = Instant.fromEpochSeconds(1000),
+    resultsPostedAt = Instant.fromEpochSeconds(resultsEpochSeconds),
     status = ChallengeStatus.RESULTS_POSTED,
     joinedCount = 4,
     promoted = false,
@@ -304,8 +379,14 @@ private fun ResultsContent_Preview() {
     ThemePreview {
         ResultsContent(
             sections = ResultsViewModel.Sections(
-                unseen = listOf(previewChallenge(id = "c1", title = "Champions League Final")),
-                history = listOf(previewChallenge(id = "c2", title = "Oscars 2026")),
+                unseen = listOf(
+                    previewChallenge(id = "c1", title = "Champions League Final", resultsEpochSeconds = 1_750_000_000),
+                    previewChallenge(id = "c3", title = "Super Bowl LX MVP", resultsEpochSeconds = 1_749_913_600),
+                ),
+                history = listOf(
+                    previewChallenge(id = "c2", title = "Oscars 2026", resultsEpochSeconds = 1_749_913_600),
+                    previewChallenge(id = "c4", title = "NBA Finals 2026", resultsEpochSeconds = 1_749_827_200),
+                ),
                 myUid = "u1",
             ),
             onChallenge = {},

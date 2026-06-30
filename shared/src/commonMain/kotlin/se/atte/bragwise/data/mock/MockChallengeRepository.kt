@@ -50,7 +50,10 @@ class MockChallengeRepository(
                 .sortedByDescending { it.createdAt }
         }
 
-    override fun observePendingInvites(): Flow<List<InviteCard>> = flowOf(emptyList())
+    override fun observePendingInvites(): Flow<List<InviteCard>> = _challenges.map { list ->
+        list.filter { it.visibility == Visibility.INVITE_ONLY && it.createdBy != currentUid && it.id !in _predictions.value.keys }
+            .map { InviteCard(challenge = it, invitedByUid = it.createdBy) }
+    }
 
     override fun observeJoinedIds(): Flow<Set<String>> =
         _predictions.map { it.keys }

@@ -203,6 +203,8 @@
     <string name="results_menu_clone">Copy to new challenge</string>
     <string name="results_menu_archive">Archive</string>
     <string name="results_menu_mark_unseen">Mark as unseen</string>
+    <string name="results_day_today">Today</string>
+    <string name="results_day_yesterday">Yesterday</string>
 
     <!-- Predict screen. -->
     <string name="predict_no_bets">No bets</string>

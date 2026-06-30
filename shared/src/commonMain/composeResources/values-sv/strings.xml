@@ -165,6 +165,8 @@
     <string name="results_menu_clone">Kopiera till ny utmaning</string>
     <string name="results_menu_archive">Arkivera</string>
     <string name="results_menu_mark_unseen">Markera som osedd</string>
+    <string name="results_day_today">Idag</string>
+    <string name="results_day_yesterday">Igår</string>
 
     <string name="predict_no_bets">Inga tips</string>
     <string name="predict_yes">Ja</string>
