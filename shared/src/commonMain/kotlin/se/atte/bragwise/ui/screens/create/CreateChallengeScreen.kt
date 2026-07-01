@@ -1207,7 +1207,7 @@ private fun CreateChallenge_BetEditor_Preview() {
             onOptionTypeChange = {},
             question = "Top scorer",
             onQuestionChange = {},
-            options = listOf("Mbappe", "Messi", "Haaland"),
+            options = listOf("Player A", "Player B", "Player C"),
             onOptionsChange = {},
             countryOptions = emptyList(),
             onCountryOptionsChange = {},

@@ -1105,10 +1105,10 @@ private fun RankingDragList_NoFlags_Preview() {
     PreviewFrame {
         RankingDragList(
             options = listOf(
-                BetOption(id = "a", label = "Mbappe"),
-                BetOption(id = "b", label = "Messi"),
-                BetOption(id = "c", label = "Haaland"),
-                BetOption(id = "d", label = "Salah"),
+                BetOption(id = "a", label = "Player A"),
+                BetOption(id = "b", label = "Player B"),
+                BetOption(id = "c", label = "Player C"),
+                BetOption(id = "d", label = "Player D"),
             ),
             topN = 3,
             orderedOptionIds = listOf("b"),

@@ -435,7 +435,7 @@ private fun ResultsRevealBody_Preview() {
     ThemePreview {
         ResultsRevealBody(
             data = ResultsRevealViewModel.RevealData(
-                challengeTitle = "Champions League Final",
+                challengeTitle = "Continental Cup Final",
                 leaderboard = entries,
                 allLeaderboard = entries,
                 myUid = "u1",
@@ -465,7 +465,7 @@ private fun ResultsRevealBody_CreatorNoPrediction_Preview() {
     ThemePreview {
         ResultsRevealBody(
             data = ResultsRevealViewModel.RevealData(
-                challengeTitle = "Champions League Final",
+                challengeTitle = "Continental Cup Final",
                 leaderboard = entries,
                 allLeaderboard = entries,
                 myUid = "u1",
@@ -497,7 +497,7 @@ private fun PreviewTie() {
     ThemePreview {
         ResultsRevealBody(
             data = ResultsRevealViewModel.RevealData(
-                challengeTitle = "Champions League Final",
+                challengeTitle = "Continental Cup Final",
                 leaderboard = entries,
                 allLeaderboard = entries,
                 myUid = "u1",

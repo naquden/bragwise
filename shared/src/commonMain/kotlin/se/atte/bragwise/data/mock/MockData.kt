@@ -47,8 +47,8 @@ internal val mockChallenges = listOf(
     // === RESULTS_POSTED: Recent finished challenges ===
     Challenge(
         id = "mock-challenge-005",
-        title = "Champions League Final 2026",
-        description = "Real Madrid vs Man City — who called it?",
+        title = "Continental Cup Final 2026",
+        description = "City United vs Rovers FC — who called it?",
         category = "Football",
         visibility = Visibility.FRIENDS,
         createdBy = MOCK_UID,
@@ -64,8 +64,8 @@ internal val mockChallenges = listOf(
                 title = "Who wins the final?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Real Madrid"),
-                    BetOption(id = "o2", label = "Man City"),
+                    BetOption(id = "o1", label = "City United"),
+                    BetOption(id = "o2", label = "Rovers FC"),
                 ),
             ),
             Bet.BooleanProp(
@@ -164,7 +164,7 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-004",
-        title = "FIFA World Cup 2026",
+        title = "World Football Cup 2026",
         description = "48 nations, one champion. Drag your picks into the podium slots.",
         category = "Football",
         visibility = Visibility.PROMOTED,
@@ -178,7 +178,7 @@ internal val mockChallenges = listOf(
         bets = listOf(
             Bet.Ranking(
                 id = "bet-004-a",
-                title = "Group A final standings",
+                title = "Group stage final standings",
                 optionType = OptionType.COUNTRY,
                 topN = 4,
                 options = listOf(
@@ -204,7 +204,7 @@ internal val mockChallenges = listOf(
             ),
             Bet.BooleanProp(
                 id = "bet-004-b",
-                title = "Will the host nation (USA/Canada/Mexico) reach the semi-finals?",
+                title = "Will any co-host nation reach the semi-finals?",
             ),
         ),
         results = null,
@@ -212,8 +212,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-001",
-        title = "2026 World Cup Top Scorer",
-        description = "Who will score the most goals at the 2026 World Cup?",
+        title = "2026 Football Cup Top Scorer",
+        description = "Who will score the most goals at the 2026 World Football Cup?",
         category = "Football",
         visibility = Visibility.FRIENDS,
         createdBy = MOCK_UID,
@@ -229,10 +229,10 @@ internal val mockChallenges = listOf(
                 title = "Who will be the top scorer?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Erling Haaland"),
-                    BetOption(id = "o2", label = "Kylian Mbappé"),
-                    BetOption(id = "o3", label = "Vinicius Jr."),
-                    BetOption(id = "o4", label = "Harry Kane"),
+                    BetOption(id = "o1", label = "Player A"),
+                    BetOption(id = "o2", label = "Player B"),
+                    BetOption(id = "o3", label = "Player C"),
+                    BetOption(id = "o4", label = "Player D"),
                 ),
             ),
             Bet.BooleanProp(
@@ -253,8 +253,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-002",
-        title = "F1 2026 Constructors Podium",
-        description = "Rank the top 3 constructors for the 2026 F1 season.",
+        title = "Grand Prix Constructors 2026",
+        description = "Rank the top 3 constructors for the 2026 racing season.",
         category = "Motorsport",
         visibility = Visibility.FRIENDS,
         createdBy = MOCK_UID,
@@ -271,11 +271,11 @@ internal val mockChallenges = listOf(
                 optionType = OptionType.NONE,
                 topN = 3,
                 options = listOf(
-                    BetOption(id = "o1", label = "Red Bull"),
-                    BetOption(id = "o2", label = "Ferrari"),
-                    BetOption(id = "o3", label = "McLaren"),
-                    BetOption(id = "o4", label = "Mercedes"),
-                    BetOption(id = "o5", label = "Aston Martin"),
+                    BetOption(id = "o1", label = "Team Nova"),
+                    BetOption(id = "o2", label = "Team Apex"),
+                    BetOption(id = "o3", label = "Team Bolt"),
+                    BetOption(id = "o4", label = "Team Vortex"),
+                    BetOption(id = "o5", label = "Team Falcon"),
                 ),
             ),
         ),
@@ -284,7 +284,7 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-003",
-        title = "Eurovision 2027 Pick",
+        title = "Song Contest 2027 Pick",
         description = "A promoted showcase challenge — pick the winner!",
         category = "Entertainment",
         visibility = Visibility.PROMOTED,
@@ -318,7 +318,7 @@ internal val mockChallenges = listOf(
     // === More RESULTS_POSTED challenges ===
     Challenge(
         id = "mock-challenge-100",
-        title = "Oscar Best Picture 2026",
+        title = "Film Awards Best Picture 2026",
         description = "Which film will win Best Picture?",
         category = "Entertainment",
         visibility = Visibility.FRIENDS,
@@ -335,10 +335,10 @@ internal val mockChallenges = listOf(
                 title = "Which film wins?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Dune: Part Three"),
-                    BetOption(id = "o2", label = "Avatar 4"),
-                    BetOption(id = "o3", label = "The Next Big Thing"),
-                    BetOption(id = "o4", label = "Indie Darling"),
+                    BetOption(id = "o1", label = "Starfall"),
+                    BetOption(id = "o2", label = "The Last Dawn"),
+                    BetOption(id = "o3", label = "Echo Chamber"),
+                    BetOption(id = "o4", label = "Wild Roots"),
                 ),
             ),
         ),
@@ -365,8 +365,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-101",
-        title = "NBA Finals Winner 2026",
-        description = "Who will win the NBA championship?",
+        title = "Pro Basketball Finals 2026",
+        description = "Who will win the championship?",
         category = "Basketball",
         visibility = Visibility.FRIENDS,
         createdBy = "uid-bob",
@@ -382,10 +382,10 @@ internal val mockChallenges = listOf(
                 title = "Finals champion?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Lakers"),
-                    BetOption(id = "o2", label = "Celtics"),
-                    BetOption(id = "o3", label = "Warriors"),
-                    BetOption(id = "o4", label = "Heat"),
+                    BetOption(id = "o1", label = "Sharks"),
+                    BetOption(id = "o2", label = "Wolves"),
+                    BetOption(id = "o3", label = "Titans"),
+                    BetOption(id = "o4", label = "Flames"),
                     BetOption(id = "o5", label = "Other"),
                 ),
             ),
@@ -420,8 +420,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-102",
-        title = "Summer Olympics Medal Count",
-        description = "Will Team USA get the most medals in 2028?",
+        title = "World Games Medal Count 2028",
+        description = "Will Team USA get the most medals?",
         category = "Sports",
         visibility = Visibility.PROMOTED,
         createdBy = "uid-admin",
@@ -434,7 +434,7 @@ internal val mockChallenges = listOf(
         bets = listOf(
             Bet.BooleanProp(
                 id = "bet-102-a",
-                title = "USA gets most total medals?",
+                title = "USA finishes top of the medal table?",
             ),
             Bet.SinglePick(
                 id = "bet-102-b",
@@ -481,8 +481,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-103",
-        title = "Wimbledon Men's Singles Champion",
-        description = "Who wins the 2026 Wimbledon men's title?",
+        title = "Grand Slam Tennis Final 2026",
+        description = "Who wins the 2026 grass court men's title?",
         category = "Tennis",
         visibility = Visibility.FRIENDS,
         createdBy = "uid-grace",
@@ -498,9 +498,9 @@ internal val mockChallenges = listOf(
                 title = "Champion?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Jannik Sinner"),
-                    BetOption(id = "o2", label = "Carlos Alcaraz"),
-                    BetOption(id = "o3", label = "Novak Djokovic"),
+                    BetOption(id = "o1", label = "Player A"),
+                    BetOption(id = "o2", label = "Player B"),
+                    BetOption(id = "o3", label = "Player C"),
                     BetOption(id = "o4", label = "Other"),
                 ),
             ),
@@ -526,8 +526,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-104",
-        title = "Super Bowl LX MVP",
-        description = "Who will be MVP in the next Super Bowl?",
+        title = "Championship Bowl MVP",
+        description = "Who will be MVP in the championship game?",
         category = "American Football",
         visibility = Visibility.PROMOTED,
         createdBy = "uid-admin",
@@ -543,9 +543,9 @@ internal val mockChallenges = listOf(
                 title = "MVP?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Patrick Mahomes"),
-                    BetOption(id = "o2", label = "Josh Allen"),
-                    BetOption(id = "o3", label = "Lamar Jackson"),
+                    BetOption(id = "o1", label = "QB Alpha"),
+                    BetOption(id = "o2", label = "QB Beta"),
+                    BetOption(id = "o3", label = "QB Gamma"),
                     BetOption(id = "o4", label = "Other QB"),
                     BetOption(id = "o5", label = "Non-QB"),
                 ),
@@ -581,8 +581,8 @@ internal val mockChallenges = listOf(
     // === More diverse group challenges ===
     Challenge(
         id = "mock-challenge-200",
-        title = "House Tournament: Mario Kart",
-        description = "Final ranking in our annual Mario Kart tournament",
+        title = "House Tournament: Kart Racing",
+        description = "Final ranking in our annual kart racing tournament",
         category = "Gaming",
         visibility = Visibility.FRIENDS,
         createdBy = "uid-henry",
@@ -652,10 +652,10 @@ internal val mockChallenges = listOf(
                 title = "Best novel?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "The Midnight Library"),
-                    BetOption(id = "o2", label = "Project Hail Mary"),
-                    BetOption(id = "o3", label = "Fourth Wing"),
-                    BetOption(id = "o4", label = "Holly"),
+                    BetOption(id = "o1", label = "The Quiet Horizon"),
+                    BetOption(id = "o2", label = "Signal Lost"),
+                    BetOption(id = "o3", label = "Iron Tide"),
+                    BetOption(id = "o4", label = "The Glass Garden"),
                 ),
             ),
             Bet.BooleanProp(
@@ -812,8 +812,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-205",
-        title = "Movie Night: Oscars Winner",
-        description = "What will win Best Picture at the Oscars?",
+        title = "Movie Night: Best Picture",
+        description = "What will win Best Picture at the film awards?",
         category = "Entertainment",
         visibility = Visibility.PROMOTED,
         createdBy = "uid-admin",
@@ -829,9 +829,9 @@ internal val mockChallenges = listOf(
                 title = "Best Picture winner?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "The Brutalist"),
-                    BetOption(id = "o2", label = "Emilia Pérez"),
-                    BetOption(id = "o3", label = "Wicked"),
+                    BetOption(id = "o1", label = "Into the Void"),
+                    BetOption(id = "o2", label = "Crimson Keys"),
+                    BetOption(id = "o3", label = "The Final Act"),
                     BetOption(id = "o4", label = "Other"),
                 ),
             ),
@@ -847,7 +847,7 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-206",
-        title = "Office Bracket: March Madness",
+        title = "Office Bracket: College Tournament",
         description = "Pick the Final Four and champion",
         category = "Basketball",
         visibility = Visibility.FRIENDS,
@@ -865,12 +865,12 @@ internal val mockChallenges = listOf(
                 optionType = OptionType.NONE,
                 topN = 4,
                 options = listOf(
-                    BetOption(id = "o1", label = "Duke"),
-                    BetOption(id = "o2", label = "Kansas"),
-                    BetOption(id = "o3", label = "UCLA"),
-                    BetOption(id = "o4", label = "UNC"),
-                    BetOption(id = "o5", label = "Gonzaga"),
-                    BetOption(id = "o6", label = "Michigan State"),
+                    BetOption(id = "o1", label = "State U"),
+                    BetOption(id = "o2", label = "Tech U"),
+                    BetOption(id = "o3", label = "City College"),
+                    BetOption(id = "o4", label = "Valley U"),
+                    BetOption(id = "o5", label = "Northern U"),
+                    BetOption(id = "o6", label = "Lakeside College"),
                 ),
             ),
             Bet.SinglePick(
@@ -878,9 +878,9 @@ internal val mockChallenges = listOf(
                 title = "Champion?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Duke"),
-                    BetOption(id = "o2", label = "Kansas"),
-                    BetOption(id = "o3", label = "UCLA"),
+                    BetOption(id = "o1", label = "State U"),
+                    BetOption(id = "o2", label = "Tech U"),
+                    BetOption(id = "o3", label = "City College"),
                     BetOption(id = "o4", label = "Other"),
                 ),
             ),
@@ -1012,8 +1012,8 @@ internal val mockChallenges = listOf(
     ),
     Challenge(
         id = "mock-challenge-403",
-        title = "NBA Draft Pick",
-        description = "Which college team has the most first-round picks?",
+        title = "Pro Draft Pick",
+        description = "Which college has the most first-round picks?",
         category = "Basketball",
         visibility = Visibility.FRIENDS,
         createdBy = "uid-henry",
@@ -1029,9 +1029,9 @@ internal val mockChallenges = listOf(
                 title = "Most first-round picks?",
                 optionType = OptionType.NONE,
                 options = listOf(
-                    BetOption(id = "o1", label = "Duke"),
-                    BetOption(id = "o2", label = "UCLA"),
-                    BetOption(id = "o3", label = "Michigan"),
+                    BetOption(id = "o1", label = "State U"),
+                    BetOption(id = "o2", label = "City College"),
+                    BetOption(id = "o3", label = "Tech U"),
                     BetOption(id = "o4", label = "Other"),
                 ),
             ),

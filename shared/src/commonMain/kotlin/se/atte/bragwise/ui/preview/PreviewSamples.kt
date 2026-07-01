@@ -18,15 +18,15 @@ import kotlin.time.Instant
  */
 
 internal val sampleBets: List<Bet> = listOf(
-    Bet.BooleanProp(id = "b1", title = "Will Argentina win the final?"),
+    Bet.BooleanProp(id = "b1", title = "Will the home side win the final?"),
     Bet.SinglePick(
         id = "b2",
         title = "Top scorer",
-        options = listOf(BetOption("o1", "Mbappe"), BetOption("o2", "Messi"), BetOption("o3", "Haaland")),
+        options = listOf(BetOption("o1", "Player A"), BetOption("o2", "Player B"), BetOption("o3", "Player C")),
     ),
     Bet.Ranking(
         id = "b3",
-        title = "Group A - top 2",
+        title = "Group stage - top 2",
         topN = 2,
         options = listOf(
             BetOption("g1", "France"),
@@ -51,7 +51,7 @@ internal fun sampleChallenge(
     participants: List<ParticipantInfo> = sampleParticipants,
 ): Challenge = Challenge(
     id = "c1",
-    title = "World Cup 2026 Predictions",
+    title = "World Football Cup 2026 Predictions",
     description = "Predict the outcomes",
     category = "sport",
     visibility = Visibility.FRIENDS,

@@ -437,11 +437,11 @@ private fun CountryOptionRow(
 // region Previews
 
 private val previewBets = listOf(
-    Bet.BooleanProp(id = "b1", title = "Will Argentina win the final?"),
+    Bet.BooleanProp(id = "b1", title = "Will the home side win the final?"),
     Bet.SinglePick(
         id = "b2",
         title = "Top scorer",
-        options = listOf(BetOption("o1", "Mbappe"), BetOption("o2", "Messi"), BetOption("o3", "Haaland")),
+        options = listOf(BetOption("o1", "Player A"), BetOption("o2", "Player B"), BetOption("o3", "Player C")),
     ),
     Bet.SinglePick(
         id = "b3",
@@ -455,7 +455,7 @@ private val previewBets = listOf(
     ),
     Bet.Ranking(
         id = "b4",
-        title = "World Cup top 3",
+        title = "Football Cup top 3",
         optionType = OptionType.COUNTRY,
         topN = 3,
         options = listOf(

@@ -200,11 +200,11 @@ private fun BetPredictionRow(
 @Composable
 private fun ParticipantBets_Preview() {
     val bets = listOf(
-        Bet.BooleanProp(id = "b1", title = "Will Argentina win?"),
+        Bet.BooleanProp(id = "b1", title = "Will the home side win?"),
         Bet.SinglePick(
             id = "b2",
             title = "Top scorer",
-            options = listOf(BetOption("o1", "Mbappe"), BetOption("o2", "Messi")),
+            options = listOf(BetOption("o1", "Player A"), BetOption("o2", "Player B")),
         ),
     )
     val predictions = mapOf(

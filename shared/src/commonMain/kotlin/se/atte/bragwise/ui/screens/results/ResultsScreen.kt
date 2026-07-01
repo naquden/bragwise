@@ -380,12 +380,12 @@ private fun ResultsContent_Preview() {
         ResultsContent(
             sections = ResultsViewModel.Sections(
                 unseen = listOf(
-                    previewChallenge(id = "c1", title = "Champions League Final", resultsEpochSeconds = 1_750_000_000),
-                    previewChallenge(id = "c3", title = "Super Bowl LX MVP", resultsEpochSeconds = 1_749_913_600),
+                    previewChallenge(id = "c1", title = "Continental Cup Final", resultsEpochSeconds = 1_750_000_000),
+                    previewChallenge(id = "c3", title = "Championship Bowl MVP", resultsEpochSeconds = 1_749_913_600),
                 ),
                 history = listOf(
-                    previewChallenge(id = "c2", title = "Oscars 2026", resultsEpochSeconds = 1_749_913_600),
-                    previewChallenge(id = "c4", title = "NBA Finals 2026", resultsEpochSeconds = 1_749_827_200),
+                    previewChallenge(id = "c2", title = "Film Awards 2026", resultsEpochSeconds = 1_749_913_600),
+                    previewChallenge(id = "c4", title = "Pro Basketball Finals 2026", resultsEpochSeconds = 1_749_827_200),
                 ),
                 myUid = "u1",
             ),

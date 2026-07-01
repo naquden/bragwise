@@ -23,7 +23,7 @@ object VerifyAutomation {
 
     val openPredictChallengeId: SharedFlow<String> = openPredictChallengeIdFlow.asSharedFlow()
 
-    /** Pre-filled ranking order for the seeded Eurovision bet (`b1`). */
+    /** Pre-filled ranking order for the seeded country ranking bet (`b1`). */
     private var pendingRankingFill: Pair<String, List<String>>? = null
 
     var autoSubmitPredictions: Boolean = false
@@ -44,7 +44,7 @@ object VerifyAutomation {
         autoSubmitPredictions = false
     }
 
-    /** Creates and publishes a Eurovision-style country ranking challenge; returns its id. */
+    /** Creates and publishes a country ranking challenge for QA verification; returns its id. */
     suspend fun seedEurovisionRankingChallenge(challenges: ChallengeRepository): Result<String> {
         val countryOptions = listOf(
             BetOption(id = "o0", label = "Sweden", countryCode = "SE"),
@@ -54,14 +54,14 @@ object VerifyAutomation {
         )
         val rankingBet = Bet.Ranking(
             id = "b1",
-            title = "Top 3 Eurovision results",
+            title = "Top 3 Song Contest results",
             optionType = OptionType.COUNTRY,
             topN = 3,
             options = countryOptions,
         )
         val draft = Challenge(
             id = "",
-            title = "Eurovision 2026 Top 3",
+            title = "Song Contest 2026 Top 3",
             description = "",
             category = "Other",
             visibility = Visibility.FRIENDS,
