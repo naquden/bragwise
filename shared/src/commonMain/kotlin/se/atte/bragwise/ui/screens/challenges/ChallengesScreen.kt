@@ -349,7 +349,7 @@ private fun ChallengesContent(
     Box(modifier = Modifier.fillMaxSize().background(lastBg)) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             if (showIntro) {
-                IntroBanner(onCreate = onCreate, topInset = entries.isEmpty())
+                IntroBanner(onCreate = onCreate, topInset = true)
             }
             entries.forEachIndexed { i, entry ->
                 val prevBg = if (i > 0) entries[i - 1].bg else null
