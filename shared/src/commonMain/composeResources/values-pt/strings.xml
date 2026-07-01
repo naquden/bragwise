@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">Verifique sua caixa de entrada</string>
     <string name="auth_sent_link_to">Enviamos um link de login para:</string>
     <string name="auth_tap_link_hint">Toque no link neste dispositivo para terminar o login.</string>
+    <string name="auth_check_spam_hint">Não encontrou? Verifique sua pasta de spam ou lixo eletrônico.</string>
     <string name="auth_use_different_email">Usar um email diferente</string>
     <string name="auth_resend">Reenviar</string>
 

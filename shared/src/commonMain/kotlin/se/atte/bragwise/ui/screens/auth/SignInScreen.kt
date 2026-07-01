@@ -38,6 +38,7 @@ import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.app_name
 import bragwise.shared.generated.resources.auth_check_inbox
+import bragwise.shared.generated.resources.auth_check_spam_hint
 import bragwise.shared.generated.resources.auth_continue_guest
 import bragwise.shared.generated.resources.auth_email_hint
 import bragwise.shared.generated.resources.auth_email_label
@@ -208,6 +209,12 @@ private fun CheckYourInbox(
         Spacer(Modifier.height(12.dp))
         Text(
             stringResource(Res.string.auth_tap_link_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(Res.string.auth_check_spam_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">अपना इनबॉक्स देखें</string>
     <string name="auth_sent_link_to">हमने साइन-इन लिंक भेजा:</string>
     <string name="auth_tap_link_hint">साइन इन पूरा करने के लिए इसी डिवाइस पर लिंक टैप करें।</string>
+    <string name="auth_check_spam_hint">नहीं मिला? अपने स्पैम या जंक फ़ोल्डर की जाँच करें।</string>
     <string name="auth_use_different_email">दूसरा ईमेल उपयोग करें</string>
     <string name="auth_resend">पुनः भेजें</string>
 

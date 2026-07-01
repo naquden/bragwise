@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">Проверьте входящие</string>
     <string name="auth_sent_link_to">Мы отправили ссылку входа на:</string>
     <string name="auth_tap_link_hint">Коснитесь ссылки на этом устройстве, чтобы завершить вход.</string>
+    <string name="auth_check_spam_hint">Не нашли? Проверьте папку «Спам» или «Нежелательная почта».</string>
     <string name="auth_use_different_email">Использовать другую электронную почту</string>
     <string name="auth_resend">Отправить снова</string>
 

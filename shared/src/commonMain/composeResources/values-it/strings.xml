@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">Controlla la tua posta in arrivo</string>
     <string name="auth_sent_link_to">Abbiamo inviato un link di accesso a:</string>
     <string name="auth_tap_link_hint">Tocca il link su questo dispositivo per completare l'accesso.</string>
+    <string name="auth_check_spam_hint">Non lo trovi? Controlla la cartella spam o posta indesiderata.</string>
     <string name="auth_use_different_email">Usa un'email diversa</string>
     <string name="auth_resend">Rinvia</string>
 

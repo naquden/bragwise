@@ -113,6 +113,7 @@
     <string name="auth_check_inbox">Kolla din inkorg</string>
     <string name="auth_sent_link_to">Vi skickade en inloggningslänk till:</string>
     <string name="auth_tap_link_hint">Tryck på länken på den här enheten för att slutföra inloggningen.</string>
+    <string name="auth_check_spam_hint">Hittar du den inte? Kolla din skräppost eller skräppostmapp.</string>
     <string name="auth_use_different_email">Använd en annan e-post</string>
     <string name="auth_resend">Skicka igen</string>
 

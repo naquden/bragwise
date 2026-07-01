@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">Vérifiez votre boîte de réception</string>
     <string name="auth_sent_link_to">Nous avons envoyé un lien de connexion à:</string>
     <string name="auth_tap_link_hint">Appuyez sur le lien sur cet appareil pour terminer la connexion.</string>
+    <string name="auth_check_spam_hint">Vous ne le trouvez pas ? Vérifiez votre dossier spam ou courrier indésirable.</string>
     <string name="auth_use_different_email">Utiliser un email différent</string>
     <string name="auth_resend">Renvoyer</string>
 

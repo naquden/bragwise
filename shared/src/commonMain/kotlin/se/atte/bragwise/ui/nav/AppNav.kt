@@ -65,6 +65,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trophy
 import com.composables.icons.lucide.User
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.stringResource
@@ -167,6 +168,7 @@ fun AppNav() {
         challengeRepository.observeFinished(),
         seenStore.seenIds,
     ) { finished, seen -> finished.count { it.id !in seen } }
+        .catch { emit(0) }
         .collectAsState(initial = 0)
 
     val snackbarHostState = remember { SnackbarHostState() }

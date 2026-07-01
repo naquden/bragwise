@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">Überprüfen Sie Ihren Posteingang</string>
     <string name="auth_sent_link_to">Wir haben einen Anmelde-Link gesendet an:</string>
     <string name="auth_tap_link_hint">Tippen Sie auf den Link auf diesem Gerät, um die Anmeldung abzuschließen.</string>
+    <string name="auth_check_spam_hint">Nicht gefunden? Prüfen Sie Ihren Spam- oder Junk-Ordner.</string>
     <string name="auth_use_different_email">Andere E-Mail verwenden</string>
     <string name="auth_resend">Erneut senden</string>
 

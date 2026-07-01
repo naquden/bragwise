@@ -148,6 +148,7 @@
     <string name="auth_check_inbox">Check your inbox</string>
     <string name="auth_sent_link_to">We sent a sign-in link to:</string>
     <string name="auth_tap_link_hint">Tap the link on this device to finish signing in.</string>
+    <string name="auth_check_spam_hint">Can\'t find it? Check your spam or junk folder.</string>
     <string name="auth_use_different_email">Use a different email</string>
     <string name="auth_resend">Resend</string>
 

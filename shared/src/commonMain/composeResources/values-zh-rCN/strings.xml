@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">检查您的收件箱</string>
     <string name="auth_sent_link_to">我们已发送登录链接至:</string>
     <string name="auth_tap_link_hint">在此设备上点击链接以完成登录。</string>
+    <string name="auth_check_spam_hint">找不到？请检查您的垃圾邮件或垃圾箱文件夹。</string>
     <string name="auth_use_different_email">使用其他电子邮件</string>
     <string name="auth_resend">重新发送</string>
 

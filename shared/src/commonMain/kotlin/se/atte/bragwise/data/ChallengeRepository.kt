@@ -5,6 +5,7 @@ package se.atte.bragwise.data
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -95,6 +96,9 @@ class FirebaseChallengeRepository(
                 ) { created, joined, drafts ->
                     (drafts + created + joined).distinctBy { it.id }
                         .sortedByDescending { it.createdAt }
+                }.catch { e ->
+                    crDbg("observeMine.error type=${e::class.simpleName} msg=${e.message}")
+                    emitAll(localDrafts.observeDrafts())
                 }
                 else -> localDrafts.observeDrafts()
             }

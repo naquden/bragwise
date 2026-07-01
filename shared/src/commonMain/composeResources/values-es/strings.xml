@@ -111,6 +111,7 @@
     <string name="auth_check_inbox">Revisa tu bandeja de entrada</string>
     <string name="auth_sent_link_to">Hemos enviado un enlace de inicio de sesión a:</string>
     <string name="auth_tap_link_hint">Toca el enlace en este dispositivo para terminar de iniciar sesión.</string>
+    <string name="auth_check_spam_hint">¿No lo encuentras? Revisa tu carpeta de spam o correo no deseado.</string>
     <string name="auth_use_different_email">Usar un correo diferente</string>
     <string name="auth_resend">Reenviar</string>
 
