@@ -35,6 +35,7 @@ import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.searchCountries
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.cc_country_pick_from_list
 import bragwise.shared.generated.resources.country_clear_a11y
 
 /**
@@ -55,6 +56,7 @@ fun CountryAutocompleteField(
     placeholder: String = "Country or custom text",
 ) {
     val isLocked = value.countryCode != null
+    val isError = value.label.isNotBlank() && !isLocked
     val suggestions by remember(value.label, isLocked) {
         derivedStateOf {
             if (isLocked || value.label.isBlank()) emptyList()
@@ -73,6 +75,10 @@ fun CountryAutocompleteField(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            isError = isError,
+            supportingText = if (isError) {
+                { Text(stringResource(Res.string.cc_country_pick_from_list)) }
+            } else null,
             placeholder = { Text(placeholder) },
             leadingIcon = if (isLocked && value.countryCode != null) {
                 val code = value.countryCode

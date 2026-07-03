@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import _avatarFixture from './fixtures/avatarSeeds.json';
+import { SUPPORTED_COUNTRY_CODES } from './countries';
 
 /**
  * Zod schemas per callable. Server-derived fields (createdBy, createdAt,
@@ -136,6 +137,24 @@ function validatePlacementRequiresClosest(data: { bets: z.infer<typeof BetSchema
   });
 }
 
+// Validates that COUNTRY bets have all options with a recognised country code.
+// Keep the allowed codes in sync with functions/src/countries.ts and the Kotlin Country.kt.
+function validateCountryOptions(data: { bets: z.infer<typeof BetSchema>[] }, ctx: z.RefinementCtx) {
+  data.bets.forEach((bet, betIndex) => {
+    if (bet.kind === 'BOOLEAN_PROP' || bet.kind === 'GUESS' || bet.kind === 'OVER_UNDER') return;
+    if (bet.optionType !== 'COUNTRY') return;
+    bet.options.forEach((option, optionIndex) => {
+      if (!option.countryCode || !SUPPORTED_COUNTRY_CODES.has(option.countryCode)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: option.countryCode ? 'unsupported-country' : 'country-code-required',
+          path: ['bets', betIndex, 'options', optionIndex, 'countryCode'],
+        });
+      }
+    });
+  });
+}
+
 // Validates that no bet contains duplicate options.
 // Dedup key: countryCode when present, otherwise normalized label (trim + lowercase).
 // Prevents ambiguous predictions and unresolvable results.
@@ -177,6 +196,7 @@ export const CreateChallengeSchema = CreateChallengeBaseSchema
   .superRefine(validateRankingTopN)
   .superRefine(validatePlacementRequiresClosest)
   .superRefine(validateNoDuplicateOptions)
+  .superRefine(validateCountryOptions)
   .superRefine(validateInviteOnlyHasInvitees);
 
 export const SubmitPredictionsSchema = z.object({

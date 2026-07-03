@@ -26,6 +26,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +78,7 @@ import bragwise.shared.generated.resources.cc_pick_friends
 import bragwise.shared.generated.resources.cc_publish
 import bragwise.shared.generated.resources.cc_question_label
 import bragwise.shared.generated.resources.cc_remove_option_a11y
+import bragwise.shared.generated.resources.cc_bet_invalid_country
 import bragwise.shared.generated.resources.cc_save_bet
 import bragwise.shared.generated.resources.cc_save_draft
 import bragwise.shared.generated.resources.cc_saving_dialog
@@ -127,6 +129,9 @@ import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
+import se.atte.bragwise.domain.allCountryOptionsResolved
+import se.atte.bragwise.domain.hasUnsupportedCountryOption
+import se.atte.bragwise.domain.isSupportedCountryCode
 import se.atte.bragwise.theme.ThemePreview
 import se.atte.bragwise.ui.preview.sampleBets
 import se.atte.bragwise.ui.components.AppButton
@@ -186,6 +191,7 @@ fun CreateChallengeScreen(
     var overUnderLine by remember { mutableStateOf("") }
     var editingBetId by rememberSaveable { mutableStateOf<String?>(null) }
     var showFriendPicker by rememberSaveable { mutableStateOf(false) }
+    var singleBetValid by remember { mutableStateOf(state.bets.isNotEmpty()) }
 
     val isEditing = editingBetId != null && editingBetId != ""
     val resetEditor = {
@@ -270,6 +276,8 @@ fun CreateChallengeScreen(
     val hasDuplicateOptions = resolvedOptions
         .map { option -> option.countryCode ?: option.label.trim().lowercase() }
         .let { keys -> keys.size != keys.toSet().size }
+    val hasUnresolvedCountry = optionType == OptionType.COUNTRY &&
+        resolvedOptions.any { !isSupportedCountryCode(it.countryCode) }
     if (showFriendPicker) {
         FriendPickerDialog(
             friends = friends,
@@ -465,7 +473,7 @@ fun CreateChallengeScreen(
                                             onCountryOptionsChange = { countryOptions = it },
                                             topN = topN,
                                             onTopNChange = { topN = it },
-                                            canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
+                                            canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && !hasUnresolvedCountry && when (betType) {
                                                 BetType.YesNo -> true
                                                 BetType.SinglePick -> resolvedOptions.size >= 2
                                                 BetType.Ranking -> resolvedOptions.size >= topN
@@ -551,7 +559,7 @@ fun CreateChallengeScreen(
                                         onCountryOptionsChange = { countryOptions = it },
                                         topN = topN,
                                         onTopNChange = { topN = it },
-                                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && when (betType) {
+                                        canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && !hasUnresolvedCountry && when (betType) {
                                             BetType.YesNo -> true
                                             BetType.SinglePick -> resolvedOptions.size >= 2
                                             BetType.Ranking -> resolvedOptions.size >= topN
@@ -638,8 +646,9 @@ fun CreateChallengeScreen(
                         }
                         CreateMode.SINGLE -> {
                             SingleBetEditor(
-                                singleBet = state.bets.firstOrNull() as? Bet.Guess,
-                                onSave = { title, granularity ->
+                                singleBet = state.bets.firstOrNull(),
+                                onValidityChange = { singleBetValid = it },
+                                onSaveGuess = { title, granularity ->
                                     val existing = state.bets.firstOrNull()
                                     if (existing != null) {
                                         viewModel.onIntent(
@@ -664,6 +673,32 @@ fun CreateChallengeScreen(
                                         )
                                     }
                                 },
+                                onSaveRanking = { title, options, optionType, topN ->
+                                    val existing = state.bets.firstOrNull()
+                                    val reindexed = options.mapIndexed { i, opt -> opt.copy(id = "o$i") }
+                                    if (existing != null) {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.UpdateBet(
+                                                Bet.Ranking(
+                                                    id = existing.id,
+                                                    title = title,
+                                                    optionType = optionType,
+                                                    topN = topN,
+                                                    options = reindexed,
+                                                )
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.AddRanking(
+                                                title = title,
+                                                options = reindexed,
+                                                optionType = optionType,
+                                                topN = topN,
+                                            )
+                                        )
+                                    }
+                                },
                             )
                         }
                     }
@@ -671,16 +706,18 @@ fun CreateChallengeScreen(
             }
         }
 
+        val singleModeBlocked = state.mode == CreateMode.SINGLE && !singleBetValid
+        val betsValid = state.bets.allCountryOptionsResolved()
         BottomActionBar {
             AppOutlinedButton(
                 modifier = Modifier.weight(1f),
                 onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.SaveDraft) },
-                enabled = !state.submitting,
+                enabled = !state.submitting && !singleModeBlocked && betsValid,
             ) { Text(stringResource(Res.string.cc_save_draft)) }
             AppButton(
                 modifier = Modifier.weight(1f).testTag("create_publish"),
                 onClick = { viewModel.onIntent(CreateChallengeViewModel.Intent.Publish) },
-                enabled = !state.submitting && state.bets.isNotEmpty() && state.title.isNotBlank(),
+                enabled = !state.submitting && state.bets.isNotEmpty() && state.title.isNotBlank() && !singleModeBlocked && betsValid,
             ) { Text(stringResource(Res.string.cc_publish)) }
         }
     }
@@ -959,6 +996,14 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp),
         )
+        if (bet.hasUnsupportedCountryOption()) {
+            Text(
+                text = stringResource(Res.string.cc_bet_invalid_country),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
         if (options.isNotEmpty()) {
             val visibleOptions = if (showExpand && !expanded) options.take(4) else options
             Column(
@@ -985,18 +1030,67 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
 
 
 /**
- * Focused editor for SINGLE mode: one Guess bet with placement=true forced.
- * Shows granularity chips (Time / Day / Number) and a question field.
- * Calls [onSave] each time the question or granularity changes (auto-save style —
- * no explicit Save button needed since there is exactly one bet).
+ * Focused editor for SINGLE mode: one bet with placement/ranking.
+ * Sub-type row: Time / Day / Number (Guess placement=true) or Ranking.
+ * Guess sub-types auto-save on keystroke; Ranking saves only when valid.
  */
 @Composable
 private fun SingleBetEditor(
-    singleBet: Bet.Guess?,
-    onSave: (title: String, granularity: GuessGranularity) -> Unit,
+    singleBet: Bet?,
+    onSaveGuess: (title: String, granularity: GuessGranularity) -> Unit,
+    onSaveRanking: (title: String, options: List<BetOption>, optionType: OptionType, topN: Int) -> Unit,
+    onValidityChange: (Boolean) -> Unit,
 ) {
+    val isRanking = singleBet is Bet.Ranking
+    var useRanking by remember(isRanking) { mutableStateOf(isRanking) }
+
+    val guessBet = singleBet as? Bet.Guess
+    val rankingBet = singleBet as? Bet.Ranking
+
     var question by remember(singleBet?.title) { mutableStateOf(singleBet?.title ?: "") }
-    var granularity by remember(singleBet?.granularity) { mutableStateOf(singleBet?.granularity ?: GuessGranularity.NUMBER) }
+    var granularity by remember(guessBet?.granularity) {
+        mutableStateOf(guessBet?.granularity ?: GuessGranularity.NUMBER)
+    }
+    var rankingOptionType by remember(rankingBet?.optionType) {
+        mutableStateOf(rankingBet?.optionType ?: OptionType.NONE)
+    }
+    var rankingOptions by remember(rankingBet) {
+        mutableStateOf(
+            if (rankingBet?.optionType == OptionType.NONE) rankingBet.options.map { it.label }
+            else listOf("", "")
+        )
+    }
+    var rankingCountryOptions by remember(rankingBet) {
+        mutableStateOf(
+            if (rankingBet?.optionType == OptionType.COUNTRY) rankingBet.options
+            else defaultCountryOptions()
+        )
+    }
+    var rankingTopN by remember(rankingBet?.topN) { mutableIntStateOf(rankingBet?.topN ?: 3) }
+
+    val resolvedRankingOptions = when (rankingOptionType) {
+        OptionType.COUNTRY -> rankingCountryOptions.filter { it.label.isNotBlank() }
+        OptionType.NONE -> rankingOptions
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .mapIndexed { i, label -> BetOption(id = "o$i", label = label) }
+    }
+    val rankingCountryAllResolved = rankingOptionType == OptionType.NONE ||
+        resolvedRankingOptions.all { isSupportedCountryCode(it.countryCode) }
+
+    val isValid = question.isNotBlank() && when {
+        !useRanking -> true
+        else -> resolvedRankingOptions.size >= rankingTopN && rankingTopN >= 2 && rankingCountryAllResolved
+    }
+
+    LaunchedEffect(isValid) { onValidityChange(isValid) }
+
+    fun trySaveRanking(title: String, opts: List<BetOption>, oType: OptionType, topN: Int) {
+        val countryValid = oType == OptionType.NONE || opts.all { isSupportedCountryCode(it.countryCode) }
+        if (title.isNotBlank() && opts.size >= topN && topN >= 2 && countryValid) {
+            onSaveRanking(title, opts, oType, topN)
+        }
+    }
 
     SectionCard {
         FlowRow(
@@ -1004,42 +1098,110 @@ private fun SingleBetEditor(
             verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
         ) {
             AppFilterChip(
-                selected = granularity == GuessGranularity.TIME,
+                selected = !useRanking && granularity == GuessGranularity.TIME,
                 onClick = {
+                    useRanking = false
                     granularity = GuessGranularity.TIME
-                    if (question.isNotBlank()) onSave(question, GuessGranularity.TIME)
+                    if (question.isNotBlank()) onSaveGuess(question, GuessGranularity.TIME)
                 },
                 label = { Text(stringResource(Res.string.cc_bet_type_time)) },
             )
             AppFilterChip(
-                selected = granularity == GuessGranularity.DAY,
+                selected = !useRanking && granularity == GuessGranularity.DAY,
                 onClick = {
+                    useRanking = false
                     granularity = GuessGranularity.DAY
-                    if (question.isNotBlank()) onSave(question, GuessGranularity.DAY)
+                    if (question.isNotBlank()) onSaveGuess(question, GuessGranularity.DAY)
                 },
                 label = { Text(stringResource(Res.string.cc_bet_type_day)) },
             )
             AppFilterChip(
-                selected = granularity == GuessGranularity.NUMBER,
+                selected = !useRanking && granularity == GuessGranularity.NUMBER,
                 onClick = {
+                    useRanking = false
                     granularity = GuessGranularity.NUMBER
-                    if (question.isNotBlank()) onSave(question, GuessGranularity.NUMBER)
+                    if (question.isNotBlank()) onSaveGuess(question, GuessGranularity.NUMBER)
                 },
                 label = { Text(stringResource(Res.string.cc_bet_type_number)) },
             )
+            AppFilterChip(
+                selected = useRanking,
+                onClick = { useRanking = true },
+                label = { Text(stringResource(Res.string.cc_bet_type_ranking)) },
+            )
+        }
+        if (useRanking) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+                modifier = Modifier.padding(top = standardPaddingSmall),
+            ) {
+                AppFilterChip(
+                    selected = rankingOptionType == OptionType.NONE,
+                    onClick = { rankingOptionType = OptionType.NONE },
+                    label = { Text(stringResource(Res.string.cc_custom_options)) },
+                )
+                AppFilterChip(
+                    selected = rankingOptionType == OptionType.COUNTRY,
+                    onClick = {
+                        rankingOptionType = OptionType.COUNTRY
+                        if (rankingCountryOptions.size < 2) rankingCountryOptions = defaultCountryOptions()
+                    },
+                    label = { Text(stringResource(Res.string.cc_countries)) },
+                )
+            }
         }
         OutlinedTextField(
             value = question,
             onValueChange = { v ->
                 if (v.length <= InputLimits.BET_TITLE) {
                     question = v
-                    if (v.isNotBlank()) onSave(v, granularity)
+                    if (!useRanking && v.isNotBlank()) onSaveGuess(v, granularity)
+                    if (useRanking) trySaveRanking(v, resolvedRankingOptions, rankingOptionType, rankingTopN)
                 }
             },
             label = { Text(stringResource(Res.string.cc_single_question_label)) },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_single_question"),
             singleLine = true,
         )
+        if (useRanking) {
+            Spacer(Modifier.height(standardPaddingSmall))
+            if (rankingOptionType == OptionType.COUNTRY) {
+                CountryOptionsEditor(
+                    options = rankingCountryOptions,
+                    onOptionsChange = { updated ->
+                        rankingCountryOptions = updated
+                        val clampedTopN = rankingTopN.coerceAtMost(
+                            updated.count { it.label.isNotBlank() }.coerceAtLeast(2)
+                        )
+                        rankingTopN = clampedTopN
+                        val resolved = updated.filter { it.label.isNotBlank() }
+                        trySaveRanking(question, resolved, OptionType.COUNTRY, clampedTopN)
+                    },
+                )
+            } else {
+                OptionsEditor(
+                    options = rankingOptions,
+                    onOptionsChange = { updated ->
+                        rankingOptions = updated
+                        val clampedTopN = rankingTopN.coerceAtMost(
+                            updated.map { it.trim() }.count { it.isNotEmpty() }.coerceAtLeast(2)
+                        )
+                        rankingTopN = clampedTopN
+                        val resolved = updated.map { it.trim() }.filter { it.isNotEmpty() }
+                            .mapIndexed { i, label -> BetOption(id = "o$i", label = label) }
+                        trySaveRanking(question, resolved, OptionType.NONE, clampedTopN)
+                    },
+                )
+            }
+            Spacer(Modifier.height(standardPaddingSmall))
+            TopNStepper(
+                value = rankingTopN,
+                onValueChange = { newTopN ->
+                    rankingTopN = newTopN
+                    trySaveRanking(question, resolvedRankingOptions, rankingOptionType, newTopN)
+                },
+            )
+        }
     }
 }
 

@@ -230,3 +230,7 @@ val ALL_COUNTRIES: List<Country> = listOf(
     Country("ZM", "Zambia"),
     Country("ZW", "Zimbabwe"),
 )
+
+private val COUNTRY_CODES: Set<String> = ALL_COUNTRIES.map { it.code }.toSet()
+
+fun isSupportedCountryCode(code: String?): Boolean = code != null && code in COUNTRY_CODES

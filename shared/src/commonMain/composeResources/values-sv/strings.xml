@@ -313,6 +313,8 @@
     <string name="cc_show_more_options">… %1$d till · Tryck för att visa</string>
     <string name="cc_saving_dialog">Sparar utmaning…</string>
     <string name="cc_duplicate_options_error">Ta bort dubbletter innan du sparar</string>
+    <string name="cc_country_pick_from_list">Välj ett land från listan</string>
+    <string name="cc_bet_invalid_country">Åtgärda land som inte stöds innan publicering</string>
     <string name="cc_snackbar_nothing_to_save">Inget att spara än</string>
     <string name="cc_snackbar_title_and_bet_required">Titel och minst ett tips krävs</string>
     <string name="cc_snackbar_deadline_future">Deadline måste vara i framtiden</string>

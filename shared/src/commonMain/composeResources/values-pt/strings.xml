@@ -307,6 +307,8 @@
     <string name="cc_show_more_options">… %1$d mais · Toque para expandir</string>
     <string name="cc_saving_dialog">Salvando desafio…</string>
     <string name="cc_duplicate_options_error">Remova opções duplicadas antes de salvar</string>
+    <string name="cc_country_pick_from_list">Escolha um país da lista</string>
+    <string name="cc_bet_invalid_country">Corrija o país não suportado antes de publicar</string>
     <string name="cc_snackbar_nothing_to_save">Nada para salvar ainda</string>
     <string name="cc_snackbar_title_and_bet_required">Título e pelo menos uma aposta necessários</string>
     <string name="cc_snackbar_deadline_future">O prazo deve ser no futuro</string>

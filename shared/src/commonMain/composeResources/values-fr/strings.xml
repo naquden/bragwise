@@ -306,7 +306,9 @@
     <string name="cc_show_less">Afficher moins</string>
     <string name="cc_show_more_options">… %1$d plus · Appuyez pour développer</string>
     <string name="cc_saving_dialog">Enregistrement du défi…</string>
-    <string name="cc_duplicate_options_error">Supprimez les options en double avant d'enregistrer</string>
+    <string name="cc_duplicate_options_error">Supprimez les options en double avant d\'enregistrer</string>
+    <string name="cc_country_pick_from_list">Choisissez un pays dans la liste</string>
+    <string name="cc_bet_invalid_country">Corriger le pays non pris en charge avant de publier</string>
     <string name="cc_snackbar_nothing_to_save">Rien à enregistrer pour l'instant</string>
     <string name="cc_snackbar_title_and_bet_required">Titre et au moins un pari requis</string>
     <string name="cc_snackbar_deadline_future">Le délai doit être dans le futur</string>

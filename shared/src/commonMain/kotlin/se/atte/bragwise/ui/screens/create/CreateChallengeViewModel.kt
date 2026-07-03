@@ -1,6 +1,7 @@
 package se.atte.bragwise.ui.screens.create
 
 import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.cc_bet_invalid_country
 import bragwise.shared.generated.resources.cc_snackbar_deadline_future
 import bragwise.shared.generated.resources.cc_snackbar_invite_needs_friends
 import bragwise.shared.generated.resources.cc_snackbar_no_reachable_invitees
@@ -20,6 +21,7 @@ import se.atte.bragwise.data.SocialRepository
 import se.atte.bragwise.mvi.ErrorReporter
 import se.atte.bragwise.mvi.UiText
 import se.atte.bragwise.domain.Bet
+import se.atte.bragwise.domain.allCountryOptionsResolved
 import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
@@ -33,7 +35,7 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-/** Whether the challenge has a single placement-scored guess bet, or multiple freeform bets. */
+/** Whether the challenge has a single bet (Guess placement=true or Ranking), or multiple freeform bets. */
 enum class CreateMode { SINGLE, MULTI }
 
 /** Single-screen challenge creator/editor — title, visibility and bets all on one form. */
@@ -268,6 +270,10 @@ class CreateChallengeViewModel(
         }
         if (s.visibility == Visibility.INVITE_ONLY && s.invitedUids.isEmpty()) {
             emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_invite_needs_friends)))
+            return
+        }
+        if (!s.bets.allCountryOptionsResolved()) {
+            emitEffect(Effect.Snackbar(UiText(Res.string.cc_bet_invalid_country)))
             return
         }
         when (ensureNamedAccount.nameState.value) {

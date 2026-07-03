@@ -307,6 +307,8 @@
     <string name="cc_show_more_options">… %1$d ещё · Нажмите для разворачивания</string>
     <string name="cc_saving_dialog">Сохранение испытания…</string>
     <string name="cc_duplicate_options_error">Удалите дублирующиеся опции перед сохранением</string>
+    <string name="cc_country_pick_from_list">Выберите страну из списка</string>
+    <string name="cc_bet_invalid_country">Исправьте неподдерживаемую страну перед публикацией</string>
     <string name="cc_snackbar_nothing_to_save">Нечего сохранять</string>
     <string name="cc_snackbar_title_and_bet_required">Требуется название и по крайней мере одна ставка</string>
     <string name="cc_snackbar_deadline_future">Крайний срок должен быть в будущем</string>

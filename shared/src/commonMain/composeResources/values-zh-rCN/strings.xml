@@ -307,6 +307,8 @@
     <string name="cc_show_more_options">… 还有 %1$d 个 · 点击展开</string>
     <string name="cc_saving_dialog">正在保存挑战…</string>
     <string name="cc_duplicate_options_error">保存前删除重复选项</string>
+    <string name="cc_country_pick_from_list">从列表中选择一个国家</string>
+    <string name="cc_bet_invalid_country">发布前请修正不支持的国家</string>
     <string name="cc_snackbar_nothing_to_save">还没有要保存的内容</string>
     <string name="cc_snackbar_title_and_bet_required">需要标题和至少一个投注</string>
     <string name="cc_snackbar_deadline_future">截止日期必须在未来</string>

@@ -94,6 +94,25 @@ data class BetOption(
     val countryCode: String? = null,
 )
 
+/**
+ * True when this bet uses COUNTRY options but at least one option is not a
+ * recognised country (typed free text that was never resolved to a code).
+ * Applies to the option-bearing types (SinglePick / Ranking / MultiSelect).
+ */
+fun Bet.hasUnsupportedCountryOption(): Boolean {
+    if (optionType != OptionType.COUNTRY) return false
+    val opts = when (this) {
+        is Bet.SinglePick -> options
+        is Bet.Ranking -> options
+        is Bet.MultiSelect -> options
+        else -> return false
+    }
+    return opts.any { !isSupportedCountryCode(it.countryCode) }
+}
+
+/** True when every COUNTRY option across all bets resolves to a supported code. */
+fun List<Bet>.allCountryOptionsResolved(): Boolean = none { it.hasUnsupportedCountryOption() }
+
 sealed interface PredictionPayload {
     data class SinglePick(val optionId: String) : PredictionPayload
     data class Ranking(val orderedOptionIds: List<String>) : PredictionPayload

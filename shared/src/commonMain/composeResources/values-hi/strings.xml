@@ -307,6 +307,8 @@
     <string name="cc_show_more_options">… %1$d और · विस्तार के लिए टैप करें</string>
     <string name="cc_saving_dialog">चैलेंज सहेजा जा रहा है…</string>
     <string name="cc_duplicate_options_error">सहेजने से पहले डुप्लिकेट विकल्प हटाएं</string>
+    <string name="cc_country_pick_from_list">सूची से एक देश चुनें</string>
+    <string name="cc_bet_invalid_country">प्रकाशित करने से पहले असमर्थित देश ठीक करें</string>
     <string name="cc_snackbar_nothing_to_save">अभी सहेजने के लिए कुछ नहीं</string>
     <string name="cc_snackbar_title_and_bet_required">शीर्षक और कम से कम एक बेट आवश्यक है</string>
     <string name="cc_snackbar_deadline_future">समय सीमा भविष्य में होनी चाहिए</string>
