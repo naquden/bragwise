@@ -10,16 +10,18 @@ when the leading command does not.
 **Before running:** ask whether the same result can be obtained by:
 
 1. Running each segment as a separate Bash call (storing intermediate output to
-   `./temp/*.txt`, then piping locally with `Read`/`Grep`).
+   `./temp/bajs/*.txt`, then piping locally with `Read`/`Grep`).
 2. Replacing a piped helper with a tool that does not need shell composition
    (e.g. the `Grep` tool instead of `| grep`, `Read` with `offset`/`limit` instead of
    `| tail -N` or `| head -N`).
 3. Routing output to a file the first time, then operating on the file with built-in
    tools that don't trigger Bash permission checks at all.
 
+All scratch output goes in `./temp/bajs/` (create it if missing).
+
 **Order of preference** (least → most prompts):
 
-1. Single Bash command, output to `./temp/*` → followed by `Read` / `Grep` tools.
+1. Single Bash command, output to `./temp/bajs/*` → followed by `Read` / `Grep` tools.
 2. Single Bash command using only allowlisted segments.
 3. Piped/chained Bash with potentially-prompting segments — **last resort**, only when
    splitting would hide a real shell-side dependency (e.g. `$(adb shell pidof …)` command
@@ -36,8 +38,8 @@ adb logcat -d -v time | grep "$(adb shell pidof com.assaabloy.hospitality.vostio
 
 ```bash
 PID=$(adb shell pidof com.assaabloy.hospitality.vostio.debug)
-adb logcat -d -v time > ./temp/logcat.txt
-# then: Grep tool on ./temp/logcat.txt with pattern "(Dialog|orientation).*\\b$PID\\b"
+adb logcat -d -v time > ./temp/bajs/logcat.txt
+# then: Grep tool on ./temp/bajs/logcat.txt with pattern "(Dialog|orientation).*\\b$PID\\b"
 # — no `tail` needed; Grep returns the matches directly.
 ```
 
@@ -57,5 +59,5 @@ equivalent", not "always split".
 ## Quick checklist before running a piped command
 
 - [ ] Is every binary in the pipeline already in `.claude/settings.local.json` allowlist?
-- [ ] If not, can I redirect to `./temp/*.txt` and use `Read`/`Grep` instead?
+- [ ] If not, can I redirect to `./temp/bajs/*.txt` and use `Read`/`Grep` instead?
 - [ ] If neither — does the chain semantically require one shell? If yes, run it.
