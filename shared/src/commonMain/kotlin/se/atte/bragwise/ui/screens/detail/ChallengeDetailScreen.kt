@@ -41,6 +41,7 @@ import se.atte.bragwise.ui.predictedCount
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppOutlinedButton
 import se.atte.bragwise.ui.components.AppTextButton
@@ -77,11 +78,14 @@ import bragwise.shared.generated.resources.cd_snackbar_delete_failed
 import bragwise.shared.generated.resources.cd_snackbar_invites_sent
 import bragwise.shared.generated.resources.cd_snackbar_share_failed
 import bragwise.shared.generated.resources.cd_view_predictions
+import bragwise.shared.generated.resources.cd_deleting
 import bragwise.shared.generated.resources.cd_your_rank
 import bragwise.shared.generated.resources.cta_share
 import bragwise.shared.generated.resources.deadline_locks_prefix
 import bragwise.shared.generated.resources.invite_button
+import se.atte.bragwise.mvi.Cause
 import se.atte.bragwise.ui.components.FriendPickerDialog
+import se.atte.bragwise.ui.components.LoadingDialog
 import se.atte.bragwise.ui.components.formatDeadline
 import se.atte.bragwise.ui.preview.sampleDetail
 
@@ -148,7 +152,7 @@ fun ChallengeDetailScreen(
             Text(stringResource(Res.string.cd_no_challenge))
         }
         is UiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (ui.cause == se.atte.bragwise.mvi.Cause.NoAccess) {
+            if (ui.cause == Cause.NoAccess) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -178,6 +182,7 @@ fun ChallengeDetailScreen(
                 isOwner = state.isOwner,
                 myUid = state.myUid,
                 confirmingDelete = state.confirmingDelete,
+                isDeleting = state.isDeleting,
                 onPredict = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPredict) },
                 onSummary = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenSummary) },
                 onPostResults = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPostResults) },
@@ -199,6 +204,7 @@ private fun DetailContent(
     isOwner: Boolean,
     myUid: String,
     confirmingDelete: Boolean,
+    isDeleting: Boolean,
     onPredict: () -> Unit,
     onSummary: () -> Unit,
     onPostResults: () -> Unit,
@@ -212,6 +218,10 @@ private fun DetailContent(
 ) {
     val joined = data.myPredictions.isNotEmpty()
     val challenge = data.challenge
+
+    if (isDeleting) {
+        LoadingDialog(message = stringResource(Res.string.cd_deleting))
+    }
 
     if (confirmingDelete) {
         AlertDialog(
@@ -235,7 +245,7 @@ private fun DetailContent(
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(standardPadding),
+            contentPadding = PaddingValues(standardPadding),
             verticalArrangement = Arrangement.spacedBy(standardPadding),
         ) {
             item {
@@ -501,6 +511,7 @@ private fun Detail_Ready_NotJoined_Preview() {
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
+            isDeleting = false,
         )
     }
 }
@@ -529,6 +540,7 @@ private fun Detail_Ready_Owner_Preview() {
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
+            isDeleting = false,
         )
     }
 }
@@ -555,6 +567,7 @@ private fun Detail_Ready_BetsVisible_Preview() {
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
+            isDeleting = false,
         )
     }
 }

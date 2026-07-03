@@ -128,6 +128,7 @@
     <string name="cd_results_posted">结果已发布</string>
     <string name="cd_post_results">发布结果</string>
     <string name="cd_use_as_template">复制到新挑战</string>
+    <string name="cd_deleting">正在删除挑战…</string>
     <string name="cd_delete_challenge">删除挑战</string>
     <string name="cd_delete_challenge_title">删除挑战?</string>
     <string name="cd_delete_challenge_body">这将永久删除挑战、所有预测和邀请。这无法撤销。</string>

@@ -128,6 +128,7 @@
     <string name="cd_results_posted">Risultati pubblicati</string>
     <string name="cd_post_results">Pubblica risultati</string>
     <string name="cd_use_as_template">Copia in una nuova sfida</string>
+    <string name="cd_deleting">Eliminazione sfida…</string>
     <string name="cd_delete_challenge">Elimina sfida</string>
     <string name="cd_delete_challenge_title">Eliminare la sfida?</string>
     <string name="cd_delete_challenge_body">Questo elimina permanentemente la sfida, tutte le previsioni e gli inviti. Questo non può essere annullato.</string>

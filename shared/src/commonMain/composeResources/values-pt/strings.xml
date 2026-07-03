@@ -128,6 +128,7 @@
     <string name="cd_results_posted">Resultados publicados</string>
     <string name="cd_post_results">Publicar resultados</string>
     <string name="cd_use_as_template">Copiar para novo desafio</string>
+    <string name="cd_deleting">Deletando desafio…</string>
     <string name="cd_delete_challenge">Deletar desafio</string>
     <string name="cd_delete_challenge_title">Deletar desafio?</string>
     <string name="cd_delete_challenge_body">Isso remove permanentemente o desafio, todas as previsões e convites. Isso não pode ser desfeito.</string>

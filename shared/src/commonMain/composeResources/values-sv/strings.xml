@@ -130,6 +130,7 @@
     <string name="cd_results_posted">Resultat publicerade</string>
     <string name="cd_post_results">Publicera resultat</string>
     <string name="cd_use_as_template">Kopiera till ny utmaning</string>
+    <string name="cd_deleting">Tar bort utmaning…</string>
     <string name="cd_delete_challenge">Ta bort utmaning</string>
     <string name="cd_delete_challenge_title">Ta bort utmaning?</string>
     <string name="cd_delete_challenge_body">Detta tar permanent bort utmaningen, alla tipsningar och inbjudningar. Det går inte att ångra.</string>

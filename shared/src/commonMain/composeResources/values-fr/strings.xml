@@ -128,6 +128,7 @@
     <string name="cd_results_posted">Résultats publiés</string>
     <string name="cd_post_results">Publier les résultats</string>
     <string name="cd_use_as_template">Copier vers un nouveau défi</string>
+    <string name="cd_deleting">Suppression du défi…</string>
     <string name="cd_delete_challenge">Supprimer le défi</string>
     <string name="cd_delete_challenge_title">Supprimer le défi?</string>
     <string name="cd_delete_challenge_body">Cela supprime définitivement le défi, toutes les prédictions et invitations. Cela ne peut pas être annulé.</string>

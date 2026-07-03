@@ -128,6 +128,7 @@
     <string name="cd_results_posted">परिणाम पोस्ट हुए</string>
     <string name="cd_post_results">परिणाम पोस्ट करें</string>
     <string name="cd_use_as_template">नई चुनौती में कॉपी करें</string>
+    <string name="cd_deleting">चैलेंज हटाया जा रहा है…</string>
     <string name="cd_delete_challenge">चैलेंज हटाएं</string>
     <string name="cd_delete_challenge_title">चैलेंज हटाएं?</string>
     <string name="cd_delete_challenge_body">यह चैलेंज, सभी भविष्यवाणियां और आमंत्रण स्थायी रूप से हटा देगा। यह पूर्ववत नहीं हो सकता।</string>

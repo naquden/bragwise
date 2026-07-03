@@ -128,6 +128,7 @@
     <string name="cd_results_posted">Результаты опубликованы</string>
     <string name="cd_post_results">Опубликовать результаты</string>
     <string name="cd_use_as_template">Копировать в новый вызов</string>
+    <string name="cd_deleting">Удаление испытания…</string>
     <string name="cd_delete_challenge">Удалить испытание</string>
     <string name="cd_delete_challenge_title">Удалить испытание?</string>
     <string name="cd_delete_challenge_body">Это навсегда удалит испытание, все прогнозы и приглашения. Это невозможно отменить.</string>

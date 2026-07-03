@@ -65,6 +65,7 @@ class ChallengeDetailViewModel(
         val isOwner: Boolean = false,
         val myUid: String = "",
         val confirmingDelete: Boolean = false,
+        val isDeleting: Boolean = false,
         val invitingFriends: Boolean = false,
         val sendingInvites: Boolean = false,
     )
@@ -173,13 +174,14 @@ class ChallengeDetailViewModel(
             Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }
             Intent.CancelDelete -> update { it.copy(confirmingDelete = false) }
             Intent.ConfirmDelete -> viewModelScope.launch {
-                update { it.copy(confirmingDelete = false) }
+                update { it.copy(confirmingDelete = false, isDeleting = true) }
                 challenges.deleteChallenge(challengeId)
                     .onSuccess { emitDeleted() }
                     .onFailure { e ->
                         if (e is AppError && e.code == AppErrorCode.NotFound) {
                             emitDeleted()
                         } else {
+                            update { it.copy(isDeleting = false) }
                             errorReporter.report(e)
                         }
                     }
