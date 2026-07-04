@@ -723,6 +723,85 @@ fun CreateChallengeScreen(
                                         )
                                     }
                                 },
+                                onSaveSinglePick = { title, options, optionType ->
+                                    val existing = state.bets.firstOrNull()
+                                    val reindexed = options.mapIndexed { i, opt -> opt.copy(id = "o$i") }
+                                    if (existing != null) {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.UpdateBet(
+                                                Bet.SinglePick(
+                                                    id = existing.id,
+                                                    title = title,
+                                                    optionType = optionType,
+                                                    options = reindexed,
+                                                )
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.AddSinglePick(
+                                                title = title,
+                                                options = reindexed,
+                                                optionType = optionType,
+                                            )
+                                        )
+                                    }
+                                },
+                                onSaveMultiSelect = { title, options, optionType ->
+                                    val existing = state.bets.firstOrNull()
+                                    val reindexed = options.mapIndexed { i, opt -> opt.copy(id = "o$i") }
+                                    if (existing != null) {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.UpdateBet(
+                                                Bet.MultiSelect(
+                                                    id = existing.id,
+                                                    title = title,
+                                                    optionType = optionType,
+                                                    options = reindexed,
+                                                )
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.AddMultiSelect(
+                                                title = title,
+                                                options = reindexed,
+                                                optionType = optionType,
+                                            )
+                                        )
+                                    }
+                                },
+                                onSaveBoolean = { title ->
+                                    val existing = state.bets.firstOrNull()
+                                    if (existing != null) {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.UpdateBet(
+                                                Bet.BooleanProp(id = existing.id, title = title)
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.AddBoolean(title = title)
+                                        )
+                                    }
+                                },
+                                onSaveOverUnder = { title, line ->
+                                    val existing = state.bets.firstOrNull()
+                                    if (existing != null) {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.UpdateBet(
+                                                Bet.OverUnder(id = existing.id, title = title, line = line)
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.onIntent(
+                                            CreateChallengeViewModel.Intent.AddOverUnder(
+                                                title = title,
+                                                line = line,
+                                            )
+                                        )
+                                    }
+                                },
                             )
                         }
                     }
@@ -1056,27 +1135,49 @@ private fun BetCard(bet: Bet, onRemove: () -> Unit, onClick: () -> Unit) {
 
 
 /**
- * Focused editor for SINGLE mode: one bet with placement/ranking.
- * Sub-type row: Time / Day / Number (Guess placement=true) or Ranking.
- * Guess sub-types auto-save on keystroke; Ranking saves only when valid.
+ * Focused editor for SINGLE mode: one bet, all types supported.
+ * Guess sub-types auto-save on keystroke; option-bearing types save when valid.
  */
 @Composable
 private fun SingleBetEditor(
     singleBet: Bet?,
     onSaveGuess: (title: String, granularity: GuessGranularity) -> Unit,
     onSaveRanking: (title: String, options: List<BetOption>, optionType: OptionType, topN: Int) -> Unit,
+    onSaveSinglePick: (title: String, options: List<BetOption>, optionType: OptionType) -> Unit,
+    onSaveMultiSelect: (title: String, options: List<BetOption>, optionType: OptionType) -> Unit,
+    onSaveBoolean: (title: String) -> Unit,
+    onSaveOverUnder: (title: String, line: Long) -> Unit,
     onValidityChange: (Boolean) -> Unit,
 ) {
-    val isRanking = singleBet is Bet.Ranking
-    var useRanking by remember(isRanking) { mutableStateOf(isRanking) }
+    val initialBetType = when (singleBet) {
+        is Bet.Ranking -> BetType.Ranking
+        is Bet.BooleanProp -> BetType.YesNo
+        is Bet.SinglePick -> BetType.SinglePick
+        is Bet.MultiSelect -> BetType.MultiSelect
+        is Bet.OverUnder -> BetType.OverUnder
+        is Bet.Guess -> when (singleBet.granularity) {
+            GuessGranularity.TIME -> BetType.Time
+            GuessGranularity.DAY -> BetType.Day
+            GuessGranularity.NUMBER -> BetType.Number
+        }
+        null -> BetType.Number
+    }
+    var betType by remember(initialBetType) { mutableStateOf(initialBetType) }
 
     val guessBet = singleBet as? Bet.Guess
     val rankingBet = singleBet as? Bet.Ranking
+    val singlePickBet = singleBet as? Bet.SinglePick
+    val multiSelectBet = singleBet as? Bet.MultiSelect
+    val overUnderBet = singleBet as? Bet.OverUnder
 
     var question by remember(singleBet?.title) { mutableStateOf(singleBet?.title ?: "") }
+
+    // Guess granularity (Time/Day/Number)
     var granularity by remember(guessBet?.granularity) {
         mutableStateOf(guessBet?.granularity ?: GuessGranularity.NUMBER)
     }
+
+    // Ranking state
     var rankingOptionType by remember(rankingBet?.optionType) {
         mutableStateOf(rankingBet?.optionType ?: OptionType.NONE)
     }
@@ -1095,11 +1196,36 @@ private fun SingleBetEditor(
     var rankingTopN by remember(rankingBet?.topN) { mutableIntStateOf(rankingBet?.topN ?: 3) }
     var rankingTopNManuallySet by remember(rankingBet) { mutableStateOf(rankingBet != null) }
 
+    // SinglePick / MultiSelect shared option state
+    val pickSourceBet = singlePickBet ?: multiSelectBet
+    var pickOptionType by remember(pickSourceBet?.optionType) {
+        mutableStateOf(pickSourceBet?.optionType ?: OptionType.NONE)
+    }
+    var pickOptions by remember(pickSourceBet) {
+        val opts = singlePickBet?.options ?: multiSelectBet?.options
+        mutableStateOf(
+            if (opts != null && (pickSourceBet?.optionType == OptionType.NONE)) opts.map { it.label }
+            else listOf("", "")
+        )
+    }
+    var pickCountryOptions by remember(pickSourceBet) {
+        val opts = singlePickBet?.options ?: multiSelectBet?.options
+        mutableStateOf(
+            if (opts != null && (pickSourceBet?.optionType == OptionType.COUNTRY)) opts
+            else defaultCountryOptions()
+        )
+    }
+
+    // Over/Under line
+    var overUnderLine by remember(overUnderBet?.line) {
+        mutableStateOf(overUnderBet?.line?.toString() ?: "")
+    }
+
+    // --- derived resolved options ---
+
     val resolvedRankingOptions = when (rankingOptionType) {
         OptionType.COUNTRY -> rankingCountryOptions.filter { it.label.isNotBlank() }
-        OptionType.NONE -> rankingOptions
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
+        OptionType.NONE -> rankingOptions.map { it.trim() }.filter { it.isNotEmpty() }
             .mapIndexed { i, label -> BetOption(id = "o$i", label = label) }
     }
     val rankingCountryAllResolved = rankingOptionType == OptionType.NONE ||
@@ -1110,9 +1236,19 @@ private fun SingleBetEditor(
     }
     val effectiveRankingTopN = if (rankingTopNManuallySet) rankingTopN else singleBetRankingSlotCount.coerceAtLeast(2)
 
-    val isValid = question.isNotBlank() && when {
-        !useRanking -> true
-        else -> resolvedRankingOptions.size >= effectiveRankingTopN && effectiveRankingTopN >= 2 && rankingCountryAllResolved
+    val resolvedPickOptions = when (pickOptionType) {
+        OptionType.COUNTRY -> pickCountryOptions.filter { it.label.isNotBlank() }
+        OptionType.NONE -> pickOptions.map { it.trim() }.filter { it.isNotEmpty() }
+            .mapIndexed { i, label -> BetOption(id = "o$i", label = label) }
+    }
+    val pickCountryAllResolved = pickOptionType == OptionType.NONE ||
+        resolvedPickOptions.all { isSupportedCountryCode(it.countryCode) }
+
+    val isValid = question.isNotBlank() && when (betType) {
+        BetType.Ranking -> resolvedRankingOptions.size >= effectiveRankingTopN && effectiveRankingTopN >= 2 && rankingCountryAllResolved
+        BetType.SinglePick, BetType.MultiSelect -> resolvedPickOptions.size >= 2 && pickCountryAllResolved
+        BetType.OverUnder -> overUnderLine.toLongOrNull() != null
+        else -> true
     }
 
     LaunchedEffect(isValid) { onValidityChange(isValid) }
@@ -1124,59 +1260,105 @@ private fun SingleBetEditor(
         }
     }
 
+    fun trySavePick(title: String, opts: List<BetOption>, oType: OptionType) {
+        val countryValid = oType == OptionType.NONE || opts.all { isSupportedCountryCode(it.countryCode) }
+        if (title.isNotBlank() && opts.size >= 2 && countryValid) {
+            if (betType == BetType.SinglePick) onSaveSinglePick(title, opts, oType)
+            else onSaveMultiSelect(title, opts, oType)
+        }
+    }
+
+    fun trySaveOverUnder(title: String, line: String) {
+        val parsed = line.toLongOrNull()
+        if (title.isNotBlank() && parsed != null) onSaveOverUnder(title, parsed)
+    }
+
     SectionCard {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
             verticalArrangement = Arrangement.spacedBy(standardPaddingSmall),
         ) {
             AppFilterChip(
-                selected = !useRanking && granularity == GuessGranularity.TIME,
+                selected = betType == BetType.YesNo,
                 onClick = {
-                    useRanking = false
+                    betType = BetType.YesNo
+                    if (question.isNotBlank()) onSaveBoolean(question)
+                },
+                label = { Text(stringResource(Res.string.cc_bet_type_yes_no)) },
+            )
+            AppFilterChip(
+                selected = betType == BetType.SinglePick,
+                onClick = { betType = BetType.SinglePick },
+                label = { Text(stringResource(Res.string.cc_bet_type_single_pick)) },
+            )
+            AppFilterChip(
+                selected = betType == BetType.MultiSelect,
+                onClick = { betType = BetType.MultiSelect },
+                label = { Text(stringResource(Res.string.cc_bet_type_multi_select)) },
+            )
+            AppFilterChip(
+                selected = betType == BetType.Ranking,
+                onClick = { betType = BetType.Ranking },
+                label = { Text(stringResource(Res.string.cc_bet_type_ranking)) },
+            )
+            AppFilterChip(
+                selected = betType == BetType.Time,
+                onClick = {
+                    betType = BetType.Time
                     granularity = GuessGranularity.TIME
                     if (question.isNotBlank()) onSaveGuess(question, GuessGranularity.TIME)
                 },
                 label = { Text(stringResource(Res.string.cc_bet_type_time)) },
             )
             AppFilterChip(
-                selected = !useRanking && granularity == GuessGranularity.DAY,
+                selected = betType == BetType.Day,
                 onClick = {
-                    useRanking = false
+                    betType = BetType.Day
                     granularity = GuessGranularity.DAY
                     if (question.isNotBlank()) onSaveGuess(question, GuessGranularity.DAY)
                 },
                 label = { Text(stringResource(Res.string.cc_bet_type_day)) },
             )
             AppFilterChip(
-                selected = !useRanking && granularity == GuessGranularity.NUMBER,
+                selected = betType == BetType.Number,
                 onClick = {
-                    useRanking = false
+                    betType = BetType.Number
                     granularity = GuessGranularity.NUMBER
                     if (question.isNotBlank()) onSaveGuess(question, GuessGranularity.NUMBER)
                 },
                 label = { Text(stringResource(Res.string.cc_bet_type_number)) },
             )
             AppFilterChip(
-                selected = useRanking,
-                onClick = { useRanking = true },
-                label = { Text(stringResource(Res.string.cc_bet_type_ranking)) },
+                selected = betType == BetType.OverUnder,
+                onClick = { betType = BetType.OverUnder },
+                label = { Text(stringResource(Res.string.cc_bet_type_over_under)) },
             )
         }
-        if (useRanking) {
+        // Option-type toggle for Ranking / SinglePick / MultiSelect
+        if (betType == BetType.Ranking || betType == BetType.SinglePick || betType == BetType.MultiSelect) {
+            val currentOptionType = if (betType == BetType.Ranking) rankingOptionType else pickOptionType
             Row(
                 horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
                 modifier = Modifier.padding(top = standardPaddingSmall),
             ) {
                 AppFilterChip(
-                    selected = rankingOptionType == OptionType.NONE,
-                    onClick = { rankingOptionType = OptionType.NONE },
+                    selected = currentOptionType == OptionType.NONE,
+                    onClick = {
+                        if (betType == BetType.Ranking) rankingOptionType = OptionType.NONE
+                        else pickOptionType = OptionType.NONE
+                    },
                     label = { Text(stringResource(Res.string.cc_custom_options)) },
                 )
                 AppFilterChip(
-                    selected = rankingOptionType == OptionType.COUNTRY,
+                    selected = currentOptionType == OptionType.COUNTRY,
                     onClick = {
-                        rankingOptionType = OptionType.COUNTRY
-                        if (rankingCountryOptions.size < 2) rankingCountryOptions = defaultCountryOptions()
+                        if (betType == BetType.Ranking) {
+                            rankingOptionType = OptionType.COUNTRY
+                            if (rankingCountryOptions.size < 2) rankingCountryOptions = defaultCountryOptions()
+                        } else {
+                            pickOptionType = OptionType.COUNTRY
+                            if (pickCountryOptions.size < 2) pickCountryOptions = defaultCountryOptions()
+                        }
                     },
                     label = { Text(stringResource(Res.string.cc_countries)) },
                 )
@@ -1187,15 +1369,39 @@ private fun SingleBetEditor(
             onValueChange = { v ->
                 if (v.length <= InputLimits.BET_TITLE) {
                     question = v
-                    if (!useRanking && v.isNotBlank()) onSaveGuess(v, granularity)
-                    if (useRanking) trySaveRanking(v, resolvedRankingOptions, rankingOptionType, effectiveRankingTopN)
+                    when (betType) {
+                        BetType.Time -> if (v.isNotBlank()) onSaveGuess(v, GuessGranularity.TIME)
+                        BetType.Day -> if (v.isNotBlank()) onSaveGuess(v, GuessGranularity.DAY)
+                        BetType.Number -> if (v.isNotBlank()) onSaveGuess(v, GuessGranularity.NUMBER)
+                        BetType.Ranking -> trySaveRanking(v, resolvedRankingOptions, rankingOptionType, effectiveRankingTopN)
+                        BetType.SinglePick, BetType.MultiSelect -> trySavePick(v, resolvedPickOptions, pickOptionType)
+                        BetType.YesNo -> if (v.isNotBlank()) onSaveBoolean(v)
+                        BetType.OverUnder -> trySaveOverUnder(v, overUnderLine)
+                    }
                 }
             },
             label = { Text(stringResource(Res.string.cc_single_question_label)) },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("create_single_question"),
             singleLine = true,
         )
-        if (useRanking) {
+        // OverUnder line field
+        if (betType == BetType.OverUnder) {
+            OutlinedTextField(
+                value = overUnderLine,
+                onValueChange = { v ->
+                    overUnderLine = v
+                    trySaveOverUnder(question, v)
+                },
+                label = { Text(stringResource(Res.string.cc_over_under_line_label)) },
+                modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                ),
+            )
+        }
+        // Options for Ranking
+        if (betType == BetType.Ranking) {
             Spacer(Modifier.height(standardPaddingSmall))
             if (rankingOptionType == OptionType.COUNTRY) {
                 CountryOptionsEditor(
@@ -1227,6 +1433,30 @@ private fun SingleBetEditor(
                 },
                 optionsCount = singleBetRankingSlotCount,
             )
+        }
+        // Options for SinglePick / MultiSelect
+        if (betType == BetType.SinglePick || betType == BetType.MultiSelect) {
+            Spacer(Modifier.height(standardPaddingSmall))
+            if (pickOptionType == OptionType.COUNTRY) {
+                CountryOptionsEditor(
+                    options = pickCountryOptions,
+                    onOptionsChange = { updated ->
+                        pickCountryOptions = updated
+                        val resolved = updated.filter { it.label.isNotBlank() }
+                        trySavePick(question, resolved, OptionType.COUNTRY)
+                    },
+                )
+            } else {
+                OptionsEditor(
+                    options = pickOptions,
+                    onOptionsChange = { updated ->
+                        pickOptions = updated
+                        val resolved = updated.map { it.trim() }.filter { it.isNotEmpty() }
+                            .mapIndexed { i, label -> BetOption(id = "o$i", label = label) }
+                        trySavePick(question, resolved, OptionType.NONE)
+                    },
+                )
+            }
         }
     }
 }

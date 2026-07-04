@@ -12,6 +12,7 @@ import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
+import se.atte.bragwise.domain.ScoringMode
 import se.atte.bragwise.domain.Visibility
 import se.atte.bragwise.util.randomUuid
 import kotlin.time.Clock
@@ -89,6 +90,7 @@ class WebLocalDraftStore : LocalDraftStore {
         val betsVisible: Boolean = false,
         val invitedUids: List<String> = emptyList(),
         val bets: List<BetDtoLocal> = emptyList(),
+        val scoringMode: String = "STANDARD",
     )
 
     @Serializable
@@ -123,6 +125,7 @@ class WebLocalDraftStore : LocalDraftStore {
         betsVisible = betsVisible,
         invitedUids = invitedUids.toList(),
         bets = bets.map { it.toDtoLocal() },
+        scoringMode = scoringMode.name,
     )
 
     private fun Bet.toDtoLocal(): BetDtoLocal = when (this) {
@@ -177,6 +180,7 @@ class WebLocalDraftStore : LocalDraftStore {
         leaderboard = null,
         betsVisible = betsVisible,
         invitedUids = invitedUids.toSet(),
+        scoringMode = runCatching { ScoringMode.valueOf(scoringMode) }.getOrDefault(ScoringMode.STANDARD),
     )
 
     private fun BetDtoLocal.toDomain(): Bet {

@@ -432,7 +432,8 @@ async function processDeleteChecklist(uid: string): Promise<void> {
                 uid: (d.data().uid ?? d.id) as string,
                 predictions: (d.data().predictions ?? {}) as Record<string, PredictionPayload>,
               }));
-            const leaderboard = computeLeaderboard(bets, players, results);
+            const scoringMode = (data.scoringMode ?? 'STANDARD') as 'STANDARD' | 'PLACEMENT';
+            const leaderboard = computeLeaderboard(bets, players, results, scoringMode);
             const ranked = competitionRanks(leaderboard);
             const rankedLeaderboard: Record<string, number> = {};
             for (const e of ranked) rankedLeaderboard[e.uid] = e.rank;

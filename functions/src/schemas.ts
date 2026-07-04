@@ -187,6 +187,7 @@ const CreateChallengeBaseSchema = z.object({
   ),
   bets: z.array(BetSchema).min(1),
   betsVisible: z.boolean().default(false),
+  scoringMode: z.enum(['STANDARD', 'PLACEMENT']).default('STANDARD'),
   invitedUids: z.array(z.string().min(1)).max(100).default([]),
   // Hard-rejected if present:
   promoted: z.never().optional(),

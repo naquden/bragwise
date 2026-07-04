@@ -2,6 +2,7 @@ package se.atte.bragwise.ui
 
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.ChallengeDetail
+import se.atte.bragwise.domain.ScoringMode
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.PredictionPayload
@@ -97,6 +98,9 @@ fun betPoints(bet: Bet, detail: ChallengeDetail): Int? {
     val results = detail.challenge.results ?: return null
     val prediction = detail.myPredictions[bet.id] ?: return 0
     val result = results[bet.id] ?: return null
+    // Placement challenges award N..1 pts cross-player; the client cannot compute
+    // these without all players' predictions. Leaderboard/podium are the source of truth.
+    if (detail.challenge.scoringMode == ScoringMode.PLACEMENT) return null
     // Closest-wins Guess bets are scored cross-player by the leaderboard aggregator;
     // the client cannot compute the point without all players' predictions.
     if (bet is Bet.Guess && bet.closest) return null

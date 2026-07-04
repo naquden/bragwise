@@ -242,6 +242,7 @@ class JsChallengeRemote : ChallengeRemote {
                 challenge.bets.forEach { bet -> add(bet.toJsonObject()) }
             }
             put("betsVisible", challenge.betsVisible)
+            put("scoringMode", challenge.scoringMode.name)
             putJsonArray("invitedUids") {
                 challenge.invitedUids.forEach { uid -> add(JsonPrimitive(uid)) }
             }

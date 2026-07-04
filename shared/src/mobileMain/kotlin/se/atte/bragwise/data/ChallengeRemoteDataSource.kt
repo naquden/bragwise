@@ -221,6 +221,7 @@ class ChallengeRemoteDataSource(
             "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to create a challenge" }.toString(),
             "bets" to challenge.bets.map { it.toMap() },
             "betsVisible" to challenge.betsVisible,
+            "scoringMode" to challenge.scoringMode.name,
             "invitedUids" to challenge.invitedUids.toList(),
         )
         val result = functions.httpsCallable("createChallenge")(data)

@@ -329,7 +329,8 @@ async function recomputeLeaderboardTx(
       uid: (d.data().uid ?? d.id) as string,
       predictions: (d.data().predictions ?? {}) as Record<string, PredictionPayload>,
     }));
-  const leaderboard = computeLeaderboard(bets, players, results);
+  const scoringMode = (data.scoringMode ?? 'STANDARD') as 'STANDARD' | 'PLACEMENT';
+  const leaderboard = computeLeaderboard(bets, players, results, scoringMode);
   const ranked = competitionRanks(leaderboard);
   const rankedLeaderboard: Record<string, number> = {};
   for (const e of ranked) rankedLeaderboard[e.uid] = e.rank;
@@ -365,7 +366,8 @@ export const postResults = onCall({ enforceAppCheck: true }, async (req: Callabl
       predictions: (d.data().predictions ?? {}) as Record<string, PredictionPayload>,
     }));
 
-    const leaderboard = computeLeaderboard(bets, players, results as Record<string, PredictionPayload>);
+    const scoringMode = (data.scoringMode ?? 'STANDARD') as 'STANDARD' | 'PLACEMENT';
+    const leaderboard = computeLeaderboard(bets, players, results as Record<string, PredictionPayload>, scoringMode);
     const ranked = competitionRanks(leaderboard);
     const rankedLeaderboard: Record<string, number> = {};
     for (const e of ranked) rankedLeaderboard[e.uid] = e.rank;

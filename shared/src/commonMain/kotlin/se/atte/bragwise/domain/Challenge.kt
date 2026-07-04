@@ -10,6 +10,8 @@ data class Reaction(
     val updatedAt: Instant,
 )
 
+enum class ScoringMode { STANDARD, PLACEMENT }
+
 data class Challenge(
     val id: String,
     val title: String,
@@ -30,6 +32,7 @@ data class Challenge(
     val participants: List<ParticipantInfo> = emptyList(),
     /** Populated for local drafts only; always empty for server-fetched challenges. */
     val invitedUids: Set<String> = emptySet(),
+    val scoringMode: ScoringMode = ScoringMode.STANDARD,
 )
 
 data class ParticipantInfo(

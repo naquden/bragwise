@@ -21,6 +21,7 @@ import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.Reaction
+import se.atte.bragwise.domain.ScoringMode
 import se.atte.bragwise.domain.Visibility
 
 // ── Serializable DTOs ────────────────────────────────────────────────────────
@@ -148,6 +149,9 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
         leaderboard = leaderboard,
         betsVisible = boolOrNull("betsVisible") ?: false,
         participants = participants,
+        scoringMode = runCatching {
+            ScoringMode.valueOf(strOrNull("scoringMode") ?: "STANDARD")
+        }.getOrDefault(ScoringMode.STANDARD),
     )
 }
 

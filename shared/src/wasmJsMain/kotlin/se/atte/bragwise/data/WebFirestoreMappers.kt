@@ -28,6 +28,7 @@ import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PredictionPayload
 import se.atte.bragwise.domain.PublicProfile
 import se.atte.bragwise.domain.Reaction
+import se.atte.bragwise.domain.ScoringMode
 import se.atte.bragwise.domain.Visibility
 
 // ── JSON config ───────────────────────────────────────────────────────────────
@@ -109,6 +110,7 @@ internal data class ChallengeDocDto(
     val results: Map<String, PredictionPayloadDto>? = null,
     val leaderboard: Map<String, Int>? = null,
     val betsVisible: Boolean = false,
+    val scoringMode: String? = null,
     val participants: Map<String, ParticipantDto> = emptyMap(),
 )
 
@@ -204,6 +206,9 @@ internal fun ChallengeDocDto.toChallenge(id: String): Challenge {
         leaderboard = leaderboard,
         betsVisible = betsVisible,
         participants = participants,
+        scoringMode = runCatching {
+            ScoringMode.valueOf(this.scoringMode ?: "STANDARD")
+        }.getOrDefault(ScoringMode.STANDARD),
     )
 }
 

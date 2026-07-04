@@ -26,6 +26,7 @@ import se.atte.bragwise.domain.BetOption
 import se.atte.bragwise.domain.Challenge
 import se.atte.bragwise.domain.ChallengeStatus
 import se.atte.bragwise.domain.CloudFriend
+import se.atte.bragwise.domain.ScoringMode
 import se.atte.bragwise.domain.GuessGranularity
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.Visibility
@@ -128,6 +129,7 @@ class CreateChallengeViewModel(
                         betSeq = maxSeq,
                         betsVisible = draft.betsVisible,
                         invitedUids = draft.invitedUids,
+                        mode = if (draft.scoringMode == ScoringMode.PLACEMENT) CreateMode.SINGLE else CreateMode.MULTI,
                     )
                 }
             }
@@ -148,6 +150,7 @@ class CreateChallengeViewModel(
                             betSeq = maxSeq,
                             betsVisible = source.betsVisible,
                             invitedUids = emptySet(),
+                            mode = if (source.scoringMode == ScoringMode.PLACEMENT) CreateMode.SINGLE else CreateMode.MULTI,
                         )
                     }
                 }.onFailure { e -> errorReporter.report(e) }
@@ -322,5 +325,6 @@ class CreateChallengeViewModel(
         leaderboard = null,
         betsVisible = s.betsVisible,
         invitedUids = s.invitedUids,
+        scoringMode = if (s.mode == CreateMode.SINGLE) ScoringMode.PLACEMENT else ScoringMode.STANDARD,
     )
 }
