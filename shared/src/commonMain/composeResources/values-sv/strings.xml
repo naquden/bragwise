@@ -309,6 +309,8 @@
     <string name="cc_top_n_ranked">Topp N rankade</string>
     <string name="cc_decrease_top_n_a11y">Minska topp N</string>
     <string name="cc_increase_top_n_a11y">Öka topp N</string>
+    <string name="cc_help_top_n_title">Topp N rankade</string>
+    <string name="cc_help_top_n_body">Endast de N bästa positionerna räknas mot poängsättningen. Spelarna måste placera dessa positioner i rätt ordning för att tjäna poäng — allt rankad under position N ignoreras.\n\nStandardvärde är alla alternativ. Sänk det för att bara poängsätta de högst rankade.</string>
     <string name="cc_save_bet">Spara tips</string>
     <string name="cc_show_less">Visa mindre</string>
     <string name="cc_show_more_options">… %1$d till · Tryck för att visa</string>

@@ -303,6 +303,8 @@
     <string name="cc_top_n_ranked">Top N classés</string>
     <string name="cc_decrease_top_n_a11y">Diminuer le top N</string>
     <string name="cc_increase_top_n_a11y">Augmenter le top N</string>
+    <string name="cc_help_top_n_title">Top N classés</string>
+    <string name="cc_help_top_n_body">Seules les N premières positions comptent pour le score. Les joueurs doivent placer ces positions dans le bon ordre pour marquer des points — tout ce qui est classé en dessous de la position N est ignoré.\n\nPar défaut toutes les options. Réduisez pour ne scorer que les premières positions.</string>
     <string name="cc_save_bet">Enregistrer le pari</string>
     <string name="cc_show_less">Afficher moins</string>
     <string name="cc_show_more_options">… %1$d plus · Appuyez pour développer</string>

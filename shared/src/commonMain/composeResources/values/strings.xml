@@ -390,6 +390,8 @@
     <string name="cc_help_bet_type_body">Yes / No — simple true or false.\nSingle pick — choose one option from a list.\nRanking — order the top N items.\nTime — guess a clock time.\nDay — guess a date.\nNumber — guess a number.\nMulti-select — pick several options.\nOver / Under — guess above or below a threshold.</string>
     <string name="cc_help_option_type_title">Options</string>
     <string name="cc_help_option_type_body">Custom — type your own choices for the bet.\n\nCountries — pick from a full country list with flags and autocomplete. Use Countries for sports or geography bets.</string>
+    <string name="cc_help_top_n_title">Top N ranked</string>
+    <string name="cc_help_top_n_body">Only the top N positions count toward scoring. Players must place these positions in the correct order to earn points — anything ranked below position N is ignored.\n\nDefaults to all options. Lower it to score only the top few.</string>
     <string name="cc_help_scoring_title">Scoring</string>
     <string name="cc_help_scoring_body">Closest wins — the nearest guess scores points. Good for hard-to-predict values like a time or score.\n\nExact match — only a spot-on guess scores. Rewards precision.</string>
 

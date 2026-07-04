@@ -303,6 +303,8 @@
     <string name="cc_top_n_ranked">Top N Klassifizierung</string>
     <string name="cc_decrease_top_n_a11y">Top N verringern</string>
     <string name="cc_increase_top_n_a11y">Top N erhöhen</string>
+    <string name="cc_help_top_n_title">Top N Klassifizierung</string>
+    <string name="cc_help_top_n_body">Nur die obersten N Positionen zählen zur Wertung. Spieler müssen diese Positionen in der richtigen Reihenfolge platzieren, um Punkte zu verdienen — alles unter Position N wird ignoriert.\n\nStandardmäßig alle Optionen. Reduzieren, um nur die obersten wenigen zu werten.</string>
     <string name="cc_save_bet">Wette speichern</string>
     <string name="cc_show_less">Weniger anzeigen</string>
     <string name="cc_show_more_options">… %1$d mehr · Tippen zum Erweitern</string>

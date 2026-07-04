@@ -303,6 +303,8 @@
     <string name="cc_top_n_ranked">前 N 名排名</string>
     <string name="cc_decrease_top_n_a11y">降低前 N 名</string>
     <string name="cc_increase_top_n_a11y">增加前 N 名</string>
+    <string name="cc_help_top_n_title">前 N 名排名</string>
+    <string name="cc_help_top_n_body">只有前 N 个位置计入得分。玩家必须按正确顺序排列这些位置才能得分 — 排在第 N 位以下的所有内容都将被忽略。\n\n默认为所有选项。降低以仅对前几名计分。</string>
     <string name="cc_save_bet">保存投注</string>
     <string name="cc_show_less">显示更少</string>
     <string name="cc_show_more_options">… 还有 %1$d 个 · 点击展开</string>

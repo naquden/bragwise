@@ -303,6 +303,8 @@
     <string name="cc_top_n_ranked">शीर्ष N रैंक</string>
     <string name="cc_decrease_top_n_a11y">शीर्ष N घटाएं</string>
     <string name="cc_increase_top_n_a11y">शीर्ष N बढ़ाएं</string>
+    <string name="cc_help_top_n_title">शीर्ष N रैंक</string>
+    <string name="cc_help_top_n_body">केवल शीर्ष N स्थान स्कोरिंग में गिने जाते हैं। खिलाड़ियों को अंक अर्जित करने के लिए इन स्थानों को सही क्रम में रखना होगा — N से नीचे रैंक किए गए सभी स्थान अनदेखे किए जाते हैं।\n\nडिफ़ॉल्ट रूप से सभी विकल्प। केवल शीर्ष कुछ को स्कोर करने के लिए कम करें।</string>
     <string name="cc_save_bet">बेट सहेजें</string>
     <string name="cc_show_less">कम दिखाएं</string>
     <string name="cc_show_more_options">… %1$d और · विस्तार के लिए टैप करें</string>

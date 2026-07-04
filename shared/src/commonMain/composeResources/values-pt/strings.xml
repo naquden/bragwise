@@ -303,6 +303,8 @@
     <string name="cc_top_n_ranked">Top N classificados</string>
     <string name="cc_decrease_top_n_a11y">Diminuir top N</string>
     <string name="cc_increase_top_n_a11y">Aumentar top N</string>
+    <string name="cc_help_top_n_title">Top N classificados</string>
+    <string name="cc_help_top_n_body">Apenas as N primeiras posições contam para a pontuação. Os jogadores devem colocar estas posições na ordem correta para ganhar pontos — tudo classificado abaixo da posição N é ignorado.\n\nPadrão para todas as opções. Reduza para pontuar apenas as primeiras posições.</string>
     <string name="cc_save_bet">Salvar aposta</string>
     <string name="cc_show_less">Mostrar menos</string>
     <string name="cc_show_more_options">… %1$d mais · Toque para expandir</string>

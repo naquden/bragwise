@@ -303,6 +303,8 @@
     <string name="cc_top_n_ranked">Топ N рейтинг</string>
     <string name="cc_decrease_top_n_a11y">Уменьшить топ N</string>
     <string name="cc_increase_top_n_a11y">Увеличить топ N</string>
+    <string name="cc_help_top_n_title">Топ N рейтинг</string>
+    <string name="cc_help_top_n_body">Только первые N позиций учитываются в счёте. Игроки должны расставить эти позиции в правильном порядке, чтобы заработать очки — всё ниже позиции N игнорируется.\n\nПо умолчанию все варианты. Уменьшите, чтобы засчитывать только первые несколько позиций.</string>
     <string name="cc_save_bet">Сохранить ставку</string>
     <string name="cc_show_less">Показать меньше</string>
     <string name="cc_show_more_options">… %1$d ещё · Нажмите для разворачивания</string>

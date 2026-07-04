@@ -120,6 +120,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bragwise.shared.generated.resources.cc_help_top_n_body
+import bragwise.shared.generated.resources.cc_help_top_n_title
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Minus
 import com.composables.icons.lucide.Plus
@@ -186,6 +188,7 @@ fun CreateChallengeScreen(
     var countryOptions by remember { mutableStateOf(defaultCountryOptions()) }
     var optionType by remember { mutableStateOf(OptionType.NONE) }
     var topN by remember { mutableIntStateOf(3) }
+    var topNManuallySet by remember { mutableStateOf(false) }
     var betType by remember { mutableStateOf(BetType.YesNo) }
     var guessClosest by remember { mutableStateOf(true) }
     var overUnderLine by remember { mutableStateOf("") }
@@ -200,6 +203,7 @@ fun CreateChallengeScreen(
         countryOptions = defaultCountryOptions()
         optionType = OptionType.NONE
         topN = 3
+        topNManuallySet = false
         betType = BetType.YesNo
         guessClosest = true
         overUnderLine = ""
@@ -213,6 +217,7 @@ fun CreateChallengeScreen(
                 countryOptions = defaultCountryOptions()
                 optionType = OptionType.NONE
                 topN = 3
+                topNManuallySet = false
                 guessClosest = true
                 overUnderLine = ""
             }
@@ -222,6 +227,7 @@ fun CreateChallengeScreen(
                 options = bet.options.map { it.label }
                 countryOptions = bet.options
                 topN = 3
+                topNManuallySet = false
                 guessClosest = true
                 overUnderLine = ""
             }
@@ -231,6 +237,7 @@ fun CreateChallengeScreen(
                 options = bet.options.map { it.label }
                 countryOptions = bet.options
                 topN = bet.topN
+                topNManuallySet = true
                 guessClosest = true
                 overUnderLine = ""
             }
@@ -244,6 +251,7 @@ fun CreateChallengeScreen(
                 countryOptions = defaultCountryOptions()
                 optionType = OptionType.NONE
                 topN = 3
+                topNManuallySet = false
                 guessClosest = bet.closest
                 overUnderLine = ""
             }
@@ -253,6 +261,7 @@ fun CreateChallengeScreen(
                 options = bet.options.map { it.label }
                 countryOptions = bet.options
                 topN = 3
+                topNManuallySet = false
                 guessClosest = true
                 overUnderLine = ""
             }
@@ -262,6 +271,7 @@ fun CreateChallengeScreen(
                 countryOptions = defaultCountryOptions()
                 optionType = OptionType.NONE
                 topN = 3
+                topNManuallySet = false
                 guessClosest = true
                 overUnderLine = bet.line.toString()
             }
@@ -273,6 +283,12 @@ fun CreateChallengeScreen(
         OptionType.NONE -> options.map { it.trim() }.filter { it.isNotEmpty() }
             .mapIndexed { index, label -> BetOption(id = "o$index", label = label) }
     }
+    val rankingSlotCount = when (optionType) {
+        OptionType.COUNTRY -> countryOptions.size
+        OptionType.NONE -> options.size
+    }
+    val effectiveTopN = if (topNManuallySet) topN else rankingSlotCount.coerceAtLeast(2)
+
     val hasDuplicateOptions = resolvedOptions
         .map { option -> option.countryCode ?: option.label.trim().lowercase() }
         .let { keys -> keys.size != keys.toSet().size }
@@ -462,6 +478,9 @@ fun CreateChallengeScreen(
                                                     options = listOf("", "")
                                                     optionType = OptionType.NONE
                                                 }
+                                                if (newType == BetType.Ranking) {
+                                                    topNManuallySet = false
+                                                }
                                             },
                                             optionType = optionType,
                                             onOptionTypeChange = { optionType = it },
@@ -471,12 +490,13 @@ fun CreateChallengeScreen(
                                             onOptionsChange = { options = it },
                                             countryOptions = countryOptions,
                                             onCountryOptionsChange = { countryOptions = it },
-                                            topN = topN,
-                                            onTopNChange = { topN = it },
+                                            topN = effectiveTopN,
+                                            onTopNChange = { topN = it; topNManuallySet = true },
+                                            optionsCount = rankingSlotCount,
                                             canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && !hasUnresolvedCountry && when (betType) {
                                                 BetType.YesNo -> true
                                                 BetType.SinglePick -> resolvedOptions.size >= 2
-                                                BetType.Ranking -> resolvedOptions.size >= topN
+                                                BetType.Ranking -> resolvedOptions.size >= effectiveTopN
                                                 BetType.Time, BetType.Day, BetType.Number -> true
                                                 BetType.MultiSelect -> resolvedOptions.size >= 2
                                                 BetType.OverUnder -> overUnderLine.toLongOrNull() != null
@@ -505,7 +525,7 @@ fun CreateChallengeScreen(
                                                         title = newBetTitle,
                                                         optionType = optionType,
                                                         options = resolvedOptions,
-                                                        topN = topN,
+                                                        topN = effectiveTopN,
                                                     )
                                                     BetType.Time -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.TIME, closest = guessClosest)
                                                     BetType.Day -> Bet.Guess(id = bet.id, title = newBetTitle, granularity = GuessGranularity.DAY, closest = guessClosest)
@@ -548,6 +568,9 @@ fun CreateChallengeScreen(
                                                 options = listOf("", "")
                                                 optionType = OptionType.NONE
                                             }
+                                            if (newType == BetType.Ranking) {
+                                                topNManuallySet = false
+                                            }
                                         },
                                         optionType = optionType,
                                         onOptionTypeChange = { optionType = it },
@@ -557,12 +580,13 @@ fun CreateChallengeScreen(
                                         onOptionsChange = { options = it },
                                         countryOptions = countryOptions,
                                         onCountryOptionsChange = { countryOptions = it },
-                                        topN = topN,
-                                        onTopNChange = { topN = it },
+                                        topN = effectiveTopN,
+                                        onTopNChange = { topN = it; topNManuallySet = true },
+                                        optionsCount = rankingSlotCount,
                                         canSave = newBetTitle.isNotBlank() && !hasDuplicateOptions && !hasUnresolvedCountry && when (betType) {
                                             BetType.YesNo -> true
                                             BetType.SinglePick -> resolvedOptions.size >= 2
-                                            BetType.Ranking -> resolvedOptions.size >= topN
+                                            BetType.Ranking -> resolvedOptions.size >= effectiveTopN
                                             BetType.Time, BetType.Day, BetType.Number -> true
                                             BetType.MultiSelect -> resolvedOptions.size >= 2
                                             BetType.OverUnder -> overUnderLine.toLongOrNull() != null
@@ -594,7 +618,7 @@ fun CreateChallengeScreen(
                                                         title = newBetTitle,
                                                         optionType = optionType,
                                                         options = resolvedOptions,
-                                                        topN = topN,
+                                                        topN = effectiveTopN,
                                                     ),
                                                 )
                                                 BetType.Time -> viewModel.onIntent(
@@ -740,6 +764,7 @@ private fun BetEditor(
     onCountryOptionsChange: (List<BetOption>) -> Unit,
     topN: Int,
     onTopNChange: (Int) -> Unit,
+    optionsCount: Int,
     canSave: Boolean,
     saveLabel: String,
     guessClosest: Boolean,
@@ -894,6 +919,7 @@ private fun BetEditor(
             TopNStepper(
                 value = topN,
                 onValueChange = onTopNChange,
+                optionsCount = optionsCount,
                 modifier = Modifier.padding(top = standardPaddingSmall),
             )
         }
@@ -1067,6 +1093,7 @@ private fun SingleBetEditor(
         )
     }
     var rankingTopN by remember(rankingBet?.topN) { mutableIntStateOf(rankingBet?.topN ?: 3) }
+    var rankingTopNManuallySet by remember(rankingBet) { mutableStateOf(rankingBet != null) }
 
     val resolvedRankingOptions = when (rankingOptionType) {
         OptionType.COUNTRY -> rankingCountryOptions.filter { it.label.isNotBlank() }
@@ -1077,10 +1104,15 @@ private fun SingleBetEditor(
     }
     val rankingCountryAllResolved = rankingOptionType == OptionType.NONE ||
         resolvedRankingOptions.all { isSupportedCountryCode(it.countryCode) }
+    val singleBetRankingSlotCount = when (rankingOptionType) {
+        OptionType.COUNTRY -> rankingCountryOptions.size
+        OptionType.NONE -> rankingOptions.size
+    }
+    val effectiveRankingTopN = if (rankingTopNManuallySet) rankingTopN else singleBetRankingSlotCount.coerceAtLeast(2)
 
     val isValid = question.isNotBlank() && when {
         !useRanking -> true
-        else -> resolvedRankingOptions.size >= rankingTopN && rankingTopN >= 2 && rankingCountryAllResolved
+        else -> resolvedRankingOptions.size >= effectiveRankingTopN && effectiveRankingTopN >= 2 && rankingCountryAllResolved
     }
 
     LaunchedEffect(isValid) { onValidityChange(isValid) }
@@ -1156,7 +1188,7 @@ private fun SingleBetEditor(
                 if (v.length <= InputLimits.BET_TITLE) {
                     question = v
                     if (!useRanking && v.isNotBlank()) onSaveGuess(v, granularity)
-                    if (useRanking) trySaveRanking(v, resolvedRankingOptions, rankingOptionType, rankingTopN)
+                    if (useRanking) trySaveRanking(v, resolvedRankingOptions, rankingOptionType, effectiveRankingTopN)
                 }
             },
             label = { Text(stringResource(Res.string.cc_single_question_label)) },
@@ -1170,12 +1202,8 @@ private fun SingleBetEditor(
                     options = rankingCountryOptions,
                     onOptionsChange = { updated ->
                         rankingCountryOptions = updated
-                        val clampedTopN = rankingTopN.coerceAtMost(
-                            updated.count { it.label.isNotBlank() }.coerceAtLeast(2)
-                        )
-                        rankingTopN = clampedTopN
                         val resolved = updated.filter { it.label.isNotBlank() }
-                        trySaveRanking(question, resolved, OptionType.COUNTRY, clampedTopN)
+                        trySaveRanking(question, resolved, OptionType.COUNTRY, effectiveRankingTopN)
                     },
                 )
             } else {
@@ -1183,23 +1211,21 @@ private fun SingleBetEditor(
                     options = rankingOptions,
                     onOptionsChange = { updated ->
                         rankingOptions = updated
-                        val clampedTopN = rankingTopN.coerceAtMost(
-                            updated.map { it.trim() }.count { it.isNotEmpty() }.coerceAtLeast(2)
-                        )
-                        rankingTopN = clampedTopN
                         val resolved = updated.map { it.trim() }.filter { it.isNotEmpty() }
                             .mapIndexed { i, label -> BetOption(id = "o$i", label = label) }
-                        trySaveRanking(question, resolved, OptionType.NONE, clampedTopN)
+                        trySaveRanking(question, resolved, OptionType.NONE, effectiveRankingTopN)
                     },
                 )
             }
             Spacer(Modifier.height(standardPaddingSmall))
             TopNStepper(
-                value = rankingTopN,
+                value = effectiveRankingTopN,
                 onValueChange = { newTopN ->
                     rankingTopN = newTopN
+                    rankingTopNManuallySet = true
                     trySaveRanking(question, resolvedRankingOptions, rankingOptionType, newTopN)
                 },
+                optionsCount = singleBetRankingSlotCount,
             )
         }
     }
@@ -1301,6 +1327,7 @@ private fun defaultCountryOptions(count: Int = 2): List<BetOption> =
 private fun TopNStepper(
     value: Int,
     onValueChange: (Int) -> Unit,
+    optionsCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -1312,6 +1339,10 @@ private fun TopNStepper(
             text = stringResource(Res.string.cc_top_n_ranked),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
+        )
+        InfoIcon(
+            title = stringResource(Res.string.cc_help_top_n_title),
+            body = stringResource(Res.string.cc_help_top_n_body),
         )
         IconButton(
             onClick = { if (value > 2) onValueChange(value - 1) },
@@ -1325,8 +1356,8 @@ private fun TopNStepper(
             fontWeight = FontWeight.Bold,
         )
         IconButton(
-            onClick = { if (value < 10) onValueChange(value + 1) },
-            enabled = value < 10,
+            onClick = { if (value < optionsCount) onValueChange(value + 1) },
+            enabled = value < optionsCount,
         ) {
             Icon(imageVector = Lucide.Plus, contentDescription = stringResource(Res.string.cc_increase_top_n_a11y))
         }
@@ -1375,6 +1406,7 @@ private fun CreateChallenge_BetEditor_Preview() {
             onCountryOptionsChange = {},
             topN = 3,
             onTopNChange = {},
+            optionsCount = 3,
             canSave = true,
             saveLabel = "Save bet",
             guessClosest = true,
