@@ -18,6 +18,11 @@ kotlin {
             baseName = "Shared"
             isStatic = true
         }
+        // We only run unit tests against the shared module on the JVM/Android host.
+        // iOS Firebase frameworks are supplied by Xcode/SPM at app-link time, not by
+        // Gradle — so the Kotlin/Native test executable can't link (FirebaseCore not
+        // found). Skip the iOS test link/run so `./gradlew build` stays green.
+        iosTarget.binaries.getTest("DEBUG").linkTaskProvider.configure { enabled = false }
     }
     
     androidLibrary {
@@ -142,6 +147,16 @@ val generateScoringFixtures = tasks.register<GenerateScoringFixturesTask>("gener
 
 kotlin.sourceSets.named("commonTest") {
     kotlin.srcDir(generateScoringFixtures.map { it.outputDir })
+}
+
+// Lint / model tasks consume the generated fixtures source dir but don't infer
+// the producer dependency automatically — wire it explicitly to avoid Gradle's
+// implicit-dependency validation failure.
+tasks.matching {
+    it.name.startsWith("lintAnalyze") ||
+        it.name.startsWith("generate") && it.name.endsWith("LintModel")
+}.configureEach {
+    dependsOn(generateScoringFixtures)
 }
 
 abstract class GenerateAppVersionTask : org.gradle.api.DefaultTask() {
