@@ -10,6 +10,7 @@ import dev.gitlive.firebase.functions.FirebaseFunctions
 import dev.gitlive.firebase.functions.functions
 import dev.gitlive.firebase.firestore.FirebaseFirestoreException
 import dev.gitlive.firebase.firestore.FirestoreExceptionCode
+import dev.gitlive.firebase.firestore.code
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.serialization.builtins.ListSerializer
