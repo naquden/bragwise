@@ -13,6 +13,7 @@ import dev.gitlive.firebase.firestore.FirestoreExceptionCode
 import dev.gitlive.firebase.firestore.code
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
@@ -214,18 +215,18 @@ class ChallengeRemoteDataSource(
     // ── Writes (callables) ───────────────────────────────────────────────────
 
     override suspend fun createChallenge(challenge: Challenge): String = mapErrors {
-        val data = hashMapOf<String, Any?>(
-            "title" to challenge.title,
-            "description" to challenge.description,
-            "category" to challenge.category,
-            "visibility" to challenge.visibility.name,
-            "locksAt" to checkNotNull(challenge.locksAt) { "locksAt required to create a challenge" }.toString(),
-            "bets" to challenge.bets.map { it.toMap() },
-            "betsVisible" to challenge.betsVisible,
-            "scoringMode" to challenge.scoringMode.name,
-            "invitedUids" to challenge.invitedUids.toList(),
+        val payload = CreateChallengePayload(
+            title = challenge.title,
+            description = challenge.description,
+            category = challenge.category,
+            visibility = challenge.visibility.name,
+            locksAt = checkNotNull(challenge.locksAt) { "locksAt required to create a challenge" }.toString(),
+            bets = challenge.bets.map { it.toDto() },
+            betsVisible = challenge.betsVisible,
+            scoringMode = challenge.scoringMode.name,
+            invitedUids = challenge.invitedUids.toList(),
         )
-        val result = functions.httpsCallable("createChallenge")(data)
+        val result = functions.httpsCallable("createChallenge").invoke(payload)
         val resultData = result.data(MapSerializer(String.serializer(), String.serializer().nullable))
         resultData["challengeId"] ?: error("createChallenge returned no challengeId")
     }
@@ -241,22 +242,20 @@ class ChallengeRemoteDataSource(
     }
 
     override suspend fun submitPredictions(challengeId: String, predictions: List<Prediction>) = mapErrors {
-        val data = hashMapOf(
-            "challengeId" to challengeId,
-            "predictions" to predictions.map { p ->
-                hashMapOf("betId" to p.betId, "payload" to p.payload.toMap())
-            },
+        val payload = SubmitPredictionsPayload(
+            challengeId = challengeId,
+            predictions = predictions.map { p -> PredictionEntryDto(betId = p.betId, payload = p.payload.toDto()) },
         )
-        functions.httpsCallable("submitPredictions")(data)
+        functions.httpsCallable("submitPredictions").invoke(payload)
         Unit
     }
 
     override suspend fun postResults(challengeId: String, results: Map<String, se.atte.bragwise.domain.PredictionPayload>) = mapErrors {
-        val data = hashMapOf(
-            "challengeId" to challengeId,
-            "results" to results.mapValues { (_, v) -> v.toMap() },
+        val payload = PostResultsPayload(
+            challengeId = challengeId,
+            results = results.mapValues { (_, v) -> v.toDto() },
         )
-        functions.httpsCallable("postResults")(data)
+        functions.httpsCallable("postResults").invoke(payload)
         Unit
     }
 
@@ -298,12 +297,12 @@ class ChallengeRemoteDataSource(
      * failed (locked / ineligible / invalid).
      */
     override suspend fun migrateGuestData(predictions: List<LocalPrediction>): MigrationSummary = mapErrors {
-        val data = hashMapOf(
-            "predictions" to predictions.map { p ->
-                hashMapOf("challengeId" to p.challengeId, "betId" to p.betId, "payload" to p.payload.toMap())
+        val payload = MigrateGuestDataPayload(
+            predictions = predictions.map { p ->
+                MigratePredictionDto(challengeId = p.challengeId, betId = p.betId, payload = p.payload.toDto())
             },
         )
-        val result = functions.httpsCallable("migrateGuestData")(data)
+        val result = functions.httpsCallable("migrateGuestData").invoke(payload)
         val lists = result.data(MapSerializer(String.serializer(), ListSerializer(String.serializer())))
         val migrated = lists["migrated"]?.size ?: 0
         val skipped = lists["skipped"]?.size ?: 0
@@ -335,37 +334,75 @@ private fun buildLeaderboardEntries(
     }
 }
 
-private fun se.atte.bragwise.domain.Bet.toMap(): Map<String, Any?> = when (this) {
-    is se.atte.bragwise.domain.Bet.SinglePick -> mapOf(
-        "kind" to "SINGLE_PICK", "id" to id, "title" to title,
-        "optionType" to optionType.name,
-        "options" to options.map { it.toMap() },
+private fun se.atte.bragwise.domain.Bet.toDto(): BetDto = when (this) {
+    is se.atte.bragwise.domain.Bet.SinglePick -> BetDto(
+        kind = "SINGLE_PICK", id = id, title = title,
+        optionType = optionType.name,
+        options = options.map { it.toDto() },
     )
-    is se.atte.bragwise.domain.Bet.Ranking -> mapOf(
-        "kind" to "RANKING", "id" to id, "title" to title,
-        "optionType" to optionType.name, "topN" to topN,
-        "options" to options.map { it.toMap() },
+    is se.atte.bragwise.domain.Bet.Ranking -> BetDto(
+        kind = "RANKING", id = id, title = title,
+        optionType = optionType.name, topN = topN,
+        options = options.map { it.toDto() },
     )
-    is se.atte.bragwise.domain.Bet.BooleanProp -> mapOf(
-        "kind" to "BOOLEAN_PROP", "id" to id, "title" to title,
+    is se.atte.bragwise.domain.Bet.BooleanProp -> BetDto(
+        kind = "BOOLEAN_PROP", id = id, title = title,
     )
-    is se.atte.bragwise.domain.Bet.Guess -> mapOf(
-        "kind" to "GUESS", "id" to id, "title" to title,
-        "granularity" to granularity.name, "closest" to closest, "placement" to placement,
+    is se.atte.bragwise.domain.Bet.Guess -> BetDto(
+        kind = "GUESS", id = id, title = title,
+        granularity = granularity.name, closest = closest, placement = placement,
     )
-    is se.atte.bragwise.domain.Bet.MultiSelect -> mapOf(
-        "kind" to "MULTI_SELECT", "id" to id, "title" to title,
-        "optionType" to optionType.name,
-        "options" to options.map { it.toMap() },
+    is se.atte.bragwise.domain.Bet.MultiSelect -> BetDto(
+        kind = "MULTI_SELECT", id = id, title = title,
+        optionType = optionType.name,
+        options = options.map { it.toDto() },
     )
-    is se.atte.bragwise.domain.Bet.OverUnder -> mapOf(
-        "kind" to "OVER_UNDER", "id" to id, "title" to title,
-        "line" to line,
+    is se.atte.bragwise.domain.Bet.OverUnder -> BetDto(
+        kind = "OVER_UNDER", id = id, title = title,
+        line = line,
     )
 }
 
-private fun se.atte.bragwise.domain.BetOption.toMap(): Map<String, Any> = buildMap {
-    put("id", id)
-    put("label", label)
-    countryCode?.let { put("countryCode", it) }
+private fun se.atte.bragwise.domain.BetOption.toDto() = BetOptionDto(id = id, label = label, countryCode = countryCode)
+
+private fun se.atte.bragwise.domain.PredictionPayload.toDto(): PredictionPayloadDto = when (this) {
+    is PredictionPayload.SinglePick -> PredictionPayloadDto(kind = "SINGLE_PICK", optionId = optionId)
+    is PredictionPayload.Ranking -> PredictionPayloadDto(kind = "RANKING", orderedOptionIds = orderedOptionIds)
+    is PredictionPayload.BooleanProp -> PredictionPayloadDto(kind = "BOOLEAN_PROP", value = value)
+    is PredictionPayload.Guess -> PredictionPayloadDto(kind = "GUESS", guessValue = value)
+    is PredictionPayload.MultiSelect -> PredictionPayloadDto(kind = "MULTI_SELECT", selectedOptionIds = selectedOptionIds)
+    is PredictionPayload.OverUnder -> PredictionPayloadDto(kind = "OVER_UNDER", over = over, actualValue = actualValue)
 }
+
+// ── Callable payload DTOs ─────────────────────────────────────────────────────
+// Using @Serializable DTOs instead of untyped hashMapOf ensures kotlinx.serialization
+// drives primitive encoding (Boolean, Int, Long) correctly on Kotlin/Native (iOS).
+// Untyped maps bridge Kotlin Boolean → NSNumber → 0/1, failing zod z.boolean().
+
+@Serializable
+private data class CreateChallengePayload(
+    val title: String,
+    val description: String,
+    val category: String,
+    val visibility: String,
+    val locksAt: String,
+    val bets: List<BetDto>,
+    val betsVisible: Boolean,
+    val scoringMode: String,
+    val invitedUids: List<String>,
+)
+
+@Serializable
+private data class PredictionEntryDto(val betId: String, val payload: PredictionPayloadDto)
+
+@Serializable
+private data class SubmitPredictionsPayload(val challengeId: String, val predictions: List<PredictionEntryDto>)
+
+@Serializable
+private data class PostResultsPayload(val challengeId: String, val results: Map<String, PredictionPayloadDto>)
+
+@Serializable
+private data class MigratePredictionDto(val challengeId: String, val betId: String, val payload: PredictionPayloadDto)
+
+@Serializable
+private data class MigrateGuestDataPayload(val predictions: List<MigratePredictionDto>)

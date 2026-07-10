@@ -84,7 +84,7 @@ async function applyHandleChange(
 export const claimHandle = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'claimHandle', 86400, 10);
-  const { handle } = validate(ClaimHandleSchema, req.data);
+  const { handle } = validate(ClaimHandleSchema, req.data, 'claimHandle');
 
   const profileRef = db.doc(`publicProfiles/${uid}`);
   const playerRef = db.doc(`players/${uid}`);
@@ -103,7 +103,7 @@ export const claimHandle = onCall({ enforceAppCheck: true }, async (req: Callabl
 export const updateProfile = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'updateProfile', 3600, 10);
-  const payload = validate(UpdateProfileSchema, req.data);
+  const payload = validate(UpdateProfileSchema, req.data, 'updateProfile');
 
   const profileRef = db.doc(`publicProfiles/${uid}`);
   const playerRef = db.doc(`players/${uid}`);
@@ -140,7 +140,7 @@ export const createChallenge = onCall({ enforceAppCheck: true }, async (req: Cal
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'createChallenge', 3600, 10);
-  const payload = validate(CreateChallengeSchema, req.data);
+  const payload = validate(CreateChallengeSchema, req.data, 'createChallenge');
   await audit(uid, 'createChallenge', { title: payload.title, visibility: payload.visibility });
 
   const ref = db.collection('challenges').doc();
@@ -299,7 +299,7 @@ export const submitPredictions = onCall({ enforceAppCheck: true }, async (req: C
   // Anonymous guests have a real uid and can submit — email verification is NOT required.
   const uid = requireAuth(req);
   await rateLimit(uid, 'submitPredictions', 3600, 600);
-  const { challengeId, predictions } = validate(SubmitPredictionsSchema, req.data);
+  const { challengeId, predictions } = validate(SubmitPredictionsSchema, req.data, 'submitPredictions');
 
   const predMap: Record<string, PredictionPayload> = {};
   for (const p of predictions) predMap[p.betId] = p.payload as PredictionPayload;
@@ -343,7 +343,7 @@ export const postResults = onCall({ enforceAppCheck: true }, async (req: Callabl
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'postResults', 3600, 20);
-  const { challengeId, results } = validate(PostResultsSchema, req.data);
+  const { challengeId, results } = validate(PostResultsSchema, req.data, 'postResults');
   await audit(uid, 'postResults', { challengeId });
 
   const ref = db.doc(`challenges/${challengeId}`);
@@ -395,7 +395,7 @@ export const deleteChallenge = onCall({ enforceAppCheck: true }, async (req: Cal
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'deleteChallenge', 3600, 10);
-  const { challengeId } = validate(DeleteChallengeSchema, req.data);
+  const { challengeId } = validate(DeleteChallengeSchema, req.data, 'deleteChallenge');
   await audit(uid, 'deleteChallenge', { challengeId });
 
   const challengeRef = db.doc(`challenges/${challengeId}`);
@@ -441,7 +441,7 @@ export const recomputeLeaderboard = onCall({ enforceAppCheck: true }, async (req
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'recomputeLeaderboard', 3600, 30);
-  const { challengeId } = validate(RecomputeLeaderboardSchema, req.data);
+  const { challengeId } = validate(RecomputeLeaderboardSchema, req.data, 'recomputeLeaderboard');
   await audit(uid, 'recomputeLeaderboard', { challengeId });
 
   const ref = db.doc(`challenges/${challengeId}`);
@@ -462,7 +462,7 @@ export const recomputeLeaderboard = onCall({ enforceAppCheck: true }, async (req
 export const inviteFriends = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'inviteFriends', 3600, 30);
-  const { challengeId, uids } = validate(InviteFriendsSchema, req.data);
+  const { challengeId, uids } = validate(InviteFriendsSchema, req.data, 'inviteFriends');
 
   const challengeRef = db.doc(`challenges/${challengeId}`);
   const socialRef = db.doc(`players/${uid}/private/social`);
@@ -516,7 +516,7 @@ export const inviteFriends = onCall({ enforceAppCheck: true }, async (req: Calla
 export const sendFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'sendFriendRequest', 86400, 50);
-  const { handle } = validate(SendFriendRequestSchema, req.data);
+  const { handle } = validate(SendFriendRequestSchema, req.data, 'sendFriendRequest');
 
   const handleSnap = await db.doc(`handles/${handle}`).get();
   if (!handleSnap.exists) throw new HttpsError('not-found', 'handle-not-found');
@@ -544,7 +544,7 @@ export const sendFriendRequest = onCall({ enforceAppCheck: true }, async (req: C
 export const acceptFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'acceptFriendRequest', 3600, 100);
-  const { requesterUid } = validate(FriendRequestActionSchema, req.data);
+  const { requesterUid } = validate(FriendRequestActionSchema, req.data, 'acceptFriendRequest');
 
   await db.runTransaction(async (tx) => {
     await applyTransition(tx, uid, requesterUid, 'accept');
@@ -556,7 +556,7 @@ export const acceptFriendRequest = onCall({ enforceAppCheck: true }, async (req:
 export const declineFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'declineFriendRequest', 3600, 100);
-  const { requesterUid } = validate(FriendRequestActionSchema, req.data);
+  const { requesterUid } = validate(FriendRequestActionSchema, req.data, 'declineFriendRequest');
 
   await db.runTransaction(async (tx) => {
     await applyTransition(tx, uid, requesterUid, 'decline');
@@ -568,7 +568,7 @@ export const declineFriendRequest = onCall({ enforceAppCheck: true }, async (req
 export const withdrawFriendRequest = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'withdrawFriendRequest', 3600, 100);
-  const { otherUid } = validate(WithdrawFriendRequestSchema, req.data);
+  const { otherUid } = validate(WithdrawFriendRequestSchema, req.data, 'withdrawFriendRequest');
 
   await db.runTransaction(async (tx) => {
     await applyTransition(tx, uid, otherUid, 'withdraw');
@@ -580,7 +580,7 @@ export const withdrawFriendRequest = onCall({ enforceAppCheck: true }, async (re
 export const unfriend = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'unfriend', 3600, 50);
-  const { otherUid } = validate(UnfriendSchema, req.data);
+  const { otherUid } = validate(UnfriendSchema, req.data, 'unfriend');
 
   await db.runTransaction(async (tx) => {
     await applyTransition(tx, uid, otherUid, 'unfriend');
@@ -624,7 +624,7 @@ export const migrateGuestData = onCall({ enforceAppCheck: true }, async (req: Ca
   const uid = requireAuth(req);
   requireVerifiedEmail(req);
   await rateLimit(uid, 'migrateGuestData', 86400, 1);
-  const { predictions } = validate(MigrateGuestDataSchema, req.data);
+  const { predictions } = validate(MigrateGuestDataSchema, req.data, 'migrateGuestData');
 
   // Group by challengeId — each challenge migrates as one complete submission.
   // A partial set (missing bets) is rejected by validatePredictionMap → counted as failed.
@@ -667,7 +667,7 @@ export const migrateGuestData = onCall({ enforceAppCheck: true }, async (req: Ca
 export const registerPushToken = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'registerPushToken', 86400, 100);
-  const { token, platform } = validate(RegisterPushTokenSchema, req.data);
+  const { token, platform } = validate(RegisterPushTokenSchema, req.data, 'registerPushToken');
 
   await db.doc(`players/${uid}/pushTokens/${token}`).set({
     token,
@@ -682,7 +682,7 @@ export const registerPushToken = onCall({ enforceAppCheck: true }, async (req: C
 export const setNotificationPref = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'setNotificationPref', 3600, 50);
-  const { enabled, categories } = validate(SetNotificationPrefSchema, req.data);
+  const { enabled, categories } = validate(SetNotificationPrefSchema, req.data, 'setNotificationPref');
 
   const patch: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
   if (enabled !== undefined) patch['notifications'] = enabled;
@@ -761,7 +761,7 @@ async function assignRandomHandle(uid: string, maxAttempts = 10): Promise<void> 
 export const setReaction = onCall({ enforceAppCheck: true }, async (req: CallableRequest<unknown>) => {
   const uid = requireAuth(req);
   await rateLimit(uid, 'setReaction', 3600, 600);
-  const { challengeId, emoji } = validate(SetReactionSchema, req.data);
+  const { challengeId, emoji } = validate(SetReactionSchema, req.data, 'setReaction');
 
   const challengeRef = db.doc(`challenges/${challengeId}`);
   const reactionRef = db.doc(`challenges/${challengeId}/reactions/${uid}`);

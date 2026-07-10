@@ -26,15 +26,18 @@ export const AvatarSeedSchema = z
     { message: 'invalid-avatarSeed' },
   );
 
+// iOS gitlive encodes Kotlin Boolean as 0/1 in untyped payloads — accept and coerce.
+const clientBool = z.union([z.boolean(), z.literal(0), z.literal(1)]).transform(Boolean);
+
 export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('SINGLE_PICK'), optionId: z.string().min(1) }),
   z.object({ kind: z.literal('RANKING'), orderedOptionIds: z.array(z.string().min(1)) }),
-  z.object({ kind: z.literal('BOOLEAN_PROP'), value: z.boolean() }),
+  z.object({ kind: z.literal('BOOLEAN_PROP'), value: clientBool }),
   z.object({ kind: z.literal('GUESS'), guessValue: z.number().int() }),
   z.object({ kind: z.literal('MULTI_SELECT'), selectedOptionIds: z.array(z.string()) }),
   z.object({
     kind: z.literal('OVER_UNDER'),
-    over: z.boolean().optional(),
+    over: clientBool.optional(),
     actualValue: z.number().int().optional(),
   }),
 ]);
@@ -76,8 +79,8 @@ export const BetSchema = z.discriminatedUnion('kind', [
     id: z.string().min(1),
     title: z.string().min(1),
     granularity: z.enum(['TIME', 'DAY', 'NUMBER']),
-    closest: z.boolean().default(true),
-    placement: z.boolean().default(false),
+    closest: clientBool.default(true),
+    placement: clientBool.default(false),
   }),
   z.object({
     kind: z.literal('MULTI_SELECT'),
@@ -186,7 +189,7 @@ const CreateChallengeBaseSchema = z.object({
     { message: 'locksAt-must-be-future' },
   ),
   bets: z.array(BetSchema).min(1),
-  betsVisible: z.boolean().default(false),
+  betsVisible: clientBool.default(false),
   scoringMode: z.enum(['STANDARD', 'PLACEMENT']).default('STANDARD'),
   invitedUids: z.array(z.string().min(1)).max(100).default([]),
   // Hard-rejected if present:
@@ -258,8 +261,8 @@ export type NotificationCategoryKey = typeof NOTIFICATION_CATEGORY_KEYS[number];
 
 export const SetNotificationPrefSchema = z
   .object({
-    enabled: z.boolean().optional(),
-    categories: z.record(z.enum(NOTIFICATION_CATEGORY_KEYS), z.boolean()).optional(),
+    enabled: clientBool.optional(),
+    categories: z.record(z.enum(NOTIFICATION_CATEGORY_KEYS), clientBool).optional(),
   })
   .refine((d) => d.enabled !== undefined || (d.categories && Object.keys(d.categories).length > 0), {
     message: 'at-least-one-field-required',

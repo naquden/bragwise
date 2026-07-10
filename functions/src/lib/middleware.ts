@@ -64,12 +64,20 @@ export async function rateLimit(
   });
 }
 
-export function validate<T>(schema: ZodSchema<T>, payload: unknown): T {
+export function validate<T>(schema: ZodSchema<T>, payload: unknown, context = 'unknown'): T {
   try {
     return schema.parse(payload);
   } catch (e) {
     if (e instanceof ZodError) {
-      throw new HttpsError('invalid-argument', 'invalid-argument');
+      const issues = e.issues.map((i) => ({
+        path: i.path.join('.') || '(root)',
+        code: i.code,
+        message: i.message,
+      }));
+      functions.logger.warn('validate: schema rejected payload', { context, issues });
+      throw new HttpsError('invalid-argument', 'invalid-argument', {
+        fields: issues.map((i) => i.path),
+      });
     }
     throw e;
   }

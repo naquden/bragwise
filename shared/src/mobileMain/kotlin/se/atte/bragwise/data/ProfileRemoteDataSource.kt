@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
 
@@ -47,12 +48,12 @@ class ProfileRemoteDataSource(
     }
 
     override suspend fun setMasterNotification(enabled: Boolean) = mapErrors {
-        functions.httpsCallable("setNotificationPref")(hashMapOf("enabled" to enabled))
+        functions.httpsCallable("setNotificationPref").invoke(SetNotificationPrefPayload(enabled = enabled))
         Unit
     }
 
     override suspend fun setCategoryNotification(key: String, enabled: Boolean) = mapErrors {
-        functions.httpsCallable("setNotificationPref")(hashMapOf("categories" to hashMapOf(key to enabled)))
+        functions.httpsCallable("setNotificationPref").invoke(SetNotificationPrefPayload(categories = mapOf(key to enabled)))
         Unit
     }
 
@@ -81,3 +82,9 @@ class ProfileRemoteDataSource(
         Unit
     }
 }
+
+@Serializable
+private data class SetNotificationPrefPayload(
+    val enabled: Boolean? = null,
+    val categories: Map<String, Boolean>? = null,
+)

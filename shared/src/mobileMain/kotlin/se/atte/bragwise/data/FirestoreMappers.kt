@@ -28,28 +28,28 @@ import se.atte.bragwise.domain.Visibility
 // Used so gitlive's typed decoder can deserialize nested Firestore structures.
 
 @Serializable
-private data class BetOptionDto(
+internal data class BetOptionDto(
     val id: String,
     val label: String = "",
     val countryCode: String? = null,
 )
 
 @Serializable
-private data class BetDto(
+internal data class BetDto(
     val kind: String,
     val id: String,
     val title: String = "",
-    val optionType: String = "NONE",
-    val options: List<BetOptionDto> = emptyList(),
-    val topN: Int = 1,
+    val optionType: String? = null,
+    val options: List<BetOptionDto>? = null,
+    val topN: Int? = null,
     val granularity: String? = null,
-    val closest: Boolean = true,
-    val placement: Boolean = false,
+    val closest: Boolean? = null,
+    val placement: Boolean? = null,
     val line: Long? = null,
 )
 
 @Serializable
-private data class PredictionPayloadDto(
+internal data class PredictionPayloadDto(
     val kind: String,
     val optionId: String? = null,
     val orderedOptionIds: List<String> = emptyList(),
@@ -156,17 +156,17 @@ internal fun DocumentSnapshot.toChallenge(): Challenge {
 }
 
 private fun BetDto.toDomain(): Bet {
-    val opts = options.map { BetOption(id = it.id, label = it.label, countryCode = it.countryCode) }
-    val ot = runCatching { OptionType.valueOf(optionType) }.getOrDefault(OptionType.NONE)
+    val opts = (options ?: emptyList()).map { BetOption(id = it.id, label = it.label, countryCode = it.countryCode) }
+    val ot = runCatching { OptionType.valueOf(optionType ?: "NONE") }.getOrDefault(OptionType.NONE)
     return when (kind) {
         "SINGLE_PICK" -> Bet.SinglePick(id = id, title = title, optionType = ot, options = opts)
-        "RANKING" -> Bet.Ranking(id = id, title = title, optionType = ot, topN = topN, options = opts)
+        "RANKING" -> Bet.Ranking(id = id, title = title, optionType = ot, topN = topN ?: 1, options = opts)
         "GUESS" -> Bet.Guess(
             id = id,
             title = title,
             granularity = runCatching { GuessGranularity.valueOf(granularity ?: "TIME") }.getOrDefault(GuessGranularity.TIME),
-            closest = closest,
-            placement = placement,
+            closest = closest ?: true,
+            placement = placement ?: false,
         )
         "MULTI_SELECT" -> Bet.MultiSelect(id = id, title = title, optionType = ot, options = opts)
         "OVER_UNDER" -> Bet.OverUnder(id = id, title = title, line = line ?: 0L)
