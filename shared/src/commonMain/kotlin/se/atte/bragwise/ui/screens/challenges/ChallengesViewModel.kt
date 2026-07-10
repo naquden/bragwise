@@ -112,16 +112,19 @@ class ChallengesViewModel(
         ) { allMine, promoted, fromFriends, inviteEntries, joinedIds ->
             fun List<Challenge>.byLockAsc() = sortedWith(compareBy(nullsLast()) { it.locksAt })
             val mine = allMine.filter { it.status != ChallengeStatus.RESULTS_POSTED }
+            // Drop locked friend challenges: they can't be joined/predicted, so
+            // showing them is dead weight (matches the promoted section's filter).
+            val visibleFromFriends = fromFriends.filter { it.status != ChallengeStatus.LOCKED }
             val mineIds = mine.map { it.id }.toSet()
             val promotedIds = promoted.map { it.id }.toSet()
-            val fromFriendsIds = fromFriends.map { it.id }.toSet()
+            val fromFriendsIds = visibleFromFriends.map { it.id }.toSet()
             val occupiedIds = mineIds + promotedIds + fromFriendsIds
             Sections(
                 mine = mine.byLockAsc(),
                 promoted = promoted
                     .filter { it.status != ChallengeStatus.LOCKED || it.id in joinedIds }
                     .byLockAsc(),
-                fromFriends = fromFriends.byLockAsc(),
+                fromFriends = visibleFromFriends.byLockAsc(),
                 invites = inviteEntries.filter { it.challenge.id !in occupiedIds },
                 joinedIds = joinedIds,
             )
