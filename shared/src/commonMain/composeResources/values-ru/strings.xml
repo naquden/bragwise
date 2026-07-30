@@ -104,10 +104,10 @@
     <string name="welcome_tagline">Прогнозируйте. Соревнуйтесь. Хвалитесь.</string>
     <string name="welcome_sign_in">Войти</string>
 
-    <string name="auth_sign_in_with_email">Войти по электронной почте</string>
     <string name="auth_send_link">Отправить ссылку входа</string>
     <string name="auth_sending">Отправка…</string>
-    <string name="auth_email_hint">Мы отправим вам ссылку по электронной почте. Коснитесь её на этом устройстве, чтобы завершить вход.</string>
+    <string name="auth_email_hint">Мы отправим вам ссылку входа по электронной почте.</string>
+    <string name="divider_or">или</string>
     <string name="auth_check_inbox">Проверьте входящие</string>
     <string name="auth_sent_link_to">Мы отправили ссылку входа на:</string>
     <string name="auth_tap_link_hint">Коснитесь ссылки на этом устройстве, чтобы завершить вход.</string>

@@ -1,0 +1,19 @@
+<!--
+  PLACEHOLDER — replace before shipping.
+
+  This is NOT Apple's official glyph. I do not have access to Apple's
+  licensed "Sign in with Apple" button assets (Apple Developer > Sign in
+  with Apple > Human Interface Guidelines > Resources — requires a signed-in
+  developer account) and must not fabricate a trademarked logo from memory.
+  Download the official black/white glyph pack from that page and replace
+  this file's path data with it before submitting to App Review.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <path
+      android:fillColor="#FFFFFFFF"
+      android:pathData="M4,4h16v16h-16z"/>
+</vector>

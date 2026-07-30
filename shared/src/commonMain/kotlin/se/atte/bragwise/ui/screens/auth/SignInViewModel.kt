@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import se.atte.bragwise.data.AppleSignInCancelledException
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.isFullyAuthed
 import se.atte.bragwise.mvi.ErrorReporter
@@ -12,12 +13,15 @@ import se.atte.bragwise.mvi.ScreenViewModel
 import se.atte.bragwise.mvi.UiText
 
 /**
- * OB-02 — unified Sign In / Sign Up via email-link passwordless. There is
- * no separate sign-up step: `signInWithEmailLink` on the Firebase side
- * auto-creates the account if one doesn't exist for the typed email.
+ * OB-02 — unified Sign In / Sign Up via email-link passwordless, plus
+ * guest. There is no separate sign-up step: `signInWithEmailLink` on the
+ * Firebase side auto-creates the account if one doesn't exist for the
+ * typed email.
  *
- * Phase 1 ships email-link only. Google + Apple OAuth buttons land in
- * Phase 2 (must ship together on iOS — App Store guideline 4.8).
+ * iOS additionally offers native Sign in with Apple (`supportsAppleSignIn`
+ * gates the button in `SignInScreen`). Google is deliberately NOT added to
+ * any platform — see `docs/project.md` § "Sign in with Apple (iOS)" for why
+ * adding Google to iOS without Apple would violate App Store guideline 4.8.
  */
 class SignInViewModel(
     private val auth: AuthRepository,
@@ -47,6 +51,7 @@ class SignInViewModel(
         data object Resend : Intent
         data object EditEmail : Intent
         data object ContinueAsGuest : Intent
+        data object SignInWithApple : Intent
     }
 
     sealed interface Effect {
@@ -77,6 +82,21 @@ class SignInViewModel(
             Intent.Resend -> sendLink()
             Intent.EditEmail -> update { it.copy(sentTo = null) }
             Intent.ContinueAsGuest -> emitEffect(Effect.ContinuedAsGuest)
+            Intent.SignInWithApple -> signInWithApple()
+        }
+    }
+
+    private fun signInWithApple() {
+        if (state.value.submitting) return
+        update { it.copy(submitting = true) }
+        viewModelScope.launch {
+            val r = auth.signInWithApple()
+            update { it.copy(submitting = false) }
+            r.onFailure { e ->
+                // Dismissing the native sheet is a normal user action, not an
+                // error — don't scare the user with a snackbar for it.
+                if (e !is AppleSignInCancelledException) errorReporter.report(e)
+            }
         }
     }
 

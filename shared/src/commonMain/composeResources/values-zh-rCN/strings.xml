@@ -104,10 +104,10 @@
     <string name="welcome_tagline">预测。竞争。吹牛。</string>
     <string name="welcome_sign_in">登录</string>
 
-    <string name="auth_sign_in_with_email">使用电子邮件登录</string>
     <string name="auth_send_link">发送登录链接</string>
     <string name="auth_sending">正在发送…</string>
-    <string name="auth_email_hint">我们会通过电子邮件向您发送链接。在此设备上点击它以完成登录。</string>
+    <string name="auth_email_hint">我们会通过电子邮件向您发送登录链接。</string>
+    <string name="divider_or">或</string>
     <string name="auth_check_inbox">检查您的收件箱</string>
     <string name="auth_sent_link_to">我们已发送登录链接至:</string>
     <string name="auth_tap_link_hint">在此设备上点击链接以完成登录。</string>

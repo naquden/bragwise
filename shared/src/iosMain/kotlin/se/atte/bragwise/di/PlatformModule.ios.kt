@@ -3,6 +3,8 @@ package se.atte.bragwise.di
 import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import se.atte.bragwise.IosAppleSignInPresenter
+import se.atte.bragwise.data.AppleSignInPresenter
 import se.atte.bragwise.data.AuthLocalDataSource
 import se.atte.bragwise.data.AuthRemote
 import se.atte.bragwise.data.AuthRemoteDataSource
@@ -38,6 +40,7 @@ import se.atte.bragwise.platform.PlatformShare
 actual val platformModule: Module = module {
     single<AuthLocalDataSource> { IosAuthLocalDataSource() }
     single<AuthRemote> { AuthRemoteDataSource() }
+    single<AppleSignInPresenter> { IosAppleSignInPresenter() }
     single<ChallengeRemote> { ChallengeRemoteDataSource() }
     single<ProfileRemote> { ProfileRemoteDataSource() }
     single<SocialRemote> { SocialRemoteDataSource() }

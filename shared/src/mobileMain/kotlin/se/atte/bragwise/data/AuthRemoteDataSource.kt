@@ -5,11 +5,15 @@ import dev.gitlive.firebase.auth.ActionCodeSettings
 import dev.gitlive.firebase.auth.AndroidPackageName
 import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
+import dev.gitlive.firebase.auth.OAuthProvider
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.functions.FirebaseFunctions
 import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+
+/** Matches the tag in `FirebaseAuthRepository.signInWithApple`. */
+private const val APPLE_DBG = "BRAGWISE_APPLE_7f31a2"
 
 /**
  * Thin wrapper around `Firebase.auth`. Holds the `ActionCodeSettings` we
@@ -61,6 +65,32 @@ class AuthRemoteDataSource(
 
     override suspend fun signInWithEmailLink(email: String, link: String) {
         auth.signInWithEmailLink(email = email, link = link)
+    }
+
+    /**
+     * Same upgrade-in-place shape as [completeSignIn]: an anonymous guest's
+     * uid (and predictions/scores) is preserved via `linkWithCredential`;
+     * only if that fails (e.g. the Apple ID already owns a Bragwise account)
+     * do we fall back to a fresh `signInWithCredential`.
+     */
+    override suspend fun signInWithApple(credential: AppleIdCredential): Boolean {
+        val oauth = OAuthProvider.credential(
+            providerId = "apple.com",
+            idToken = credential.identityToken,
+            rawNonce = credential.rawNonce,
+        )
+        val currentUser = auth.currentUser
+        if (currentUser != null && currentUser.isAnonymous) {
+            runCatching { currentUser.linkWithCredential(credential = oauth) }
+                .onSuccess {
+                    println("$APPLE_DBG remote.linked isNewUser=${it.additionalUserInfo?.isNewUser}")
+                    return it.additionalUserInfo?.isNewUser ?: true
+                }
+                .onFailure { println("$APPLE_DBG remote.link.failed class=${it::class.simpleName} message=${it.message}") }
+        }
+        val result = auth.signInWithCredential(oauth)
+        println("$APPLE_DBG remote.signedIn isNewUser=${result.additionalUserInfo?.isNewUser} providerId=${result.additionalUserInfo?.providerId}")
+        return result.additionalUserInfo?.isNewUser ?: false
     }
 
     override suspend fun signOut() {

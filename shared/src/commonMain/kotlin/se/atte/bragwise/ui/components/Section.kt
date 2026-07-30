@@ -35,6 +35,9 @@ import se.atte.bragwise.theme.LocalIsDark
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 import se.atte.bragwise.theme.appShadow
+import org.jetbrains.compose.resources.stringResource
+import bragwise.shared.generated.resources.Res
+import bragwise.shared.generated.resources.divider_or
 
 /**
  * Group related controls into a single elevated rectangle. Replaces the
@@ -110,6 +113,30 @@ fun ListGroupDivider() {
 @Composable
 fun SectionGap(height: androidx.compose.ui.unit.Dp = standardPadding) {
     Spacer(Modifier.height(height))
+}
+
+/** Centered "or" between two mutually exclusive actions (e.g. email vs Apple sign-in). */
+@Composable
+fun OrDivider(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = standardPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(standardPaddingSmall),
+    ) {
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+        )
+        Text(
+            text = stringResource(Res.string.divider_or),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+        )
+    }
 }
 
 /**

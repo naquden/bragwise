@@ -104,10 +104,10 @@
     <string name="welcome_tagline">Preveja. Compita. Vanglorie-se.</string>
     <string name="welcome_sign_in">Fazer login</string>
 
-    <string name="auth_sign_in_with_email">Fazer login com email</string>
     <string name="auth_send_link">Enviar link de login</string>
     <string name="auth_sending">Enviando…</string>
-    <string name="auth_email_hint">Enviaremos um link por email. Toque nele neste dispositivo para terminar o login.</string>
+    <string name="auth_email_hint">Enviaremos um link de login por email.</string>
+    <string name="divider_or">ou</string>
     <string name="auth_check_inbox">Verifique sua caixa de entrada</string>
     <string name="auth_sent_link_to">Enviamos um link de login para:</string>
     <string name="auth_tap_link_hint">Toque no link neste dispositivo para terminar o login.</string>

@@ -31,13 +31,13 @@ All scratch output goes in `./temp/bajs/` (create it if missing).
 **Real example that prompted unnecessarily:**
 
 ```bash
-adb logcat -d -v time | grep "$(adb shell pidof com.assaabloy.hospitality.vostio.debug)" | grep -iE "Dialog|orientation" | tail -40
+adb logcat -d -v time | grep "$(adb shell pidof se.atte.bragwise.debug)" | grep -iE "Dialog|orientation" | tail -40
 ```
 
 **Better split:**
 
 ```bash
-PID=$(adb shell pidof com.assaabloy.hospitality.vostio.debug)
+PID=$(adb shell pidof se.atte.bragwise.debug)
 adb logcat -d -v time > ./temp/bajs/logcat.txt
 # then: Grep tool on ./temp/bajs/logcat.txt with pattern "(Dialog|orientation).*\\b$PID\\b"
 # — no `tail` needed; Grep returns the matches directly.

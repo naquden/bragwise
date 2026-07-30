@@ -104,10 +104,10 @@
     <string name="welcome_tagline">Predice. Compite. Alardea.</string>
     <string name="welcome_sign_in">Iniciar sesión</string>
 
-    <string name="auth_sign_in_with_email">Iniciar sesión con correo</string>
     <string name="auth_send_link">Enviar enlace de inicio de sesión</string>
     <string name="auth_sending">Enviando…</string>
-    <string name="auth_email_hint">Te enviaremos un enlace por correo. Tócalo en este dispositivo para terminar de iniciar sesión.</string>
+    <string name="auth_email_hint">Te enviaremos un enlace de inicio de sesión por correo.</string>
+    <string name="divider_or">o</string>
     <string name="auth_check_inbox">Revisa tu bandeja de entrada</string>
     <string name="auth_sent_link_to">Hemos enviado un enlace de inicio de sesión a:</string>
     <string name="auth_tap_link_hint">Toca el enlace en este dispositivo para terminar de iniciar sesión.</string>

@@ -106,10 +106,10 @@
     <string name="welcome_tagline">Tipsa. Tävla. Skryt.</string>
     <string name="welcome_sign_in">Logga in</string>
 
-    <string name="auth_sign_in_with_email">Logga in med e-post</string>
     <string name="auth_send_link">Skicka inloggningslänk</string>
     <string name="auth_sending">Skickar…</string>
-    <string name="auth_email_hint">Vi skickar en länk till din e-post. Tryck på den på den här enheten för att slutföra inloggningen.</string>
+    <string name="auth_email_hint">Vi skickar en inloggningslänk till din e-post.</string>
+    <string name="divider_or">eller</string>
     <string name="auth_check_inbox">Kolla din inkorg</string>
     <string name="auth_sent_link_to">Vi skickade en inloggningslänk till:</string>
     <string name="auth_tap_link_hint">Tryck på länken på den här enheten för att slutföra inloggningen.</string>

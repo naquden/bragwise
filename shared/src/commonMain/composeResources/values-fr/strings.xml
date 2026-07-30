@@ -104,10 +104,10 @@
     <string name="welcome_tagline">Prédisez. Concourez. Vantez-vous.</string>
     <string name="welcome_sign_in">Se connecter</string>
 
-    <string name="auth_sign_in_with_email">Se connecter avec email</string>
     <string name="auth_send_link">Envoyer le lien de connexion</string>
     <string name="auth_sending">Envoi…</string>
-    <string name="auth_email_hint">Nous vous enverrons un lien par email. Appuyez dessus sur cet appareil pour terminer la connexion.</string>
+    <string name="auth_email_hint">Nous vous enverrons un lien de connexion par email.</string>
+    <string name="divider_or">ou</string>
     <string name="auth_check_inbox">Vérifiez votre boîte de réception</string>
     <string name="auth_sent_link_to">Nous avons envoyé un lien de connexion à:</string>
     <string name="auth_tap_link_hint">Appuyez sur le lien sur cet appareil pour terminer la connexion.</string>

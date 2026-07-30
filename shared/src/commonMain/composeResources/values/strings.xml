@@ -141,10 +141,10 @@
     <string name="welcome_sign_in">Sign in</string>
 
     <!-- Auth — extra strings. -->
-    <string name="auth_sign_in_with_email">Sign in with email</string>
     <string name="auth_send_link">Send sign-in link</string>
     <string name="auth_sending">Sending…</string>
-    <string name="auth_email_hint">We'll email you a link. Tap it on this device to finish signing in.</string>
+    <string name="auth_email_hint">We'll email you a sign-in link.</string>
+    <string name="divider_or">or</string>
     <string name="auth_check_inbox">Check your inbox</string>
     <string name="auth_sent_link_to">We sent a sign-in link to:</string>
     <string name="auth_tap_link_hint">Tap the link on this device to finish signing in.</string>

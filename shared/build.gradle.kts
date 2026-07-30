@@ -76,6 +76,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.test)
         }
         commonMain.dependencies {
             api(libs.koin.core)

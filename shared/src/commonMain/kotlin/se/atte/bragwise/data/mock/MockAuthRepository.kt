@@ -32,6 +32,11 @@ class MockAuthRepository : AuthRepository {
         return Result.success(Unit)
     }
 
+    override suspend fun signInWithApple(): Result<Unit> {
+        _authState.value = AuthState.SignedIn(uid = MOCK_UID, email = MOCK_EMAIL)
+        return Result.success(Unit)
+    }
+
     override suspend fun signOut() {
         _authState.value = AuthState.SignedOut
     }

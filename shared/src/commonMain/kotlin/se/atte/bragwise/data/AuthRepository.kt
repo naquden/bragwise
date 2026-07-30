@@ -5,11 +5,19 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withTimeoutOrNull
 import se.atte.bragwise.platform.Analytics
 import se.atte.bragwise.platform.AnalyticsEvent
+
+/** Grep tag for the Sign in with Apple flow; see `signInWithApple`. */
+private const val APPLE_DBG = "BRAGWISE_APPLE_7f31a2"
+
+/** Upper bound on the profile-doc read that guards the Apple name write. */
+private const val DISPLAY_NAME_READ_TIMEOUT_MS = 3_000L
 
 sealed interface AuthState {
     data object Loading : AuthState
@@ -42,13 +50,6 @@ val AuthState.signedInUid: String? get() = (this as? AuthState.SignedIn)?.uid
  */
 val AuthState.isFullyAuthed: Boolean
     get() = this is AuthState.SignedIn && !isAnonymous
-
-/**
- * Phase 1 ships email-link passwordless only. Google + Apple are Phase 2
- * (must ship together on iOS due to App Store guideline 4.8). See
- * `temp/plan.md` § "Auth providers".
- */
-enum class AuthProvider { EMAIL_LINK }
 
 sealed interface AuthPayload {
     /** First leg: user types email, we send them a link. */
@@ -92,6 +93,18 @@ interface AuthRepository {
      */
     suspend fun completeSignInWithLink(link: String): Result<Unit>
 
+    /**
+     * iOS only. Presents the native Apple sign-in sheet, then signs in (or
+     * upgrades an anonymous guest via `linkWithCredential`). Whenever Apple
+     * supplies a name — which it does only on the first authorization for a
+     * given Apple ID, so its presence alone marks a first sign-in — and the
+     * profile has no name yet, persists it via `updateProfile` so
+     * `EnsureNamedAccount`'s name gate never has to ask. Cancelling the sheet
+     * fails with [AppleSignInCancelledException] — callers must not surface
+     * that as an error.
+     */
+    suspend fun signInWithApple(): Result<Unit>
+
     suspend fun signOut()
     suspend fun deleteAccount(): Result<Unit>
     suspend fun migrateLocalToCloud(): Result<MigrationSummary>
@@ -113,6 +126,8 @@ class FirebaseAuthRepository(
     private val localPredictions: LocalPredictionStore,
     private val challengeRemote: ChallengeRemote,
     private val analytics: Analytics,
+    private val profileRemote: ProfileRemote,
+    private val applePresenter: AppleSignInPresenter? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) : AuthRepository {
     private val _pendingSignInEmail = MutableStateFlow(local.pendingSignInEmail)
@@ -156,6 +171,53 @@ class FirebaseAuthRepository(
         _pendingSignInEmail.value = null
         analytics.log(AnalyticsEvent.OnboardingComplete("email"))
         analytics.setIsGuest(false)
+    }
+
+    override suspend fun signInWithApple(): Result<Unit> = runCatching {
+        val presenter = applePresenter ?: error("apple sign-in unavailable on this platform")
+        val credential = presenter.present()
+        val isNewUser = remote.signInWithApple(credential)
+        val appleName = credential.fullName?.trim()?.takeIf { it.isNotBlank() }
+        println("$APPLE_DBG signIn.done isNewUser=$isNewUser hasName=${appleName != null} hasEmail=${credential.email != null}")
+
+        // Apple returns `fullName` ONLY on the first authorization for a given
+        // Apple ID + app pair, so receiving one at all means this IS the first
+        // authorization — whatever `additionalUserInfo.isNewUser` says. Gating on
+        // isNewUser (it comes back false/nil on some link-vs-sign-in paths)
+        // silently dropped the name and pushed the user into the name gate.
+        //
+        // Only fill a name we don't already have, so an existing profile name
+        // (e.g. one a guest chose before upgrading) is never overwritten.
+        if (appleName != null) {
+            val existing = currentDisplayName()
+            println("$APPLE_DBG name.check apple='$appleName' existing='${existing ?: ""}'")
+            if (existing.isNullOrBlank()) {
+                runCatching { profileRemote.updateProfile(appleName, null, null) }
+                    .onSuccess { println("$APPLE_DBG name.written '$appleName'") }
+                    .onFailure { println("$APPLE_DBG name.write.failed class=${it::class.simpleName} message=${it.message}") }
+            } else {
+                println("$APPLE_DBG name.kept.existing")
+            }
+        }
+        analytics.log(AnalyticsEvent.OnboardingComplete("apple"))
+        analytics.setIsGuest(false)
+    }.onFailure { e ->
+        if (e !is AppleSignInCancelledException) {
+            println("$APPLE_DBG signIn.failed class=${e::class.simpleName} message=${e.message}")
+        }
+    }
+
+    /**
+     * Current profile display name, or null if there is none / it can't be read
+     * in time. Bounded so a cold Firestore listener right after sign-in can
+     * never hang the sign-in flow; on timeout we treat the name as absent,
+     * which at worst re-writes the same name.
+     */
+    private suspend fun currentDisplayName(): String? {
+        val uid = authState.value.signedInUid ?: remote.currentUser?.uid ?: return null
+        return withTimeoutOrNull(DISPLAY_NAME_READ_TIMEOUT_MS) {
+            profileRemote.observePlayer(uid).firstOrNull()?.displayName
+        }
     }
 
     override suspend fun signOut() {

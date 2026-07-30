@@ -11,9 +11,11 @@ export function requireAuth(req: CallableRequest<unknown>): string {
 }
 
 /**
- * Email-verified gate. Email-link sign-in (Phase 1) always produces
- * `email_verified == true`, so this is effectively a no-op in the normal
- * flow — kept as defence-in-depth for operator-created accounts.
+ * Email-verified gate. Email-link sign-in always produces
+ * `email_verified == true`, so this is effectively a no-op in that flow —
+ * kept as defence-in-depth for operator-created accounts. Apple/Google OAuth
+ * sign-ins are explicitly exempted below since their tokens don't carry
+ * `email_verified`.
  */
 export function requireVerifiedEmail(req: CallableRequest<unknown>): void {
   const auth = req.auth;

@@ -60,6 +60,10 @@ class JsAuthRemote : AuthRemote {
         signInWithEmailLink(auth, email, link).await<JsAny?>()
     }
 
+    override suspend fun signInWithApple(credential: AppleIdCredential): Boolean {
+        throw UnsupportedOperationException("Sign in with Apple is iOS-only")
+    }
+
     override suspend fun signOut() {
         signOut(auth).await<JsAny?>()
     }

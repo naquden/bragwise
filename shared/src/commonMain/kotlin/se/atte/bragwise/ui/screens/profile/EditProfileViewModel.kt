@@ -63,13 +63,20 @@ class EditProfileViewModel(
             .onEach { player ->
                 if (player == null) return@onEach
                 update {
-                    if (it.profileLoaded || it.userEdited) it.copy(profileLoaded = true)
+                    // Seed each field from the server only while it is still blank and
+                    // the user hasn't typed. `handle` is assigned asynchronously by the
+                    // `recordActivity` callable (fire-and-forget server-side), so on a
+                    // first sign-in the first player-doc emission often has no handle
+                    // yet and a later one does. Latching on `profileLoaded` alone left
+                    // the Username field permanently empty in that race; per-field
+                    // seeding picks up the late value without ever clobbering typing.
+                    if (it.userEdited) it.copy(profileLoaded = true)
                     else it.copy(
                         profileLoaded = true,
-                        username = player.username,
-                        originalUsername = player.username,
-                        displayName = player.displayName,
-                        avatarSeed = player.avatarSeed,
+                        username = it.username.ifBlank { player.username },
+                        originalUsername = it.originalUsername.ifBlank { player.username },
+                        displayName = it.displayName.ifBlank { player.displayName },
+                        avatarSeed = it.avatarSeed.ifBlank { player.avatarSeed },
                     )
                 }
             }

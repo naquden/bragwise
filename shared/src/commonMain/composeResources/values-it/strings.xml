@@ -104,10 +104,10 @@
     <string name="welcome_tagline">Prevedi. Competi. Vantati.</string>
     <string name="welcome_sign_in">Accedi</string>
 
-    <string name="auth_sign_in_with_email">Accedi con email</string>
     <string name="auth_send_link">Invia link di accesso</string>
     <string name="auth_sending">Invio…</string>
-    <string name="auth_email_hint">Ti invieremo un link via email. Toccalo su questo dispositivo per completare l'accesso.</string>
+    <string name="auth_email_hint">Ti invieremo un link di accesso via email.</string>
+    <string name="divider_or">o</string>
     <string name="auth_check_inbox">Controlla la tua posta in arrivo</string>
     <string name="auth_sent_link_to">Abbiamo inviato un link di accesso a:</string>
     <string name="auth_tap_link_hint">Tocca il link su questo dispositivo per completare l'accesso.</string>

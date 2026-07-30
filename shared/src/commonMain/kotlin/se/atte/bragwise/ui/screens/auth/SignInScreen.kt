@@ -35,9 +35,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.text.KeyboardOptions
+import se.atte.bragwise.platform.supportsAppleSignIn
 import se.atte.bragwise.theme.BragwiseTheme
+import se.atte.bragwise.theme.LocalIsDark
 import se.atte.bragwise.ui.components.AppButton
 import se.atte.bragwise.ui.components.AppTextButton
+import se.atte.bragwise.ui.components.AppleSignInButton
 import se.atte.bragwise.ui.components.SectionCard
 import org.jetbrains.compose.resources.stringResource
 import bragwise.shared.generated.resources.Res
@@ -51,11 +54,12 @@ import bragwise.shared.generated.resources.auth_resend
 import bragwise.shared.generated.resources.auth_send_link
 import bragwise.shared.generated.resources.auth_sending
 import bragwise.shared.generated.resources.auth_sent_link_to
-import bragwise.shared.generated.resources.auth_sign_in_with_email
 import bragwise.shared.generated.resources.auth_tap_link_hint
 import bragwise.shared.generated.resources.auth_use_different_email
 import bragwise.shared.generated.resources.welcome_tagline
+import se.atte.bragwise.ui.components.OrDivider
 import se.atte.bragwise.ui.components.SectionGap
+import se.atte.bragwise.ui.standardPaddingSmall
 
 @Composable
 fun SignInScreen(
@@ -88,6 +92,7 @@ fun SignInScreen(
         onResend = { viewModel.onIntent(SignInViewModel.Intent.Resend) },
         onEditEmail = { viewModel.onIntent(SignInViewModel.Intent.EditEmail) },
         onGuest = { viewModel.onIntent(SignInViewModel.Intent.ContinueAsGuest) },
+        onApple = { viewModel.onIntent(SignInViewModel.Intent.SignInWithApple) },
     )
 }
 
@@ -99,6 +104,7 @@ private fun SignInContent(
     onResend: () -> Unit,
     onEditEmail: () -> Unit,
     onGuest: () -> Unit,
+    onApple: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -138,6 +144,16 @@ private fun SignInContent(
             )
         }
 
+        if (supportsAppleSignIn) {
+            OrDivider()
+            AppleSignInButton(
+                onClick = onApple,
+                enabled = !state.submitting,
+                isDark = LocalIsDark.current,
+                modifier = Modifier.testTag("sign_in_apple"),
+            )
+        }
+
         SectionGap(24.dp)
 
         Row(
@@ -161,11 +177,6 @@ private fun EnterEmail(
     onSendLink: () -> Unit,
 ) {
     SectionCard {
-        Text(
-            stringResource(Res.string.auth_sign_in_with_email),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmail,
@@ -177,7 +188,7 @@ private fun EnterEmail(
                 capitalization = KeyboardCapitalization.None,
             ),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(standardPaddingSmall))
         AppButton(
             onClick = onSendLink,
             enabled = !state.submitting && state.email.isNotBlank(),
@@ -185,7 +196,7 @@ private fun EnterEmail(
         ) {
             Text(if (state.submitting) stringResource(Res.string.auth_sending) else stringResource(Res.string.auth_send_link))
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(standardPaddingSmall))
         Text(
             stringResource(Res.string.auth_email_hint),
             style = MaterialTheme.typography.bodySmall,

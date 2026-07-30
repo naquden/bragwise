@@ -71,6 +71,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
 
         FirebaseApp.configure()
 
+        // Registered unconditionally (even in mock mode) since it's cheap and
+        // has no Firebase dependency itself — mirrors the Koin graph comment
+        // above about AuthRemoteDataSource always being constructed.
+        // Kotlin's `(AppleIdCredential?, String?) -> Unit` completion parameter
+        // bridges to `-> KotlinUnit`, not `-> Void`, once nested inside another
+        // closure param — adapt it here so AppleSignInController stays plain Swift.
+        let appleSignIn = AppleSignInController()
+        IosAppleSignInBridgeKt.registerAppleSignInPresenter { kotlinCompletion in
+            appleSignIn.present { credential, error in
+                _ = kotlinCompletion(credential, error)
+            }
+        }
+
         if !useMock {
             // Touch Analytics so the SDK initialises (parity with Android's
             // BragwiseApplication touching Firebase.analytics).

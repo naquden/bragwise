@@ -42,6 +42,8 @@ val dataModule = module {
             localPredictions = get(),
             challengeRemote = get(),
             analytics = get(),
+            profileRemote = get(),
+            applePresenter = getOrNull(),
         )
     }
     single<ChallengeRepository> { FirebaseChallengeRepository(remote = get(), local = get(), localDrafts = get(), auth = get(), social = get(), analytics = get()) }

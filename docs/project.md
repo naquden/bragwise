@@ -284,26 +284,64 @@ If valid-token % is <100% when enforcing, real users/browsers are being blocked 
 
 # Platform-Specific Notes
 
-## Sign in with Apple not required (iOS)x
+## Sign in with Apple (iOS)
 
-We do NOT need Sign in with Apple as long as passwordless email (Firebase
-email-link) stays our only auth method. App Store Review Guideline 4.8
-("Login Services") only forces Sign in with Apple when the app offers a
-third-party / social login (Google, Facebook, Apple, etc.) as the primary
-sign-in. Our own email-based account system falls under the explicit 4.8
-exception: "Your app exclusively uses your company's own account setup and
-sign-in systems."
+iOS ships native Sign in with Apple alongside passwordless email-link and
+guest. Android and web stay email-link + guest only.
 
-Trigger is the login TYPE, not the count. If we ever add a social login
-button (Google/Facebook/etc.) to iOS, guideline 4.8 activates and we'd then
-have to add Sign in with Apple alongside it. Pure email = safe.
+**Why we added it.** Not a compliance fix — a reviewer-unblock. App Review
+reported never receiving the email sign-in link (spam checked), which left
+them with no way in. Apple sign-in gives reviewers and users a path that
+doesn't depend on email delivery.
 
-Two separate iOS submission blockers unrelated to this exception, verify
-before submitting:
-- In-app account deletion (Guideline 5.1.1(v)) is mandatory for any app with
-  account creation.
+**Guideline 4.8 status — this is the part that changed.** Before, email-only
+qualified for the explicit 4.8 exception ("Your app exclusively uses your
+company's own account setup and sign-in systems"), so Sign in with Apple was
+NOT required. That reasoning was correct and still is. But now that iOS
+offers a third-party login, 4.8 IS active — and Sign in with Apple being
+present is exactly what keeps us compliant.
+
+**Consequence: do NOT add Google sign-in (or any other social login) to iOS
+without Sign in with Apple also present.** The trigger is the login TYPE, not
+the count. Removing the Apple button while keeping any other social login
+would break 4.8.
+
+**Implementation summary:**
+- iOS only. `supportsAppleSignIn` (expect/actual) gates the Compose button.
+- Swift (`iosApp/iosApp/AppleSignInController.swift`) drives
+  `ASAuthorizationController` (needs a UIKit presentation anchor) and hashes
+  the nonce with CryptoKit; Kotlin builds the Firebase `OAuthProvider`
+  credential and does the sign-in/link.
+- Anonymous guests are upgraded via `linkWithCredential` (uid preserved,
+  predictions kept), falling back to a fresh `signInWithCredential` if the
+  Apple account already exists — same shape as the email-link upgrade.
+- Apple returns `fullName` only on the FIRST authorization. We write it via
+  `updateProfile` there and then; on later sign-ins (nil name) the existing
+  `EnsureNamedAccount` name gate handles it. No new UI.
+- Backend needed no changes: `requireVerifiedEmail` already treats
+  `sign_in_provider === 'apple.com'` as OAuth and skips the email_verified
+  check; `recordActivity` already auto-assigns a handle to non-anonymous users.
+- Firebase Console: the Apple provider must be enabled. The Services ID /
+  Team ID / Key ID / `.p8` fields are for the web/Android OAuth-redirect flow
+  and are not needed for the native iOS flow (unverified against Firebase's
+  current docs — confirm if the console insists on them).
+- Apple Developer portal: Sign In with Apple enabled on App ID
+  se.atte.bragwise.Bragwise, which invalidates the `Bragwise Appstore`
+  distribution profile — regenerate it (README § iOS build).
+
+**Known gap: Apple token revocation on account deletion.** Apple's guidance
+is to call `revokeToken` when an account is deleted. We don't. `deleteAccount`
+does fully delete the Firebase Auth user and scrub all data (Guideline
+5.1.1(v) satisfied), which is what review actually tests; revocation only
+clears the app from Settings → Apple ID → Sign in with Apple. Implementing it
+needs a fresh single-use `authorizationCode` (re-running the Apple sheet
+inside the delete flow) plus the `.p8` private key configured in the Firebase
+Apple provider. Deferred; revisit if a rejection cites it.
+
+Still mandatory, unrelated to 4.8:
+- In-app account deletion (Guideline 5.1.1(v)) — already shipped.
 - Universal Links / associated domains + `handleCodeInApp` + iOS bundle ID in
-  Firebase `ActionCodeSettings`, so the magic link reopens the app.
+  Firebase `ActionCodeSettings`, so the magic link still reopens the app.
 
 Guideline text: https://developer.apple.com/app-store/review/guidelines/#login-services
 

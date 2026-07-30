@@ -81,6 +81,13 @@ A fresh `git clone` does **not** carry provisioning profiles — they live in `~
    cp ~/Downloads/Bragwise_Appstore.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
    ```
 
+Note: the App ID has **Sign In with Apple** enabled. Enabling (or changing) a
+capability invalidates existing profiles — if you hit `No profiles for
+'se.atte.bragwise.Bragwise' were found` or an entitlement-mismatch signing
+error after pulling a capability change, regenerate the profile with the
+steps above and delete the stale copy from
+`~/Library/MobileDevice/Provisioning Profiles/` first.
+
 Before building, ensure `useMock = false` in `iosApp/iosApp/iOSApp.swift`.
 
 ---
