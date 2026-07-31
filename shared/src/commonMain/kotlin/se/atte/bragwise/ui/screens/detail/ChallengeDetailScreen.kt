@@ -193,6 +193,7 @@ fun ChallengeDetailScreen(
                 onRequestDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.RequestDelete) },
                 onCancelDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.CancelDelete) },
                 onConfirmDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.ConfirmDelete) },
+                onStopWaitingForDelete = { viewModel.onIntent(ChallengeDetailViewModel.Intent.StopWaitingForDelete) },
             )
         }
     }
@@ -215,12 +216,13 @@ private fun DetailContent(
     onRequestDelete: () -> Unit,
     onCancelDelete: () -> Unit,
     onConfirmDelete: () -> Unit,
+    onStopWaitingForDelete: () -> Unit,
 ) {
     val joined = data.myPredictions.isNotEmpty()
     val challenge = data.challenge
 
     if (isDeleting) {
-        LoadingDialog(message = stringResource(Res.string.cd_deleting))
+        LoadingDialog(message = stringResource(Res.string.cd_deleting), onStopWaiting = onStopWaitingForDelete)
     }
 
     if (confirmingDelete) {
@@ -511,6 +513,7 @@ private fun Detail_Ready_NotJoined_Preview() {
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
+            onStopWaitingForDelete = {},
             isDeleting = false,
         )
     }
@@ -540,6 +543,7 @@ private fun Detail_Ready_Owner_Preview() {
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
+            onStopWaitingForDelete = {},
             isDeleting = false,
         )
     }
@@ -567,6 +571,7 @@ private fun Detail_Ready_BetsVisible_Preview() {
             onRequestDelete = {},
             onCancelDelete = {},
             onConfirmDelete = {},
+            onStopWaitingForDelete = {},
             isDeleting = false,
         )
     }

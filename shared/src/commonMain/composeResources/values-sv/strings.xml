@@ -19,6 +19,7 @@
     <string name="error_handle_not_found">Ingen användare hittades med det användarnamnet.</string>
     <string name="error_unknown">Något gick fel.</string>
     <string name="error_dialog_dismiss">OK</string>
+    <string name="loading_dialog_stop_waiting">Sluta vänta</string>
 
     <string name="cl_section_mine">Mina utmaningar</string>
     <string name="cl_section_promoted">Utvalda</string>
@@ -323,6 +324,7 @@
     <string name="cc_snackbar_deadline_future">Deadline måste vara i framtiden</string>
     <string name="cc_snackbar_no_reachable_invitees">Ingen av dina inbjudna vänner är nåbara — välj minst en</string>
     <string name="cc_snackbar_invite_needs_friends">Välj minst en vän att bjuda in</string>
+    <string name="cc_snackbar_name_not_ready">Ditt konto förbereds fortfarande — försök igen om en stund</string>
 
     <string name="nav_create_challenge_a11y">Skapa utmaning</string>
 

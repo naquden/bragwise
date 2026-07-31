@@ -19,6 +19,7 @@
     <string name="error_handle_not_found">找不到该用户名的用户。</string>
     <string name="error_unknown">出了点问题。</string>
     <string name="error_dialog_dismiss">OK</string>
+    <string name="loading_dialog_stop_waiting">停止等待</string>
 
     <string name="cl_section_mine">我的挑战</string>
     <string name="cl_section_promoted">推荐</string>
@@ -317,6 +318,7 @@
     <string name="cc_snackbar_deadline_future">截止日期必须在未来</string>
     <string name="cc_snackbar_no_reachable_invitees">您邀请的朋友中没有可达到的 — 至少选择一个</string>
     <string name="cc_snackbar_invite_needs_friends">至少选择一位朋友邀请</string>
+    <string name="cc_snackbar_name_not_ready">你的账户仍在准备中——请稍后再试</string>
 
     <string name="nav_create_challenge_a11y">创建挑战</string>
     <string name="predict_over">高于</string>

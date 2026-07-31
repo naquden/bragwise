@@ -43,6 +43,7 @@ val dataModule = module {
             challengeRemote = get(),
             analytics = get(),
             profileRemote = get(),
+            onboardingPrefs = get(),
             applePresenter = getOrNull(),
         )
     }

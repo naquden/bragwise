@@ -53,7 +53,14 @@ class PredictViewModel(
         val ui: UiState<Bets>,
         val drafts: Map<String, PredictionPayload> = emptyMap(),
         val submitting: Boolean = false,
+        /** Show the name gate. Only ever set from [submit], never from a flow. */
         val needsName: Boolean = false,
+        /**
+         * The gate has already been offered once for this screen. Predicting is
+         * not name-gated the way publishing is, so a user who dismisses it must
+         * still be able to submit — otherwise the second tap re-gates forever.
+         */
+        val nameGateOffered: Boolean = false,
     )
 
     data class Bets(
@@ -71,6 +78,8 @@ class PredictViewModel(
         data object Submit : Intent
         data class ConfirmName(val name: String) : Intent
         data object DismissName : Intent
+        /** Stops waiting on a stalled submit. Does not cancel the in-flight write. */
+        data object StopWaiting : Intent
     }
 
     sealed interface Effect {
@@ -79,12 +88,6 @@ class PredictViewModel(
     }
 
     init {
-        // Reactively track name state so Loading (cloud not yet arrived) never
-        // triggers the prompt — only a resolved Absent does.
-        ensureNamedAccount.nameState
-            .onEach { state -> update { it.copy(needsName = state is NameState.Absent) } }
-            .launchIn(viewModelScope)
-
         challenges.observeChallengeDetail(challengeId)
             .distinctUntilChanged()
             .onEach { detail ->
@@ -129,17 +132,49 @@ class PredictViewModel(
                 it.copy(drafts = it.drafts + (intent.betId to PredictionPayload.OverUnder(over = intent.over)))
             }
             Intent.Submit -> submit()
+            // Name written first, then the deferred submit runs — so the player
+            // doc carries the name before predictions land on the leaderboard.
             is Intent.ConfirmName -> viewModelScope.launch {
                 update { it.copy(needsName = false) }
-                ensureNamedAccount.ensure(intent.name)
-                    .onFailure { e -> errorReporter.report(e) }
+                ensureNamedAccount.ensure(intent.name).fold(
+                    onSuccess = { submit() },
+                    onFailure = { e -> errorReporter.report(e) },
+                )
             }
-            Intent.DismissName -> update { it.copy(needsName = false) }
+            // Dismiss means "submit anonymously": the prediction still goes
+            // through, the leaderboard just shows the generic name until the
+            // user names themselves in Edit Profile.
+            Intent.DismissName -> {
+                update { it.copy(needsName = false) }
+                submit()
+            }
+            Intent.StopWaiting -> update { it.copy(submitting = false) }
         }
     }
 
     private fun submit() {
         if (state.value.submitting) return
+        // Name gate, checked at submit time instead of reactively on screen entry.
+        // Apple sign-in makes the Absent case routine — Apple sends `fullName`
+        // only on the first authorization per Apple ID, so a reinstall or a
+        // second sign-in legitimately arrives with no name at all — and this is
+        // the moment the name starts mattering, because it's what participants
+        // and the leaderboard will show.
+        //
+        // Offered at most once per screen so a dismissal can't re-gate forever.
+        if (!state.value.nameGateOffered) {
+            when (ensureNamedAccount.nameState.value) {
+                // Cloud state unresolved: don't gate, and don't consume the one
+                // offer either. Worst case the user submits unnamed and can fix
+                // it in Edit Profile — better than blocking the submit.
+                is NameState.Loading -> Unit
+                is NameState.Absent -> {
+                    update { it.copy(needsName = true, nameGateOffered = true) }
+                    return
+                }
+                is NameState.Present -> Unit
+            }
+        }
         update { it.copy(submitting = true) }
         viewModelScope.launch { submitNow() }
     }

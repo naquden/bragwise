@@ -15,6 +15,11 @@ private class FakeAuthLocalDataSource : AuthLocalDataSource {
     override var pendingSignInEmail: String? = null
 }
 
+private class FakeOnboardingPrefs : OnboardingPrefs {
+    override var hasSeenWelcome: Boolean = false
+    override var chosenName: String? = null
+}
+
 private class FakeLocalPredictionStore : LocalPredictionStore {
     override fun forChallenge(challengeId: String) = emptyMap<String, se.atte.bragwise.domain.PredictionPayload>()
     override fun put(challengeId: String, predictions: Map<String, se.atte.bragwise.domain.PredictionPayload>) {}
@@ -116,6 +121,7 @@ private fun buildRepository(
     challengeRemote = FakeChallengeRemote(),
     analytics = analytics,
     profileRemote = profileRemote,
+    onboardingPrefs = FakeOnboardingPrefs(),
     applePresenter = presenter,
 )
 

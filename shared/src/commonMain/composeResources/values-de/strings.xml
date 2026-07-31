@@ -19,6 +19,7 @@
     <string name="error_handle_not_found">Kein Benutzer mit diesem Benutzernamen gefunden.</string>
     <string name="error_unknown">Etwas ist schief gelaufen.</string>
     <string name="error_dialog_dismiss">OK</string>
+    <string name="loading_dialog_stop_waiting">Nicht mehr warten</string>
 
     <string name="cl_section_mine">Meine Herausforderungen</string>
     <string name="cl_section_promoted">Empfohlen</string>
@@ -317,6 +318,7 @@
     <string name="cc_snackbar_deadline_future">Die Frist muss in der Zukunft liegen</string>
     <string name="cc_snackbar_no_reachable_invitees">Keiner Ihrer eingeladenen Freunde ist erreichbar — wählen Sie mindestens einen</string>
     <string name="cc_snackbar_invite_needs_friends">Wähle mindestens einen Freund zum Einladen</string>
+    <string name="cc_snackbar_name_not_ready">Dein Konto wird noch vorbereitet — versuche es gleich noch einmal</string>
 
     <string name="nav_create_challenge_a11y">Herausforderung erstellen</string>
     <string name="predict_over">Über</string>

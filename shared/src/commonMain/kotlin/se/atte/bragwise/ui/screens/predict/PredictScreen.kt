@@ -93,7 +93,10 @@ fun PredictScreen(
     }
 
     if (state.submitting) {
-        LoadingDialog(message = stringResource(Res.string.predict_saving))
+        LoadingDialog(
+            message = stringResource(Res.string.predict_saving),
+            onStopWaiting = { viewModel.onIntent(PredictViewModel.Intent.StopWaiting) },
+        )
     }
 
     if (state.needsName) {

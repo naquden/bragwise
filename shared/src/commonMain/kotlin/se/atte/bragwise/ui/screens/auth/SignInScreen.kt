@@ -148,7 +148,7 @@ private fun SignInContent(
             OrDivider()
             AppleSignInButton(
                 onClick = onApple,
-                enabled = !state.submitting,
+                enabled = !state.busy,
                 isDark = LocalIsDark.current,
                 modifier = Modifier.testTag("sign_in_apple"),
             )
@@ -191,10 +191,16 @@ private fun EnterEmail(
         Spacer(Modifier.height(standardPaddingSmall))
         AppButton(
             onClick = onSendLink,
-            enabled = !state.submitting && state.email.isNotBlank(),
+            enabled = !state.busy && state.email.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (state.submitting) stringResource(Res.string.auth_sending) else stringResource(Res.string.auth_send_link))
+            Text(
+                if (state.pending == SignInViewModel.Pending.EmailLink) {
+                    stringResource(Res.string.auth_sending)
+                } else {
+                    stringResource(Res.string.auth_send_link)
+                },
+            )
         }
         Spacer(Modifier.height(standardPaddingSmall))
         Text(
@@ -275,7 +281,7 @@ private fun SignIn_EnterEmail_Preview() {
 private fun SignIn_Sending_Preview() {
     BragwiseTheme {
         SignInContent(
-            state = SignInViewModel.State(email = "atte@example.com", submitting = true),
+            state = SignInViewModel.State(email = "atte@example.com", pending = SignInViewModel.Pending.EmailLink),
             onEmail = {}, onSendLink = {}, onResend = {}, onEditEmail = {}, onGuest = {},
         )
     }

@@ -19,6 +19,7 @@
     <string name="error_handle_not_found">Пользователь с таким именем не найден.</string>
     <string name="error_unknown">Что-то пошло не так.</string>
     <string name="error_dialog_dismiss">OK</string>
+    <string name="loading_dialog_stop_waiting">Перестать ждать</string>
 
     <string name="cl_section_mine">Мои испытания</string>
     <string name="cl_section_promoted">Рекомендуемые</string>
@@ -317,6 +318,7 @@
     <string name="cc_snackbar_deadline_future">Крайний срок должен быть в будущем</string>
     <string name="cc_snackbar_no_reachable_invitees">Ни один из ваших приглашённых друзей не доступен — выберите по крайней мере одного</string>
     <string name="cc_snackbar_invite_needs_friends">Выберите хотя бы одного друга для приглашения</string>
+    <string name="cc_snackbar_name_not_ready">Ваш аккаунт ещё готовится — попробуйте снова через минуту</string>
 
     <string name="nav_create_challenge_a11y">Создать испытание</string>
     <string name="predict_over">Выше</string>

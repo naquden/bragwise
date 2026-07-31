@@ -46,9 +46,8 @@ class EnsureNamedAccount(
     private val auth: AuthRepository,
     private val profile: ProfileRepository,
     private val onboardingPrefs: OnboardingPrefs,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) {
-    private val scope = CoroutineScope(SupervisorJob())
-
     val nameState: StateFlow<NameState> = auth.authState
         .flatMapLatest { authState ->
             when (authState) {

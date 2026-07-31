@@ -180,7 +180,10 @@ private fun FriendsBody(
     }
 
     if (state.sendingRequest) {
-        LoadingDialog(message = stringResource(Res.string.friends_sending_request))
+        LoadingDialog(
+            message = stringResource(Res.string.friends_sending_request),
+            onStopWaiting = { onIntent(FriendsViewModel.Intent.StopWaitingForRequest) },
+        )
     }
 
     if (state.addingFriend) {

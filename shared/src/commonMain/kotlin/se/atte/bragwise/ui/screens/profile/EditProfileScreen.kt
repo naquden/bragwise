@@ -83,7 +83,10 @@ fun EditProfileScreen(
     }
 
     if (state.saving) {
-        LoadingDialog(message = stringResource(Res.string.edit_saving_dialog))
+        LoadingDialog(
+            message = stringResource(Res.string.edit_saving_dialog),
+            onStopWaiting = { viewModel.onIntent(EditProfileViewModel.Intent.StopWaiting) },
+        )
     }
 
     EditProfileContent(

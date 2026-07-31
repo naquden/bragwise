@@ -80,6 +80,8 @@ class ChallengeDetailViewModel(
         data object RequestDelete : Intent
         data object CancelDelete : Intent
         data object ConfirmDelete : Intent
+        /** Stops waiting on a stalled delete. Does not cancel the in-flight write. */
+        data object StopWaitingForDelete : Intent
         data object Share : Intent
         data object Clone : Intent
         data object OpenInvite : Intent
@@ -186,6 +188,7 @@ class ChallengeDetailViewModel(
                         }
                     }
             }
+            Intent.StopWaitingForDelete -> update { it.copy(isDeleting = false) }
             Intent.Share -> {
                 val title = (state.value.ui as? UiState.Ready)?.data?.title
                 if (title != null) {

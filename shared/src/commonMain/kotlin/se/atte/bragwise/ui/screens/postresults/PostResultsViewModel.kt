@@ -41,6 +41,8 @@ class PostResultsViewModel(
         data object RequestConfirm : Intent
         data object Cancel : Intent
         data object Submit : Intent
+        /** Stops waiting on a stalled post. Does not cancel the in-flight write. */
+        data object StopWaiting : Intent
     }
 
     sealed interface Effect {
@@ -90,6 +92,7 @@ class PostResultsViewModel(
             }
             Unit
         }
+        Intent.StopWaiting -> update { it.copy(submitting = false) }
     }
 }
 

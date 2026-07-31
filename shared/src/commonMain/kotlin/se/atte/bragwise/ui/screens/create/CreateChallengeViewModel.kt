@@ -4,6 +4,7 @@ import bragwise.shared.generated.resources.Res
 import bragwise.shared.generated.resources.cc_bet_invalid_country
 import bragwise.shared.generated.resources.cc_snackbar_deadline_future
 import bragwise.shared.generated.resources.cc_snackbar_invite_needs_friends
+import bragwise.shared.generated.resources.cc_snackbar_name_not_ready
 import bragwise.shared.generated.resources.cc_snackbar_no_reachable_invitees
 import bragwise.shared.generated.resources.cc_snackbar_nothing_to_save
 import bragwise.shared.generated.resources.cc_snackbar_title_and_bet_required
@@ -66,9 +67,7 @@ class CreateChallengeViewModel(
         val invitedUids: Set<String> = emptySet(),
         val betsVisible: Boolean = false,
         val submitting: Boolean = false,
-        val error: String? = null,
         val needsName: Boolean = false,
-        val pendingPublish: Boolean = false,
         val mode: CreateMode = CreateMode.MULTI,
     )
 
@@ -105,6 +104,8 @@ class CreateChallengeViewModel(
         data object SaveDraft : Intent
         data class ConfirmName(val name: String) : Intent
         data object DismissName : Intent
+        /** Stops waiting on a stalled save/publish. Does not cancel the in-flight write. */
+        data object StopWaiting : Intent
     }
 
     sealed interface Effect {
@@ -223,17 +224,29 @@ class CreateChallengeViewModel(
             is Intent.SetBetsVisible -> update { it.copy(betsVisible = intent.visible) }
             Intent.SaveDraft -> persistDraft()
             Intent.Publish -> publish()
-            is Intent.ConfirmName -> viewModelScope.launch {
-                update { it.copy(submitting = true, needsName = false) }
-                ensureNamedAccount.ensure(intent.name).fold(
-                    onSuccess = { publish() },
-                    onFailure = { e ->
-                        update { it.copy(submitting = false) }
-                        errorReporter.report(e)
-                    },
-                )
-            }
-            Intent.DismissName -> update { it.copy(needsName = false, pendingPublish = false) }
+            is Intent.ConfirmName -> confirmName(intent.name)
+            Intent.DismissName -> update { it.copy(needsName = false) }
+            Intent.StopWaiting -> update { it.copy(submitting = false) }
+        }
+    }
+
+    private fun confirmName(name: String) {
+        if (state.value.submitting) return
+        update { it.copy(submitting = true, needsName = false) }
+        viewModelScope.launch {
+            ensureNamedAccount.ensure(name).fold(
+                // `ensure()` succeeding is itself proof the name was written —
+                // publish directly rather than going through `publish()`, which
+                // would re-check `nameState` and could still read `Loading` here:
+                // `nameState` is driven by `profile.observeMe()`, a Firestore
+                // snapshot listener with no optimistic local write, so it can lag
+                // behind the callable that `ensure()` just awaited.
+                onSuccess = { startPublish(state.value) },
+                onFailure = { e ->
+                    update { it.copy(submitting = false) }
+                    errorReporter.report(e)
+                },
+            )
         }
     }
 
@@ -280,14 +293,26 @@ class CreateChallengeViewModel(
             return
         }
         when (ensureNamedAccount.nameState.value) {
-            is NameState.Loading -> return  // cloud not resolved yet; user can retry
+            is NameState.Loading -> {
+                emitEffect(Effect.Snackbar(UiText(Res.string.cc_snackbar_name_not_ready)))
+                return
+            }
             is NameState.Absent -> {
-                update { it.copy(needsName = true, pendingPublish = true) }
+                update { it.copy(needsName = true) }
                 return
             }
             is NameState.Present -> Unit
         }
-        update { it.copy(submitting = true, error = null) }
+        startPublish(s)
+    }
+
+    /**
+     * Publishes unconditionally — no reentrancy guard, no validation, no name
+     * check. Called only by [publish] (after it has checked all three) and by
+     * [confirmName] (after `ensure()` already proved the name was written).
+     */
+    private fun startPublish(s: State) {
+        update { it.copy(submitting = true) }
         viewModelScope.launch {
             val draft = buildChallenge(s)
             challenges.publish(draft).fold(

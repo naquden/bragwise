@@ -172,7 +172,10 @@ fun CreateChallengeScreen(
     }
 
     if (state.submitting) {
-        LoadingDialog(message = stringResource(Res.string.cc_saving_dialog))
+        LoadingDialog(
+            message = stringResource(Res.string.cc_saving_dialog),
+            onStopWaiting = { viewModel.onIntent(CreateChallengeViewModel.Intent.StopWaiting) },
+        )
     }
 
     if (state.needsName) {

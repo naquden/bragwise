@@ -51,6 +51,8 @@ class EditProfileViewModel(
         data class SetDisplayName(val v: String) : Intent
         data class SetAvatarSeed(val v: String) : Intent
         data object Save : Intent
+        /** Stops waiting on a stalled save. Does not cancel the in-flight write. */
+        data object StopWaiting : Intent
     }
 
     sealed interface Effect {
@@ -164,6 +166,7 @@ class EditProfileViewModel(
             }
             Unit
         }
+        Intent.StopWaiting -> update { it.copy(saving = false) }
     }
 
     private fun usernameFormatError(value: String): UiText? = when {

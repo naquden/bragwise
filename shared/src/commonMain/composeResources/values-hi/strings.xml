@@ -19,6 +19,7 @@
     <string name="error_handle_not_found">उस उपयोगकर्ता नाम से कोई उपयोगकर्ता नहीं मिला।</string>
     <string name="error_unknown">कुछ गलत हो गया।</string>
     <string name="error_dialog_dismiss">ठीक है</string>
+    <string name="loading_dialog_stop_waiting">इंतजार बंद करें</string>
 
     <string name="cl_section_mine">मेरे चैलेंज</string>
     <string name="cl_section_promoted">प्रचारित</string>
@@ -317,6 +318,7 @@
     <string name="cc_snackbar_deadline_future">समय सीमा भविष्य में होनी चाहिए</string>
     <string name="cc_snackbar_no_reachable_invitees">आपके कोई भी आमंत्रित मित्र उपलब्ध नहीं — कम से कम एक चुनें</string>
     <string name="cc_snackbar_invite_needs_friends">आमंत्रित करने के लिए कम से कम एक मित्र चुनें</string>
+    <string name="cc_snackbar_name_not_ready">आपका अकाउंट अभी तैयार हो रहा है — कुछ पल में फिर से कोशिश करें</string>
 
     <string name="nav_create_challenge_a11y">चैलेंज बनाएं</string>
     <string name="predict_over">ऊपर</string>

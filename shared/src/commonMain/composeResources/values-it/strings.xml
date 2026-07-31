@@ -19,6 +19,7 @@
     <string name="error_handle_not_found">Nessun utente trovato con quel nome utente.</string>
     <string name="error_unknown">Qualcosa è andato storto.</string>
     <string name="error_dialog_dismiss">OK</string>
+    <string name="loading_dialog_stop_waiting">Smetti di aspettare</string>
 
     <string name="cl_section_mine">Le mie sfide</string>
     <string name="cl_section_promoted">Promossi</string>
@@ -317,6 +318,7 @@
     <string name="cc_snackbar_deadline_future">La scadenza deve essere nel futuro</string>
     <string name="cc_snackbar_no_reachable_invitees">Nessuno dei tuoi amici invitati è raggiungibile — scegline almeno uno</string>
     <string name="cc_snackbar_invite_needs_friends">Scegli almeno un amico da invitare</string>
+    <string name="cc_snackbar_name_not_ready">Stiamo ancora preparando il tuo account — riprova in un momento</string>
 
     <string name="nav_create_challenge_a11y">Crea sfida</string>
     <string name="predict_over">Sopra</string>

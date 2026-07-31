@@ -127,6 +127,7 @@ class FirebaseAuthRepository(
     private val challengeRemote: ChallengeRemote,
     private val analytics: Analytics,
     private val profileRemote: ProfileRemote,
+    private val onboardingPrefs: OnboardingPrefs,
     private val applePresenter: AppleSignInPresenter? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
 ) : AuthRepository {
@@ -225,6 +226,12 @@ class FirebaseAuthRepository(
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
         localPredictions.clear()
+        // `chosenName` is `EnsureNamedAccount`'s offline seed: a non-blank value
+        // makes the name gate report Present before the player doc arrives.
+        // Leaving the previous user's name behind would suppress the gate for
+        // whoever signs in next — and write their predictions under a name they
+        // never chose.
+        onboardingPrefs.chosenName = null
     }
 
     override suspend fun deleteAccount(): Result<Unit> = runCatching {
@@ -232,6 +239,7 @@ class FirebaseAuthRepository(
         local.pendingSignInEmail = null
         _pendingSignInEmail.value = null
         localPredictions.clear()
+        onboardingPrefs.chosenName = null
     }
 
     /**

@@ -133,7 +133,10 @@ fun PostResultsScreen(
     }
 
     if (state.submitting) {
-        LoadingDialog(message = stringResource(Res.string.postresults_posting_dialog))
+        LoadingDialog(
+            message = stringResource(Res.string.postresults_posting_dialog),
+            onStopWaiting = { viewModel.onIntent(PostResultsViewModel.Intent.StopWaiting) },
+        )
     }
 
     if (state.confirming) {

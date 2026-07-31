@@ -30,11 +30,20 @@ class SignInViewModel(
     initialState = State(),
 ) {
 
+    /** Which auth action is currently in flight, or null if none. */
+    enum class Pending { EmailLink, Apple }
+
     data class State(
         val email: String = "",
         /** Non-null after a successful `sendSignInLink` — UI flips to "Check your inbox". */
         val sentTo: String? = null,
-        val submitting: Boolean = false,
+        /**
+         * The in-flight auth action. Both buttons disable while any action is
+         * pending; only `EmailLink` may change the email button's label — the
+         * two used to share one `submitting` flag, which flipped the email
+         * button's label to "Sending…" whenever Apple sign-in was tapped.
+         */
+        val pending: Pending? = null,
         /**
          * Mirrors `AuthRepository.authState` becoming `SignedIn`. State-driven
          * (not effect-driven) so the navigation signal survives the race where
@@ -43,7 +52,9 @@ class SignInViewModel(
          * whereas `Effect.SignedIn` on a replay-0 SharedFlow would be lost.
          */
         val signedIn: Boolean = false,
-    )
+    ) {
+        val busy: Boolean get() = pending != null
+    }
 
     sealed interface Intent {
         data class SetEmail(val email: String) : Intent
@@ -87,11 +98,11 @@ class SignInViewModel(
     }
 
     private fun signInWithApple() {
-        if (state.value.submitting) return
-        update { it.copy(submitting = true) }
+        if (state.value.busy) return
+        update { it.copy(pending = Pending.Apple) }
         viewModelScope.launch {
             val r = auth.signInWithApple()
-            update { it.copy(submitting = false) }
+            update { it.copy(pending = null) }
             r.onFailure { e ->
                 // Dismissing the native sheet is a normal user action, not an
                 // error — don't scare the user with a snackbar for it.
@@ -102,11 +113,11 @@ class SignInViewModel(
 
     private fun sendLink() {
         val email = state.value.email.trim()
-        if (state.value.submitting || email.isBlank()) return
-        update { it.copy(submitting = true) }
+        if (state.value.busy || email.isBlank()) return
+        update { it.copy(pending = Pending.EmailLink) }
         viewModelScope.launch {
             val r = auth.sendSignInLink(email)
-            update { it.copy(submitting = false) }
+            update { it.copy(pending = null) }
             r.fold(
                 onSuccess = { update { s -> s.copy(sentTo = email) } },
                 onFailure = { e -> errorReporter.report(e) },

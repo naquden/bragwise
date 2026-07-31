@@ -63,6 +63,8 @@ class FriendsViewModel(
         data class OpenCloud(val uid: String) : Intent
         data class Accept(val uid: String) : Intent
         data class Decline(val uid: String) : Intent
+        /** Stops waiting on a stalled friend request. Does not cancel the in-flight write. */
+        data object StopWaitingForRequest : Intent
     }
 
     sealed interface Effect {
@@ -124,6 +126,7 @@ class FriendsViewModel(
             is Intent.OpenCloud -> emitEffect(Effect.OpenCloudProfile(intent.uid))
             is Intent.Accept -> act(intent.uid, FriendAction.Accept) { social.acceptFriendRequest(intent.uid) }
             is Intent.Decline -> act(intent.uid, FriendAction.Decline) { social.declineFriendRequest(intent.uid) }
+            Intent.StopWaitingForRequest -> update { it.copy(sendingRequest = false) }
         }
     }
 

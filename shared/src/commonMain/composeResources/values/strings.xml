@@ -27,6 +27,11 @@
     <string name="error_unknown">Something went wrong.</string>
     <string name="error_dialog_dismiss">OK</string>
 
+    <!-- Shared LoadingDialog escape hatch. Never "Cancel" — the underlying write
+         is already in flight server-side and cannot be undone; this only stops
+         waiting for it. -->
+    <string name="loading_dialog_stop_waiting">Stop waiting</string>
+
     <!-- Discovery / Challenges screen. -->
     <string name="cl_section_mine">My Challenges</string>
     <string name="cl_section_promoted">Promoted</string>
@@ -373,6 +378,7 @@
     <string name="cc_snackbar_deadline_future">Deadline must be in the future</string>
     <string name="cc_snackbar_no_reachable_invitees">None of your invited friends are reachable — pick at least one</string>
     <string name="cc_snackbar_invite_needs_friends">Pick at least one friend to invite</string>
+    <string name="cc_snackbar_name_not_ready">Still getting your account ready — try again in a moment</string>
 
     <!-- Create challenge — section help dialogs (cc_info_*, cc_help_*, cc_label_*). -->
     <string name="cc_info_a11y">More info about %1$s</string>
