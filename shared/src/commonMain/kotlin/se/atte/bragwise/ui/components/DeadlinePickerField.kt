@@ -69,16 +69,18 @@ fun DeadlinePickerField(
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
+            // DatePickerDialog (unlike AlertDialog) always lays out confirmButton left of
+            // dismissButton, with no RTL-flip. Swap slot contents so Next still ends up on the right.
             confirmButton = {
+                AppTextButton(onClick = { showDatePicker = false }) { Text(stringResource(Res.string.deadline_cancel)) }
+            },
+            dismissButton = {
                 AppTextButton(onClick = {
                     val selected = dateState.selectedDateMillis ?: return@AppTextButton
                     pendingDateMillis = selected
                     showDatePicker = false
                     showTimePicker = true
                 }) { Text(stringResource(Res.string.deadline_next)) }
-            },
-            dismissButton = {
-                AppTextButton(onClick = { showDatePicker = false }) { Text(stringResource(Res.string.deadline_cancel)) }
             },
         ) {
             DatePicker(state = dateState)

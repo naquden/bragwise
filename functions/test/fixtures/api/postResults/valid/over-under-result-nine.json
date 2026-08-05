@@ -1,0 +1,15 @@
+{
+  "challengeId": "chal1",
+  "results": {
+    "bet1": {
+      "kind": "OVER_UNDER",
+      "optionId": null,
+      "orderedOptionIds": [],
+      "value": null,
+      "guessValue": null,
+      "selectedOptionIds": [],
+      "over": null,
+      "actualValue": 9
+    }
+  }
+}

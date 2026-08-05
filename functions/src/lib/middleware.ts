@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions/v2';
 import { HttpsError, CallableRequest } from 'firebase-functions/v2/https';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodType, ZodTypeDef, ZodError } from 'zod';
 import { db, FieldValue, Timestamp } from './admin';
 
 export function requireAuth(req: CallableRequest<unknown>): string {
@@ -66,7 +66,7 @@ export async function rateLimit(
   });
 }
 
-export function validate<T>(schema: ZodSchema<T>, payload: unknown, context = 'unknown'): T {
+export function validate<T>(schema: ZodType<T, ZodTypeDef, unknown>, payload: unknown, context = 'unknown'): T {
   try {
     return schema.parse(payload);
   } catch (e) {

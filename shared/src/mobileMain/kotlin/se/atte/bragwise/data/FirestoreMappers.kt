@@ -2,6 +2,8 @@ package se.atte.bragwise.data
 
 import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.Timestamp
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -48,16 +50,22 @@ internal data class BetDto(
     val line: Long? = null,
 )
 
+// @EncodeDefault(NEVER) is scoped to the nullable scalars only — never the two List fields.
+// A List defaults to emptyList(), which is a legitimate value (e.g. an empty MULTI_SELECT
+// selection), so annotating it would drop the key entirely and the server can't tell that
+// apart from "field omitted". Does not affect decoding, so the nullable types stay as-is
+// for gitlive's typed decoder at toDomain()/toPredictionsMap() below.
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 internal data class PredictionPayloadDto(
     val kind: String,
-    val optionId: String? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val optionId: String? = null,
     val orderedOptionIds: List<String> = emptyList(),
-    val value: Boolean? = null,
-    val guessValue: Long? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val value: Boolean? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val guessValue: Long? = null,
     val selectedOptionIds: List<String> = emptyList(),
-    val over: Boolean? = null,
-    val actualValue: Long? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val over: Boolean? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val actualValue: Long? = null,
 )
 
 @Serializable

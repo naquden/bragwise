@@ -153,14 +153,16 @@ private fun DayGuessPicker(
     )
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        // DatePickerDialog (unlike AlertDialog) always lays out confirmButton left of
+        // dismissButton, with no RTL-flip. Swap slot contents so Done still ends up on the right.
         confirmButton = {
+            AppTextButton(onClick = onDismiss) { Text(stringResource(Res.string.deadline_cancel)) }
+        },
+        dismissButton = {
             AppTextButton(onClick = {
                 val selected = dateState.selectedDateMillis ?: return@AppTextButton
                 onConfirm(selected / 86_400_000L)
             }) { Text(stringResource(Res.string.deadline_done)) }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(Res.string.deadline_cancel)) }
         },
     ) {
         DatePicker(state = dateState)

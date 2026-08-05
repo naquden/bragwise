@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import se.atte.bragwise.domain.Player
 import se.atte.bragwise.domain.PublicProfile
@@ -83,8 +85,9 @@ class ProfileRemoteDataSource(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 private data class SetNotificationPrefPayload(
-    val enabled: Boolean? = null,
-    val categories: Map<String, Boolean>? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val enabled: Boolean? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val categories: Map<String, Boolean>? = null,
 )

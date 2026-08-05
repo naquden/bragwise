@@ -1,0 +1,18 @@
+{
+  "challengeId": "chal1",
+  "predictions": [
+    {
+      "betId": "bet1",
+      "payload": {
+        "kind": "BOOLEAN_PROP",
+        "optionId": null,
+        "orderedOptionIds": [],
+        "value": false,
+        "guessValue": null,
+        "selectedOptionIds": [],
+        "over": null,
+        "actualValue": null
+      }
+    }
+  ]
+}

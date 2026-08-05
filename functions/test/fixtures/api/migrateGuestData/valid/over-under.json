@@ -1,0 +1,18 @@
+{
+  "predictions": [
+    {
+      "challengeId": "chal1",
+      "betId": "bet1",
+      "payload": {
+        "kind": "OVER_UNDER",
+        "optionId": null,
+        "orderedOptionIds": [],
+        "value": null,
+        "guessValue": null,
+        "selectedOptionIds": [],
+        "over": true,
+        "actualValue": null
+      }
+    }
+  ]
+}

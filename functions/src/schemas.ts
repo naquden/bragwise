@@ -29,7 +29,19 @@ export const AvatarSeedSchema = z
 // iOS gitlive encodes Kotlin Boolean as 0/1 in untyped payloads — accept and coerce.
 const clientBool = z.union([z.boolean(), z.literal(0), z.literal(1)]).transform(Boolean);
 
-export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
+// Mobile callable payloads come from flat @Serializable DTOs encoded with gitlive's
+// encodeDefaults=true, so unset fields arrive as explicit null instead of being
+// omitted (both iOS and Android — see JSONObject.wrap / FunctionsSerializer.encode).
+// Zod's .optional() rejects null. Undeclared null keys were already stripped by zod's
+// default object behaviour; this makes declared ones behave the same, so the parsed
+// object matches what the web client sends and downstream `=== undefined` /
+// `!== undefined` checks keep working.
+const stripNullFields = (v: unknown): unknown =>
+  v !== null && typeof v === 'object' && !Array.isArray(v)
+    ? Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([, x]) => x !== null))
+    : v;
+
+export const PredictionPayloadSchema = z.preprocess(stripNullFields, z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('SINGLE_PICK'), optionId: z.string().min(1) }),
   z.object({ kind: z.literal('RANKING'), orderedOptionIds: z.array(z.string().min(1)) }),
   z.object({ kind: z.literal('BOOLEAN_PROP'), value: clientBool }),
@@ -40,7 +52,7 @@ export const PredictionPayloadSchema = z.discriminatedUnion('kind', [
     over: clientBool.optional(),
     actualValue: z.number().int().optional(),
   }),
-]);
+]));
 
 // Phase 1.5: option shape extended with optional countryCode.
 // Supports ISO-3166 alpha-2 ("GB") and subdivision codes ("GB-ENG", "GB-SCT", etc.).
@@ -259,14 +271,14 @@ export const RegisterPushTokenSchema = z.object({
 export const NOTIFICATION_CATEGORY_KEYS = ['social', 'results', 'participations', 'invites'] as const;
 export type NotificationCategoryKey = typeof NOTIFICATION_CATEGORY_KEYS[number];
 
-export const SetNotificationPrefSchema = z
+export const SetNotificationPrefSchema = z.preprocess(stripNullFields, z
   .object({
     enabled: clientBool.optional(),
     categories: z.record(z.enum(NOTIFICATION_CATEGORY_KEYS), clientBool).optional(),
   })
   .refine((d) => d.enabled !== undefined || (d.categories && Object.keys(d.categories).length > 0), {
     message: 'at-least-one-field-required',
-  });
+  }));
 
 export const DeleteChallengeSchema = z.object({
   challengeId: z.string().min(1),

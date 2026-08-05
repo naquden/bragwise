@@ -1,0 +1,92 @@
+{
+  "title": "Test challenge",
+  "description": "",
+  "category": "sports",
+  "visibility": "FRIENDS",
+  "locksAt": "2999-01-01T00:00:00.000Z",
+  "betsVisible": false,
+  "scoringMode": "STANDARD",
+  "invitedUids": [],
+  "bets": [
+    {
+      "kind": "SINGLE_PICK",
+      "id": "b1",
+      "title": "Single pick",
+      "optionType": "NONE",
+      "options": [
+        { "id": "o1", "label": "Option A", "countryCode": null },
+        { "id": "o2", "label": "Option B", "countryCode": null }
+      ],
+      "topN": null,
+      "granularity": null,
+      "closest": null,
+      "placement": null,
+      "line": null
+    },
+    {
+      "kind": "RANKING",
+      "id": "b2",
+      "title": "Ranking",
+      "optionType": "NONE",
+      "options": [
+        { "id": "o3", "label": "Option C", "countryCode": null },
+        { "id": "o4", "label": "Option D", "countryCode": null }
+      ],
+      "topN": 2,
+      "granularity": null,
+      "closest": null,
+      "placement": null,
+      "line": null
+    },
+    {
+      "kind": "BOOLEAN_PROP",
+      "id": "b3",
+      "title": "Boolean prop",
+      "optionType": null,
+      "options": null,
+      "topN": null,
+      "granularity": null,
+      "closest": null,
+      "placement": null,
+      "line": null
+    },
+    {
+      "kind": "GUESS",
+      "id": "b4",
+      "title": "Guess",
+      "optionType": null,
+      "options": null,
+      "topN": null,
+      "granularity": "NUMBER",
+      "closest": true,
+      "placement": false,
+      "line": null
+    },
+    {
+      "kind": "MULTI_SELECT",
+      "id": "b5",
+      "title": "Multi select",
+      "optionType": "NONE",
+      "options": [
+        { "id": "o5", "label": "Option E", "countryCode": null }
+      ],
+      "topN": null,
+      "granularity": null,
+      "closest": null,
+      "placement": null,
+      "line": null
+    },
+    {
+      "kind": "OVER_UNDER",
+      "id": "b6",
+      "title": "Over under",
+      "optionType": null,
+      "options": null,
+      "topN": null,
+      "granularity": null,
+      "closest": null,
+      "placement": null,
+      "line": 5
+    }
+  ]
+}
