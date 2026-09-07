@@ -23,9 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.ui.text.input.KeyboardType
 import se.atte.bragwise.domain.Bet
 import se.atte.bragwise.domain.OptionType
 import se.atte.bragwise.domain.PredictionPayload
@@ -47,6 +45,7 @@ import bragwise.shared.generated.resources.postresults_posting
 import bragwise.shared.generated.resources.postresults_posting_dialog
 import bragwise.shared.generated.resources.postresults_yes
 import se.atte.bragwise.ui.components.AppButton
+import se.atte.bragwise.ui.components.rememberNumericKeyboardOptions
 import se.atte.bragwise.ui.components.AppFilterChip
 import se.atte.bragwise.ui.components.AppTextButton
 import se.atte.bragwise.ui.components.BottomActionBar
@@ -229,7 +228,7 @@ private fun BetRow(
                     label = { Text(stringResource(Res.string.postresults_over_under_actual_label, bet.line)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = rememberNumericKeyboardOptions(),
                 )
             }
         }

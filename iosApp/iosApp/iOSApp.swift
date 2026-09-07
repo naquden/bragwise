@@ -24,9 +24,12 @@ struct iOSApp: App {
                     // transition (Kotlin gates this so guests are never prompted),
                     // mirroring Android's MainActivity.requestNotificationsOnFirstSignIn.
                     // On grant we register with APNs here (UIKit main-thread API).
-                    IosPushBridgeKt.requestPushPermissionOnFirstSignInFromIos {
-                        DispatchQueue.main.async {
-                            UIApplication.shared.registerForRemoteNotifications()
+                    // Skip in mock mode to avoid blocking UI during simulator testing.
+                    if !BuildFlags.shared.USE_MOCK_DATA {
+                        IosPushBridgeKt.requestPushPermissionOnFirstSignInFromIos {
+                            DispatchQueue.main.async {
+                                UIApplication.shared.registerForRemoteNotifications()
+                            }
                         }
                     }
                 }

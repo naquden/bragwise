@@ -348,4 +348,7 @@
     <string name="pb_snackbar_request_failed">发送失败，请重试</string>
     <string name="settings_language_title">语言</string>
     <string name="settings_language_system">系统默认</string>
+
+    <!-- Software keyboard accessory bar (iOS numeric keypad has no return key). -->
+    <string name="keyboard_done">完成</string>
 </resources>

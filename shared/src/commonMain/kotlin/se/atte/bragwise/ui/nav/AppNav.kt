@@ -6,10 +6,12 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -44,6 +46,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -230,8 +234,22 @@ fun AppNav() {
         }
     }
 
+    val focusManager = LocalFocusManager.current
+
     Scaffold(
-        modifier = Modifier.enableTestTagsAsResourceId(),
+        modifier = Modifier
+            .enableTestTagsAsResourceId()
+            // Resize the whole app when the software keyboard opens instead of letting
+            // UIKit pan the scene (see MainViewController.kt). Consuming the ime inset
+            // here also collapses the navigationBarsPadding() inside BottomActionBar,
+            // so nothing double-compensates.
+            .imePadding()
+            // Safety net: tapping any non-interactive background dismisses the keyboard.
+            // Runs on PointerEventPass.Main, which is child-first, so clickable children
+            // have already consumed the down and this never swallows their clicks.
+            .pointerInput(focusManager) {
+                detectTapGestures(onTap = { focusManager.clearFocus() })
+            },
         topBar = {
             if (!isAtTab) {
                 IconButton(

@@ -348,4 +348,7 @@
     <string name="pb_snackbar_request_failed">अनुरोध नहीं भेजा जा सका — पुनः प्रयास करें</string>
     <string name="settings_language_title">भाषा</string>
     <string name="settings_language_system">सिस्टम डिफ़ॉल्ट</string>
+
+    <!-- Software keyboard accessory bar (iOS numeric keypad has no return key). -->
+    <string name="keyboard_done">हो गया</string>
 </resources>

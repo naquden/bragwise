@@ -350,4 +350,7 @@
     <string name="cc_mode_single_hint">En gissningssatsning, placering poängsätts bland alla deltagare</string>
     <string name="cc_single_question_label">Fråga</string>
     <string name="cl_invited_by">Inbjuden av %1$s</string>
+
+    <!-- Software keyboard accessory bar (iOS numeric keypad has no return key). -->
+    <string name="keyboard_done">Klar</string>
 </resources>

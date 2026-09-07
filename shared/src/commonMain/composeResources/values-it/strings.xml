@@ -348,4 +348,7 @@
     <string name="pb_snackbar_request_failed">Impossibile inviare la richiesta — riprova</string>
     <string name="settings_language_title">Lingua</string>
     <string name="settings_language_system">Predefinito di sistema</string>
+
+    <!-- Software keyboard accessory bar (iOS numeric keypad has no return key). -->
+    <string name="keyboard_done">Fatto</string>
 </resources>

@@ -147,6 +147,7 @@ import se.atte.bragwise.ui.components.FriendPickerDialog
 import se.atte.bragwise.ui.components.InfoIcon
 import se.atte.bragwise.ui.components.SectionCard
 import se.atte.bragwise.ui.components.SectionTitleRow
+import se.atte.bragwise.ui.components.rememberNumericKeyboardOptions
 import se.atte.bragwise.ui.standardPadding
 import se.atte.bragwise.ui.standardPaddingSmall
 
@@ -1044,9 +1045,7 @@ private fun BetEditor(
                 label = { Text(stringResource(Res.string.cc_over_under_line_label)) },
                 modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
                 singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                ),
+                keyboardOptions = rememberNumericKeyboardOptions(),
             )
         }
         if (duplicateOptionError != null) {
@@ -1398,9 +1397,7 @@ private fun SingleBetEditor(
                 label = { Text(stringResource(Res.string.cc_over_under_line_label)) },
                 modifier = Modifier.fillMaxWidth().padding(top = standardPaddingSmall),
                 singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                ),
+                keyboardOptions = rememberNumericKeyboardOptions(),
             )
         }
         // Options for Ranking
