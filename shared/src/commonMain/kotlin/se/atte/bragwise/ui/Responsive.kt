@@ -20,6 +20,15 @@ fun windowWidthDp(): Dp = with(LocalDensity.current) {
     LocalWindowInfo.current.containerSize.width.toDp()
 }
 
+/**
+ * Usable window height in dp. Used to cap tall widgets (e.g. RankingDragList) so they
+ * scroll internally instead of pushing a screen's bottom CTA out of reach.
+ */
+@Composable
+fun windowHeightDp(): Dp = with(LocalDensity.current) {
+    LocalWindowInfo.current.containerSize.height.toDp()
+}
+
 @Composable
 fun isWideScreen(): Boolean = windowWidthDp() >= WideBreakpoint
 

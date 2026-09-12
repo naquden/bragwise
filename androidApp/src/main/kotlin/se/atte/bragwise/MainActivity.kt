@@ -92,29 +92,35 @@ class MainActivity : ComponentActivity() {
     /**
      * Debug-only verification entry point for agents / CI:
      * `adb shell am start -n se.atte.bragwise/.MainActivity --es verify eurovision_ranking`
+     * `adb shell am start -n se.atte.bragwise/.MainActivity --es verify ranking_top8`
      *
      * Seeds a published country-ranking challenge and opens the Predict screen.
+     * `ranking_top8` seeds the 8-option / topN=8 variant and does NOT auto-submit.
      */
     private fun handleVerifyIntent(intent: Intent?) {
         if (!BuildConfig.DEBUG) return
         val scenario = intent?.getStringExtra(EXTRA_VERIFY) ?: return
         intent.removeExtra(EXTRA_VERIFY)
-        if (scenario != VERIFY_EUROVISION_RANKING) return
+        if (scenario != VERIFY_EUROVISION_RANKING && scenario != VERIFY_RANKING_TOP8) return
         lifecycleScope.launch {
             val signedIn = withTimeoutOrNull(timeMillis = 15_000) {
                 auth.authState.filterIsInstance<AuthState.SignedIn>().first()
             }
             if (signedIn == null) {
-                Log.e(TAG_VERIFY, "eurovision_ranking: not signed in within 15s — sign in first")
+                Log.e(TAG_VERIFY, "$scenario: not signed in within 15s — sign in first")
                 return@launch
             }
-            VerifyAutomation.seedEurovisionRankingChallenge(challenges = challenges)
+            val seeded = when (scenario) {
+                VERIFY_RANKING_TOP8 -> VerifyAutomation.seedRankingTop8Challenge(challenges = challenges)
+                else -> VerifyAutomation.seedEurovisionRankingChallenge(challenges = challenges)
+            }
+            seeded
                 .onSuccess { challengeId ->
-                    Log.i(TAG_VERIFY, "eurovision_ranking: seeded challengeId=$challengeId")
+                    Log.i(TAG_VERIFY, "$scenario: seeded challengeId=$challengeId")
                     VerifyAutomation.requestOpenPredict(challengeId = challengeId)
                 }
                 .onFailure { error ->
-                    Log.e(TAG_VERIFY, "eurovision_ranking: seed failed", error)
+                    Log.e(TAG_VERIFY, "$scenario: seed failed", error)
                 }
         }
     }
@@ -150,6 +156,7 @@ class MainActivity : ComponentActivity() {
         private const val TAG_VERIFY = "BRAGWISE_VERIFY"
         const val EXTRA_VERIFY = "verify"
         const val VERIFY_EUROVISION_RANKING = "eurovision_ranking"
+        const val VERIFY_RANKING_TOP8 = "ranking_top8"
 
         private val TRUSTED_HOSTS = setOf("bragwise.firebaseapp.com", "bragwise.app")
     }
