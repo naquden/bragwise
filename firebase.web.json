@@ -5,10 +5,30 @@
     "ignore": ["firebase.json", "**/.git/**", "**/.DS_Store"],
     "headers": [
       {
+        "comment": "Webpack content-hashes these, so a given name never changes contents.",
         "source": "**/*.wasm",
-        "headers": [{ "key": "Content-Type", "value": "application/wasm" }]
+        "headers": [
+          { "key": "Content-Type", "value": "application/wasm" },
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
+        "comment": "webApp.js has a FIXED name (outputFileName) but references content-hashed .wasm. If it is ever cached it will fetch wasm hashes that a later deploy deleted, and the app dies on a white screen. It must always revalidate.",
+        "source": "**/*.js",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "comment": "Matches both / and /index.html; a plain /index.html source does not match a bare root request.",
+        "regex": "^/(index\\.html)?$",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
       }
     ],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    "rewrites": [
+      {
+        "comment": "SPA routing for dot-free paths only (/c/{id}, /c/{id}/results, /requests, /friends per DeepLink.kt). A catch-all ** would answer a missing .wasm/.js/.ttf with index.html under a forced application/wasm content type, turning a clear 404 into a wasm compile failure.",
+        "regex": "^/[^.]*$",
+        "destination": "/index.html"
+      }
+    ]
   }
 }

@@ -2,7 +2,6 @@ package se.atte.bragwise
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
-import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,11 +18,21 @@ import se.atte.bragwise.ui.nav.parseDeepLink
 
 private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+/**
+ * Compose mounts into this `<div>` (see `wasmJsMain/resources/index.html`), not into
+ * `<body>`. ComposeViewport clears its container on composition creation, and the
+ * Firebase App Check reCAPTCHA v3 provider appends its hidden placeholder div to
+ * `<body>`; mounting on `<body>` wiped that placeholder out from under
+ * `grecaptcha.render()`, which then failed with "reCAPTCHA placeholder element must
+ * be an element or id" and no App Check token was ever minted on web.
+ */
+private const val VIEWPORT_CONTAINER_ID = "composeApp"
+
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     if (BuildFlags.USE_MOCK_DATA) {
         initKoin(useMock = true)
-        ComposeViewport(document.body!!) { App() }
+        ComposeViewport(VIEWPORT_CONTAINER_ID) { App() }
         return
     }
 
@@ -48,7 +57,7 @@ fun main() {
         parseDeepLink(href)?.let { koin.get<PushNotifications>().seedDeepLink(href) }
     }
 
-    ComposeViewport(document.body!!) {
+    ComposeViewport(VIEWPORT_CONTAINER_ID) {
         App()
     }
 }

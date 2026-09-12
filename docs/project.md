@@ -225,7 +225,10 @@ manually, verify your change, revert before pushing.
 
 **Always verify `USE_MOCK_DATA = false` before:**
 - Building an IPA for App Store / TestFlight
-- Generating an AAB for Play Store (`./gradlew :androidApp:bundleRelease`)
+- Generating an AAB for Play Store (`./gradlew :androidApp:bundleRelease`) — release builds run R8
+  (code + resource shrinking, keep rules in `androidApp/proguard-rules.pro`) and upload the mapping
+  file to Crashlytics, so they need network. Add `-x :androidApp:uploadCrashlyticsMappingFileRelease`
+  to build offline or to avoid publishing a mapping for a throwaway build.
 - Deploying wasmJs to Firebase Hosting (`./gradlew :webApp:wasmJsBrowserDistribution` + `firebase deploy`)
 
 ---

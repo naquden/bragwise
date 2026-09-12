@@ -2,11 +2,71 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
+    <!-- Every asset reference below (and every relative XHR the Compose resource
+         loader makes) resolves against this base, NOT against the current path.
+         Without it, entering the app at a deep link such as /c/{id} makes the
+         browser request /c/{id}/webApp.js, which the catch-all rewrite in
+         firebase.web.json answers with index.html — the bundle never runs and the
+         page stays blank white. -->
+    <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bragwise</title>
-    <style>html,body{margin:0;padding:0;width:100%;height:100%;}</style>
+    <style>
+      html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}
+      /* Compose mounts here rather than into <body>: ComposeViewport clears its
+         container, and Firebase App Check appends its hidden reCAPTCHA
+         placeholder div to <body>. Mounting on <body> deleted that placeholder
+         and App Check failed with "reCAPTCHA placeholder element must be an
+         element or id". */
+      #composeApp{width:100%;height:100%;}
+      #bootError{display:none;box-sizing:border-box;width:100%;height:100%;padding:24px;
+        overflow:auto;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1b1b1b;}
+      #bootError h1{font-size:20px;margin:0 0 12px;}
+      #bootError button{font:inherit;padding:8px 16px;margin-top:8px;cursor:pointer;}
+      #bootErrorDetail{white-space:pre-wrap;font:12px/1.4 ui-monospace,Menlo,monospace;color:#666;margin-top:16px;}
+    </style>
   </head>
   <body>
-    <script src="webApp.js"></script>
+    <div id="composeApp"></div>
+    <div id="bootError">
+      <h1>Bragwise couldn&rsquo;t start</h1>
+      <p>The app failed to load in this browser. Bragwise needs a browser with
+         WebAssembly garbage-collection support &mdash; Chrome/Edge 119+, Firefox 120+
+         or Safari 18.2+.</p>
+      <p>If your browser is up to date, a stale cached copy is the likely cause;
+         reloading should fix it.</p>
+      <button type="button" onclick="location.reload()">Reload</button>
+      <div id="bootErrorDetail"></div>
+    </div>
+    <script>
+      // Without this the page has no fallback at all: any bundle or wasm failure
+      // leaves an empty <body>, i.e. a white screen with nothing to diagnose.
+      (function () {
+        var shown = false;
+        function showBootError(detail) {
+          if (shown) return;
+          var host = document.getElementById('composeApp');
+          // Only a *boot* failure gets the overlay. Once ComposeViewport has
+          // appended its containers the app is alive, and a later unrelated
+          // rejection must not blank a working screen.
+          if (!host || host.childElementCount > 0) return;
+          shown = true;
+          host.style.display = 'none';
+          document.getElementById('bootError').style.display = 'block';
+          document.getElementById('bootErrorDetail').textContent = detail || '';
+        }
+        window.addEventListener('error', function (e) {
+          if (e.target && e.target.tagName === 'SCRIPT') {
+            showBootError('Failed to load ' + (e.target.src || 'script'));
+          } else {
+            showBootError(e.message ? e.message + '\n' + (e.filename || '') : '');
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          showBootError(String((e.reason && e.reason.message) || e.reason || ''));
+        });
+      })();
+    </script>
+    <script src="/webApp.js"></script>
   </body>
 </html>
