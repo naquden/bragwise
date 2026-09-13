@@ -19,9 +19,30 @@ Use the run configurations provided by the run widget in your IDE's toolbar. You
 - Android app: `./gradlew :androidApp:assembleDebug`
 - iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
 
+### Bumping the app version
+
+`gradle.properties` is the single source of truth (`app.versionName`, `app.versionCode`).
+Use the script — it updates the Android properties *and* syncs the iOS xcconfig, and
+increments `versionCode` by 1 automatically:
+
+```bash
+./scripts/bump-version.sh 0.7.11
+```
+
+Consumers, all fed from those two properties:
+- Android — `androidApp/build.gradle.kts` (`versionCode` / `versionName`)
+- iOS — `iosApp/Configuration/Config.xcconfig` (`CURRENT_PROJECT_VERSION`, `MARKETING_VERSION`)
+- shared — `shared/build.gradle.kts`
+
+Patch numbers run past 9 (`0.4.9 → 0.4.10 → 0.4.11`), so the successor to `0.7.9` is
+`0.7.10`, not `0.8.0`.
+
+If you edit `gradle.properties` by hand instead, sync iOS with
+`./gradlew generateXcconfig` — don't hand-edit `Config.xcconfig`.
+
 ### Building iOS IPA for App Store (Transporter)
 
-**1. Archive**
+**1. Archive** (~10 min — builds the shared KMP framework)
 ```bash
 xcodebuild archive \
   -project iosApp/iosApp.xcodeproj \
@@ -40,21 +61,18 @@ xcodebuild archive \
     <key>method</key>
     <string>app-store-connect</string>
     <key>teamID</key>
-    <string><teamId></string>
+    <string>2AN99UVZWL</string>
     <key>uploadSymbols</key>
     <true/>
     <key>signingStyle</key>
-    <string>manual</string>
-    <key>signingCertificate</key>
-    <string>Apple Distribution</string>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>se.atte.bragwise.Bragwise</key>
-        <string>Bragwise Appstore</string>
-    </dict>
+    <string>automatic</string>
 </dict>
 </plist>
 ```
+
+`signingStyle` must be `automatic` to match the project's own signing config (see
+"Signing" below). Do **not** add a `provisioningProfiles` dict — the named profile
+it would reference does not exist.
 
 **3. Export IPA**
 ```bash
@@ -67,11 +85,37 @@ xcodebuild -exportArchive \
 
 IPA is at `/tmp/bragwise-export/Bragwise.ipa` — drag into Transporter to upload.
 
+**4. Verify before uploading**
+```bash
+plutil -p /tmp/bragwise-export/DistributionSummary.plist | head -15
+```
+Check two things: `buildNumber` matches the version you bumped to, and
+`certificate.type` is `Apple Distribution` (not `Apple Development`). An
+`Apple Development` certificate here means the export did not re-sign and the
+upload will be rejected.
+
 Prereqs: Xcode signed in with Apple ID, bundle ID `se.atte.bragwise.Bragwise` registered in App Store Connect.
 
-The Release config uses **manual** signing (`CODE_SIGN_STYLE = Manual`, `CODE_SIGN_IDENTITY = "Apple Distribution"`, `PROVISIONING_PROFILE_SPECIFIER = "Bragwise Appstore"` in `iosApp.xcodeproj`). This avoids automatic signing's requirement for a registered iOS device.
+### Signing
 
-A fresh `git clone` does **not** carry provisioning profiles — they live in `~/Library/MobileDevice/Provisioning Profiles/`, not the repo. If archiving fails with `No profiles for 'se.atte.bragwise.Bragwise' were found`, recreate the App Store profile:
+The Release config uses **automatic** signing (`CODE_SIGN_STYLE = Automatic`,
+`CODE_SIGN_IDENTITY = "Apple Development"`, `PROVISIONING_PROFILE_SPECIFIER = ""`
+in `iosApp.xcodeproj`). `-allowProvisioningUpdates` on both commands is therefore
+required — it resolves the distribution profile from the developer portal at
+archive/export time.
+
+Consequence worth knowing: the **archive is `Apple Development`-signed**, and only
+the *export* step re-signs with `Apple Distribution`. This is expected for this
+flow, but it means `/tmp/bragwise.xcarchive` is not independently distributable —
+only the exported IPA is. Verify via step 4 above rather than by inspecting the
+archive's `SigningIdentity`.
+
+Provisioning profiles are not carried by a fresh `git clone` — they live in
+`~/Library/MobileDevice/Provisioning Profiles/`, not the repo. With automatic
+signing plus `-allowProvisioningUpdates` this is usually handled for you; that
+directory may legitimately contain **no** Bragwise profile and the build will
+still succeed. If archiving does fail with `No profiles for
+'se.atte.bragwise.Bragwise' were found`, create an App Store profile manually:
 
 1. developer.apple.com → Certificates, Identifiers & Profiles → Profiles → **+**
 2. **App Store Connect** (Distribution) → App ID `se.atte.bragwise.Bragwise` → cert **Apple Distribution** → name it `Bragwise Appstore` → Generate → Download.
@@ -88,7 +132,12 @@ error after pulling a capability change, regenerate the profile with the
 steps above and delete the stale copy from
 `~/Library/MobileDevice/Provisioning Profiles/` first.
 
-Before building, ensure `useMock = false` in `iosApp/iosApp/iOSApp.swift`.
+Before building, ensure `USE_MOCK_DATA = false` in
+`shared/src/commonMain/kotlin/se/atte/bragwise/BuildFlags.kt`. That single `const`
+is the only place to change it — all three platform entry points read it, and
+`iosApp/iosApp/iOSApp.swift` derives its local `useMock` from
+`BuildFlags.shared.USE_MOCK_DATA` rather than declaring its own value. The flag is
+**not** gated by build type, so a `true` value ships in a release build.
 
 ---
 
