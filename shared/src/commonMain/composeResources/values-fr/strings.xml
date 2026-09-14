@@ -187,12 +187,6 @@
     <string name="postresults_cancel">Annuler</string>
     <string name="postresults_posting_dialog">Publication des résultats…</string>
 
-    <string name="summary_no_predictions">Aucune prédiction pour l'instant</string>
-    <string name="summary_bets_count">Paris: %1$d</string>
-    <string name="summary_your_rank">Votre classement: %1$s</string>
-    <string name="summary_top_score">Meilleur score: %1$d</string>
-    <string name="summary_edit_predictions">Modifier les prédictions</string>
-
     <string name="friends_add_by_username">Ajouter par nom d'utilisateur</string>
     <string name="friends_sending_request">Envoi de la demande…</string>
     <string name="friends_no_friends_title">Aucun ami pour l'instant</string>

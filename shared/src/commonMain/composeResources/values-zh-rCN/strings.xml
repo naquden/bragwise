@@ -187,12 +187,6 @@
     <string name="postresults_cancel">取消</string>
     <string name="postresults_posting_dialog">正在发布结果…</string>
 
-    <string name="summary_no_predictions">还没有预测</string>
-    <string name="summary_bets_count">投注: %1$d</string>
-    <string name="summary_your_rank">您的排名: %1$s</string>
-    <string name="summary_top_score">最高分: %1$d</string>
-    <string name="summary_edit_predictions">编辑预测</string>
-
     <string name="friends_add_by_username">按用户名添加</string>
     <string name="friends_sending_request">正在发送请求…</string>
     <string name="friends_no_friends_title">还没有朋友</string>

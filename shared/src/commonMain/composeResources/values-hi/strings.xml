@@ -187,12 +187,6 @@
     <string name="postresults_cancel">रद्द करें</string>
     <string name="postresults_posting_dialog">परिणाम पोस्ट हो रहे हैं…</string>
 
-    <string name="summary_no_predictions">अभी कोई भविष्यवाणी नहीं</string>
-    <string name="summary_bets_count">बेट: %1$d</string>
-    <string name="summary_your_rank">आपकी रैंक: %1$s</string>
-    <string name="summary_top_score">शीर्ष स्कोर: %1$d</string>
-    <string name="summary_edit_predictions">भविष्यवाणी संपादित करें</string>
-
     <string name="friends_add_by_username">उपयोगकर्ता नाम से जोड़ें</string>
     <string name="friends_sending_request">अनुरोध भेजा जा रहा है…</string>
     <string name="friends_no_friends_title">अभी कोई मित्र नहीं</string>

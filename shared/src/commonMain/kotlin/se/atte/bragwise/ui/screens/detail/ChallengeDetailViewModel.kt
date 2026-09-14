@@ -74,7 +74,6 @@ class ChallengeDetailViewModel(
         data object Refresh : Intent
         data object OpenPredict : Intent
         data class OpenBet(val betId: String) : Intent
-        data object OpenSummary : Intent
         data object OpenPostResults : Intent
         data class OpenParticipant(val uid: String) : Intent
         data object RequestDelete : Intent
@@ -91,7 +90,6 @@ class ChallengeDetailViewModel(
 
     sealed interface Effect {
         data class GoToBet(val betId: String) : Effect
-        data class GoToSummary(val challengeId: String) : Effect
         data class GoToPostResults(val challengeId: String) : Effect
         data class GoToParticipant(val challengeId: String, val uid: String) : Effect
         data object Deleted : Effect
@@ -170,7 +168,6 @@ class ChallengeDetailViewModel(
             Intent.Refresh -> { /* re-subscribe or force-reload */ }
             Intent.OpenPredict -> emitEffect(Effect.GoToBet(challengeId))
             is Intent.OpenBet -> emitEffect(Effect.GoToBet(intent.betId))
-            Intent.OpenSummary -> emitEffect(Effect.GoToSummary(challengeId))
             Intent.OpenPostResults -> emitEffect(Effect.GoToPostResults(challengeId))
             is Intent.OpenParticipant -> emitEffect(Effect.GoToParticipant(challengeId = challengeId, uid = intent.uid))
             Intent.RequestDelete -> update { it.copy(confirmingDelete = true) }

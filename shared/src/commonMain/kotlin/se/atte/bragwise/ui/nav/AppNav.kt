@@ -94,8 +94,6 @@ import se.atte.bragwise.ui.icons.BragIcon
 import se.atte.bragwise.ui.screens.about.AboutScreen
 import se.atte.bragwise.ui.screens.auth.SignInScreen
 import se.atte.bragwise.ui.screens.auth.SignInViewModel
-import se.atte.bragwise.ui.screens.bets.BetListViewModel
-import se.atte.bragwise.ui.screens.bets.ChallengeSummaryScreen
 import se.atte.bragwise.ui.screens.challenges.ChallengesScreen
 import se.atte.bragwise.ui.screens.challenges.ChallengesViewModel
 import se.atte.bragwise.ui.screens.create.CreateChallengeScreen
@@ -136,7 +134,6 @@ import se.atte.bragwise.verify.VerifyAutomation
 @Serializable data object RouteSignIn
 @Serializable data object RouteFriends
 @Serializable data object RouteWelcome
-@Serializable data class RouteChallengeSummary(val challengeId: String)
 @Serializable data class RouteParticipantBets(val challengeId: String, val uid: String)
 @Serializable data class RoutePostResults(val challengeId: String)
 @Serializable data object RouteFriendRequests
@@ -416,7 +413,6 @@ fun AppNav() {
                             platformShare = platformShare,
                             snackbarHostState = snackbarHostState,
                             onNavigateToBet = { navController.navigate(RoutePredict(route.id)) },
-                            onNavigateToSummary = { navController.navigate(RouteChallengeSummary(route.id)) },
                             onNavigateToPostResults = { id -> navController.navigate(RoutePostResults(id)) },
                             onNavigateToParticipant = { challengeId, uid -> navController.navigate(RouteParticipantBets(challengeId = challengeId, uid = uid)) },
                             onNavigateToClone = { id -> navController.navigate(RouteCreate(cloneSourceId = id)) },
@@ -538,18 +534,6 @@ fun AppNav() {
                                 navController.navigate(RouteResultsReveal(challengeId = route.challengeId)) {
                                     popUpTo(RouteChallengeDetail::class) { inclusive = true }
                                 }
-                            },
-                        )
-                    }
-                }
-                composable<RouteChallengeSummary> { entry ->
-                    val route = entry.toRoute<RouteChallengeSummary>()
-                    CenteredMaxWidth {
-                        ChallengeSummaryScreen(
-                            viewModel = koinViewModel<BetListViewModel> { parametersOf(route.challengeId) },
-                            onEdit = { id -> navController.navigate(RoutePredict(id)) },
-                            onOpenParticipant = { uid ->
-                                navController.navigate(RouteParticipantBets(challengeId = route.challengeId, uid = uid))
                             },
                         )
                     }

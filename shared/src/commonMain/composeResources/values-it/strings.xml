@@ -187,12 +187,6 @@
     <string name="postresults_cancel">Annulla</string>
     <string name="postresults_posting_dialog">Pubblicazione risultati…</string>
 
-    <string name="summary_no_predictions">Nessuna previsione ancora</string>
-    <string name="summary_bets_count">Scommesse: %1$d</string>
-    <string name="summary_your_rank">La tua classifica: %1$s</string>
-    <string name="summary_top_score">Punteggio massimo: %1$d</string>
-    <string name="summary_edit_predictions">Modifica previsioni</string>
-
     <string name="friends_add_by_username">Aggiungi per nome utente</string>
     <string name="friends_sending_request">Invio richiesta…</string>
     <string name="friends_no_friends_title">Nessun amico ancora</string>

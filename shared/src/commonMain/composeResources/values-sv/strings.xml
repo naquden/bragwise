@@ -189,12 +189,6 @@
     <string name="postresults_cancel">Avbryt</string>
     <string name="postresults_posting_dialog">Publicerar resultat…</string>
 
-    <string name="summary_no_predictions">Inga tipsningar än</string>
-    <string name="summary_bets_count">Tips: %1$d</string>
-    <string name="summary_your_rank">Din placering: %1$s</string>
-    <string name="summary_top_score">Toppoäng: %1$d</string>
-    <string name="summary_edit_predictions">Redigera tipsningar</string>
-
     <string name="friends_add_by_username">Lägg till via användarnamn</string>
     <string name="friends_sending_request">Skickar förfrågan…</string>
     <string name="friends_no_friends_title">Inga vänner än</string>

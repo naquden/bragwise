@@ -233,13 +233,6 @@
     <string name="postresults_cancel">Cancel</string>
     <string name="postresults_posting_dialog">Posting results…</string>
 
-    <!-- Challenge summary screen. -->
-    <string name="summary_no_predictions">No predictions yet</string>
-    <string name="summary_bets_count">Bets: %1$d</string>
-    <string name="summary_your_rank">Your rank: %1$s</string>
-    <string name="summary_top_score">Top score: %1$d</string>
-    <string name="summary_edit_predictions">Edit predictions</string>
-
     <!-- Friends screen. -->
     <string name="friends_add_by_username">Add by username</string>
     <string name="friends_sending_request">Sending request…</string>

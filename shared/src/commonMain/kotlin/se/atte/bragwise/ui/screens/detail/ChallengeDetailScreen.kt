@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.CircleCheck
 import com.composables.icons.lucide.Lucide
@@ -23,6 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import se.atte.bragwise.mvi.ObserveEffects
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,7 +99,6 @@ fun ChallengeDetailScreen(
     platformShare: PlatformShare,
     snackbarHostState: SnackbarHostState,
     onNavigateToBet: (String) -> Unit,
-    onNavigateToSummary: (String) -> Unit,
     onNavigateToPostResults: (String) -> Unit,
     onNavigateToParticipant: (challengeId: String, uid: String) -> Unit,
     onNavigateToClone: (String) -> Unit,
@@ -107,7 +110,6 @@ fun ChallengeDetailScreen(
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             is ChallengeDetailViewModel.Effect.GoToBet -> onNavigateToBet(effect.betId)
-            is ChallengeDetailViewModel.Effect.GoToSummary -> onNavigateToSummary(effect.challengeId)
             is ChallengeDetailViewModel.Effect.GoToPostResults -> onNavigateToPostResults(effect.challengeId)
             is ChallengeDetailViewModel.Effect.GoToParticipant -> onNavigateToParticipant(effect.challengeId, effect.uid)
             is ChallengeDetailViewModel.Effect.Deleted -> onDeleted()
@@ -184,7 +186,6 @@ fun ChallengeDetailScreen(
                 confirmingDelete = state.confirmingDelete,
                 isDeleting = state.isDeleting,
                 onPredict = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPredict) },
-                onSummary = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenSummary) },
                 onPostResults = { viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenPostResults) },
                 onParticipant = { uid -> viewModel.onIntent(ChallengeDetailViewModel.Intent.OpenParticipant(uid)) },
                 onShare = { viewModel.onIntent(ChallengeDetailViewModel.Intent.Share) },
@@ -207,7 +208,6 @@ private fun DetailContent(
     confirmingDelete: Boolean,
     isDeleting: Boolean,
     onPredict: () -> Unit,
-    onSummary: () -> Unit,
     onPostResults: () -> Unit,
     onParticipant: (String) -> Unit,
     onShare: () -> Unit,
@@ -220,6 +220,7 @@ private fun DetailContent(
 ) {
     val joined = data.myPredictions.isNotEmpty()
     val challenge = data.challenge
+    var visibleParticipants by rememberSaveable { mutableStateOf(MAX_VISIBLE_PARTICIPANTS) }
 
     if (isDeleting) {
         LoadingDialog(message = stringResource(Res.string.cd_deleting), onStopWaiting = onStopWaitingForDelete)
@@ -314,8 +315,8 @@ private fun DetailContent(
                     )
                 }
                 item {
-                    val shown = challenge.participants.take(MAX_VISIBLE_PARTICIPANTS)
-                    val hasMore = challenge.participants.size > MAX_VISIBLE_PARTICIPANTS
+                    val shown = challenge.participants.take(visibleParticipants)
+                    val hasMore = challenge.participants.size > visibleParticipants
                     ListGroup {
                         shown.forEachIndexed { index, participant ->
                             val points = challenge.leaderboard?.get(participant.uid)
@@ -330,8 +331,10 @@ private fun DetailContent(
                         }
                         if (hasMore) {
                             ShowMoreRow(
-                                remaining = challenge.participants.size - shown.size,
-                                onClick = onSummary,
+                                onClick = {
+                                    visibleParticipants = (visibleParticipants + PARTICIPANTS_PAGE_SIZE)
+                                        .coerceAtMost(challenge.participants.size)
+                                },
                                 label = stringResource(Res.string.cd_show_more, challenge.participants.size - shown.size),
                             )
                         }
@@ -406,8 +409,8 @@ private fun DetailContent(
         BottomActionBar {
             AppButton(
                 modifier = Modifier.fillMaxWidth().testTag("detail_make_predictions"),
-                onClick = onPredict,
-                enabled = canPredict,
+                onClick = if (canPredict) onPredict else ({ onParticipant(myUid) }),
+                enabled = canPredict || (joined && myUid.isNotBlank()),
             ) {
                 Text(
                     when {
@@ -468,7 +471,7 @@ private fun ParticipantRow(
 }
 
 @Composable
-private fun ShowMoreRow(remaining: Int, onClick: () -> Unit, label: String = "Show more ($remaining)") {
+private fun ShowMoreRow(onClick: () -> Unit, label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -482,15 +485,17 @@ private fun ShowMoreRow(remaining: Int, onClick: () -> Unit, label: String = "Sh
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
         )
-        Text(
-            text = "›",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Icon(
+            imageVector = Lucide.ChevronDown,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.primary,
         )
     }
 }
 
 private const val MAX_VISIBLE_PARTICIPANTS = 5
+private const val PARTICIPANTS_PAGE_SIZE = 10
 
 // region Previews
 
@@ -504,7 +509,6 @@ private fun Detail_Ready_NotJoined_Preview() {
             myUid = "u1",
             confirmingDelete = false,
             onPredict = {},
-            onSummary = {},
             onPostResults = {},
             onParticipant = {},
             onShare = {},
@@ -534,7 +538,6 @@ private fun Detail_Ready_Owner_Preview() {
             myUid = "u1",
             confirmingDelete = false,
             onPredict = {},
-            onSummary = {},
             onPostResults = {},
             onParticipant = {},
             onShare = {},
@@ -562,7 +565,6 @@ private fun Detail_Ready_BetsVisible_Preview() {
             myUid = "u2",
             confirmingDelete = false,
             onPredict = {},
-            onSummary = {},
             onPostResults = {},
             onParticipant = {},
             onShare = {},
