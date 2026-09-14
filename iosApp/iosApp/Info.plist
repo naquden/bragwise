@@ -22,6 +22,31 @@
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 	<!--
+	  Custom URL scheme. Safari does NOT re-trigger a Universal Link when the
+	  tapped https link points at the domain that served the page, so the landing
+	  page's iOS "Open in Bragwise" CTA uses `bragwise://<host>/<path>` instead.
+	  SwiftUI delivers it to `.onOpenURL` (iOSApp.swift), which hands it to
+	  IosLinkBridge.handleInboundUrlFromIos — that normalises it back to https and
+	  rejects any host outside TRUSTED_HOSTS.
+	  Mirrors FirebaseConfig.APP_URL_SCHEME (shared/commonMain) and
+	  functions/src/landingHtml.ts — KEEP IN SYNC.
+	  Hand-edited on purpose: GENERATE_INFOPLIST_FILE merges into this file and
+	  there is no INFOPLIST_KEY_ build setting for URL types.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>se.atte.bragwise.Bragwise</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bragwise</string>
+			</array>
+		</dict>
+	</array>
+	<!--
 	  Allow APNs to wake the app for background data pushes so FCM can deliver
 	  silent / data-only messages. Foreground + tap handling is done in the
 	  UNUserNotificationCenterDelegate (iOSApp.swift).

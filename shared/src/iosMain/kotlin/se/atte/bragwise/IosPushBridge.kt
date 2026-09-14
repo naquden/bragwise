@@ -11,7 +11,6 @@ import org.koin.core.component.inject
 import se.atte.bragwise.data.AuthRepository
 import se.atte.bragwise.data.AuthState
 import se.atte.bragwise.push.PushNotifications
-import se.atte.bragwise.ui.nav.parseDeepLink
 
 /**
  * Bridge from the Swift `AppDelegate` into Kotlin's [PushNotifications] /
@@ -20,6 +19,10 @@ import se.atte.bragwise.ui.nav.parseDeepLink
  *
  * Koin is started in `iOSApp.init()` before the delegate fires, so these are
  * safe to call from APNs/FCM callbacks.
+ *
+ * Deep-link routing used to live here too; it moved to `IosLinkBridge.kt` once
+ * it stopped being push-only (the generated Obj-C class name derives from the
+ * file name, so a push-named file would have been misleading).
  */
 private object IosPushBridge : KoinComponent {
     val push: PushNotifications by inject()
@@ -28,23 +31,9 @@ private object IosPushBridge : KoinComponent {
 
 private val pushBridgeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-private val TRUSTED_HOSTS = setOf("bragwise.firebaseapp.com", "bragwise.app")
-
 /** Swift `MessagingDelegate` forwards the FCM registration token here. */
 fun handlePushTokenFromIos(token: String) {
     IosPushBridge.push.onNewToken(token)
-}
-
-/**
- * Swift forwards the `deepLink` from a tapped notification's userInfo here.
- * Only trusted https hosts with a parseable path are accepted — mirrors
- * Android's `MainActivity.handleDeepLink` + the messaging service's host check.
- */
-fun handlePushDeepLinkFromIos(url: String) {
-    val host = hostOf(url) ?: return
-    if (host !in TRUSTED_HOSTS) return
-    if (parseDeepLink(url) == null) return
-    IosPushBridge.push.onIncomingDeepLink(url)
 }
 
 /**
@@ -69,12 +58,4 @@ fun requestPushPermissionOnFirstSignInFromIos(onGranted: () -> Unit) {
                 }
             }
     }
-}
-
-private fun hostOf(url: String): String? {
-    if (!url.startsWith("https://")) return null
-    val afterScheme = url.substring("https://".length)
-    val end = afterScheme.indexOfFirst { it == '/' || it == '?' || it == '#' }
-    val host = if (end < 0) afterScheme else afterScheme.substring(0, end)
-    return host.ifEmpty { null }
 }

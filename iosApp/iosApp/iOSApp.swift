@@ -33,17 +33,23 @@ struct iOSApp: App {
                         }
                     }
                 }
-                // Universal Link path: tapping the email sign-in link from
-                // Mail / Safari arrives here once the OS has verified our
-                // `apple-app-site-association` for bragwise.firebaseapp.com.
+                // Universal Link path: tapping any https bragwise.firebaseapp.com
+                // link — the email sign-in link OR a shared `/c/{id}` challenge
+                // link — arrives here once the OS has verified our
+                // `apple-app-site-association` for that host. handleInboundUrlFromIos
+                // decides which of the two it is; previously this only ever tried
+                // sign-in, so challenge links were silently dropped.
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
                     guard let url = activity.webpageURL else { return }
-                    IosAuthBridgeKt.handleSignInLinkFromIos(url: url.absoluteString)
+                    IosLinkBridgeKt.handleInboundUrlFromIos(url: url.absoluteString)
                 }
-                // Belt-and-braces: handles the rarer `openURL` path too (eg
-                // long-press → Open in Bragwise, custom scheme fallback).
+                // Custom-scheme path: `bragwise://…` from the landing page's iOS
+                // CTA (Safari will not re-trigger a Universal Link for the domain
+                // that served the page), plus the rarer openURL cases — long-press
+                // → Open in Bragwise, smart-banner app-argument. Kotlin normalises
+                // the scheme back to https and host-checks it before routing.
                 .onOpenURL { url in
-                    IosAuthBridgeKt.handleSignInLinkFromIos(url: url.absoluteString)
+                    IosLinkBridgeKt.handleInboundUrlFromIos(url: url.absoluteString)
                 }
         }
     }
@@ -160,8 +166,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
         completionHandler([.banner, .sound, .badge])
     }
 
-    /// Notification tapped: forward the `deepLink` payload into the shared push
-    /// flow so AppNav can navigate (mirrors Android's tap PendingIntent → push.onIncomingDeepLink).
+    /// Notification tapped: forward the `deepLink` payload into the shared routing
+    /// bridge so AppNav can navigate (mirrors Android's tap PendingIntent →
+    /// push.onIncomingDeepLink). The payload is already a trusted-host https URL,
+    /// so it goes straight to handleDeepLinkFromIos — no scheme normalisation and
+    /// no sign-in attempt needed. (Function renamed from handlePushDeepLinkFromIos
+    /// and moved to IosLinkBridge.kt; behaviour is unchanged.)
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -169,7 +179,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
     ) {
         let userInfo = response.notification.request.content.userInfo
         if let deepLink = userInfo["deepLink"] as? String {
-            IosPushBridgeKt.handlePushDeepLinkFromIos(url: deepLink)
+            IosLinkBridgeKt.handleDeepLinkFromIos(url: deepLink)
         }
         completionHandler()
     }
